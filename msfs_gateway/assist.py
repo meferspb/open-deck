@@ -44,6 +44,7 @@ LANDING_MIN_IAS_KT = 40.0
 
 
 def clamp(value: float, low: float, high: float) -> float:
+    """Ограничивает значение диапазоном."""
     return max(low, min(high, value))
 
 
@@ -67,6 +68,8 @@ def _flag(values: dict[str, Any], key: str) -> bool:
 
 @dataclass
 class TaxiStatus:
+    """Состояние ассистента руления."""
+
     engaged: bool = False
     target_speed_kt: float = 12.0
     target_heading_deg: float = 0.0
@@ -87,6 +90,7 @@ class TaxiAssist:
 
     # --- управление ---------------------------------------------------
     def engage(self, values: dict[str, Any]) -> tuple[bool, str]:
+        """Включает ассистент руления с проверками безопасности."""
         if not _flag(values, "aircraft.onGround"):
             return False, "Самолёт не на земле — руление недоступно"
         if _flag(values, "brakes.parking"):
@@ -103,6 +107,7 @@ class TaxiAssist:
         return True, "Ассистент руления включён"
 
     def disengage(self, reason: str = "Ассистент руления выключен") -> None:
+        """Выключает ассистент и обнуляет тягу/руль."""
         if self.status.engaged:
             self._send("controls.throttlePct", 0)
             self._send("controls.rudder", 0)
@@ -112,6 +117,7 @@ class TaxiAssist:
         self.status.message = reason
 
     def set_speed(self, value: Any) -> tuple[bool, str]:
+        """Задаёт скорость руления в допустимых пределах."""
         try:
             speed = float(value)
         except (TypeError, ValueError):
@@ -122,10 +128,12 @@ class TaxiAssist:
         return True, f"Скорость руления: {self.status.target_speed_kt:.0f} уз"
 
     def nudge_heading(self, delta: float) -> tuple[bool, str]:
+        """Поворачивает заданный курс на delta градусов."""
         self.status.target_heading_deg = (self.status.target_heading_deg + delta) % 360.0
         return True, f"Курс: {self.status.target_heading_deg:.0f}°"
 
     def stop(self) -> tuple[bool, str]:
+        """Останавливает поток ассистента."""
         self._send("controls.throttlePct", 0)
         self._send("controls.rudder", 0)
         self._send("brakes.parking", True)
@@ -137,6 +145,7 @@ class TaxiAssist:
 
     # --- контур -------------------------------------------------------
     def update(self, dt: float, values: dict[str, Any]) -> None:
+        """Один шаг контура по свежей телеметрии."""
         if not self.status.engaged:
             return
         if dt <= 0:
@@ -184,12 +193,15 @@ class TaxiAssist:
 
 @dataclass
 class LandingStatus:
+    """Состояние ассистента посадки."""
+
     phase: str = "off"  # off | armed | approach | flare | rollout | done | toga
     message: str = ""
     throttle_pct: float = 0.0
 
     @property
     def active(self) -> bool:
+        """Активен ли контур."""
         return self.phase in {"armed", "approach", "flare", "rollout"}
 
 
@@ -203,9 +215,11 @@ class LandingAssist:
 
     @property
     def active(self) -> bool:
+        """Активен ли контур."""
         return self.status.phase in {"armed", "approach", "flare", "rollout"}
 
     def arm(self, values: dict[str, Any]) -> tuple[bool, str]:
+        """Включает AP и APR с проверкой условий захода."""
         if _flag(values, "aircraft.onGround"):
             return False, "Самолёт уже на земле"
         if _number(values, "speed.iasKt") < LANDING_MIN_IAS_KT:
@@ -224,11 +238,13 @@ class LandingAssist:
         return True, self.status.message
 
     def disarm(self, reason: str = "Ассистент посадки выключен") -> tuple[bool, str]:
+        """Выключает ассистент посадки."""
         self.status.phase = "off"
         self.status.message = reason
         return True, reason
 
     def toga(self) -> tuple[bool, str]:
+        """Уход на второй круг: полная тяга, AP выключен."""
         self._send("autopilot.master", False)
         self._send("autopilot.approachHold", False)
         sent = self._send("controls.throttlePct", 100)
@@ -242,6 +258,7 @@ class LandingAssist:
         return sent, self.status.message
 
     def update(self, dt: float, values: dict[str, Any]) -> None:
+        """Один шаг контура по свежей телеметрии."""
         if not self.active:
             return
         if dt <= 0:
@@ -315,6 +332,7 @@ class AssistManager:
 
     # --- жизнь --------------------------------------------------------
     def start(self) -> None:
+        """Запускает поток ассистента."""
         if self._thread is not None:
             return
         self._stop.clear()
@@ -322,6 +340,7 @@ class AssistManager:
         self._thread.start()
 
     def stop(self) -> None:
+        """Останавливает поток ассистента."""
         self._stop.set()
         thread = self._thread
         self._thread = None
@@ -356,6 +375,7 @@ class AssistManager:
 
     # --- действия -----------------------------------------------------
     def taxi_action(self, payload: dict[str, Any]) -> tuple[bool, str]:
+        """Выполняет действие API для руления."""
         action = str(payload.get("action") or "").strip().lower()
         with self._lock:
             if action == "engage":
@@ -378,6 +398,7 @@ class AssistManager:
         return False, f"Неизвестное действие: {action or '—'}"
 
     def landing_action(self, payload: dict[str, Any]) -> tuple[bool, str]:
+        """Выполняет действие API для посадки."""
         action = str(payload.get("action") or "").strip().lower()
         with self._lock:
             if action == "arm":
@@ -389,6 +410,7 @@ class AssistManager:
         return False, f"Неизвестное действие: {action or '—'}"
 
     def status(self) -> dict[str, Any]:
+        """Сериализуемое состояние ассистента для API."""
         with self._lock:
             values = dict(self._snapshot.values)
             taxi = self.taxi.status

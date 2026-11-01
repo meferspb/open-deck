@@ -135,6 +135,7 @@ class SessionStore:
         self._sessions: dict[str, _Session] = {}
 
     def create(self, *, ttl: float | None = None, pairing: bool = False) -> str:
+        """Создаёт сессию и возвращает токен."""
         token = secrets.token_urlsafe(32)
         duration = self.ttl if ttl is None else ttl
         with self._lock:
@@ -145,6 +146,7 @@ class SessionStore:
         return token
 
     def validate(self, token: str | None, *, touch: bool = True) -> bool:
+        """Проверяет токен и при необходимости продлевает сессию."""
         if not token:
             return False
         with self._lock:
@@ -175,16 +177,19 @@ class SessionStore:
             return new_token
 
     def revoke(self, token: str | None) -> None:
+        """Отзывает одну сессию."""
         if not token:
             return
         with self._lock:
             self._sessions.pop(token, None)
 
     def revoke_all(self) -> None:
+        """Отзывает все сессии."""
         with self._lock:
             self._sessions.clear()
 
     def count(self) -> int:
+        """Число активных сессий (диагностика)."""
         with self._lock:
             return len(self._sessions)
 
@@ -234,6 +239,7 @@ class LoginLimiter:
             return max(0.0, self._blocked_until.get(address, 0.0) - now)
 
     def reset(self, address: str) -> None:
+        """Сбрасывает счётчик неудач для адреса."""
         with self._lock:
             self._failures.pop(address, None)
             self._blocked_until.pop(address, None)
@@ -254,9 +260,11 @@ class AuthService:
 
     @property
     def required(self) -> bool:
+        """Нужен ли вход (настроен ли пароль)."""
         return self.record is not None
 
     def check(self, password: str) -> bool:
+        """Сверяет пароль с хешем."""
         if self.record is None:
             return True
         return verify_password(password, self.record)
@@ -268,9 +276,11 @@ class AuthService:
         return self.sessions.create()
 
     def valid(self, token: str | None) -> bool:
+        """Действителен ли токен (с учётом режима без пароля)."""
         if not self.required:
             return True
         return self.sessions.validate(token)
 
     def issue_pairing(self) -> str:
+        """Создаёт одноразовый QR-токен на 10 минут."""
         return self.sessions.create(ttl=PAIRING_TTL, pairing=True)

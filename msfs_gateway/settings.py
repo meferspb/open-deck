@@ -68,6 +68,7 @@ class Settings:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Создаёт парсер аргументов CLI."""
     parser = argparse.ArgumentParser(
         prog="msfs_gateway",
         description="Локальный HTTP/WebSocket шлюз между MSFS и клиентскими панелями.",
@@ -191,6 +192,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def parse_args(argv: list[str] | None = None) -> Settings:
+    """Разбирает и проверяет аргументы CLI."""
     args = build_parser().parse_args(argv)
 
     if not 1 <= args.port <= 65535:

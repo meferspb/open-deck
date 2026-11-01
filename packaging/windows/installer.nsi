@@ -83,6 +83,7 @@ Section "Приложение" SecMain
   File /r /x build /x .gradle /x local.properties /x "app\build" "${ROOT_SRC}\android\*.*"
 
   SetOutPath "$INSTDIR"
+  File /r "${ROOT_SRC}\docs"
   File "${ROOT_SRC}\LICENSE"
   File "${ROOT_SRC}\README.md"
 

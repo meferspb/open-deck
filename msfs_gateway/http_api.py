@@ -146,6 +146,8 @@ def _donation_payload(path: Path) -> dict[str, Any]:
 
 
 class GatewayHTTPServer(ThreadingHTTPServer):
+    """HTTP-сервер шлюза: один порт для статики, API и WS."""
+
     daemon_threads = True
     allow_reuse_address = True
 
@@ -172,6 +174,8 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
     """Создаёт класс обработчика, связанный с конкретным приложением."""
 
     class GatewayRequestHandler(BaseHTTPRequestHandler):
+        """Обработчик: маршрутизация, статика, API, WS."""
+
         server_version = f"RUDPanelGateway/{__version__}"
         protocol_version = "HTTP/1.1"
         timeout = 120  # keep-alive не должен висеть вечно
@@ -1000,6 +1004,7 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
 
 
 def create_server(app: Any) -> GatewayHTTPServer:
+    """Создаёт и настраивает HTTP-сервер."""
     settings = app.settings
     handler = make_handler(app)
     server = GatewayHTTPServer((settings.host, settings.port), handler, app)
@@ -1008,6 +1013,7 @@ def create_server(app: Any) -> GatewayHTTPServer:
 
 
 def serve_thread(server: GatewayHTTPServer) -> threading.Thread:
+    """Запускает сервер в фоновом потоке."""
     thread = threading.Thread(target=server.serve_forever, name="http-server", daemon=True)
     thread.start()
     return thread

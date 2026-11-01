@@ -32,6 +32,8 @@ def _initial_value(spec: dict[str, Any]) -> Any:
 
 
 class MockSim(SimProvider):
+    """Процедурный провайдер для демо и тестов."""
+
     name = "mock"
 
     #: Частота внутренней модели; клиенту уходит с частотой шлюза (30 Гц).
@@ -108,6 +110,7 @@ class MockSim(SimProvider):
         return self._values.get("aircraft.atcModel") or None
 
     def select_aircraft(self, profile_id: str) -> None:
+        """Выбирает профиль и стартовые LVAR."""
         profile = self._store.get(profile_id)
         with self._lock:
             # Снимаем переменные прошлого борта, чтобы не тянуть их в кадр.
@@ -129,6 +132,7 @@ class MockSim(SimProvider):
     # Жизненный цикл
     # ------------------------------------------------------------------
     def start(self) -> None:
+        """Запускает поток модели."""
         if self._thread is not None:
             return
         self._stop.clear()
@@ -137,6 +141,7 @@ class MockSim(SimProvider):
         self._thread.start()
 
     def stop(self) -> None:
+        """Останавливает поток модели."""
         self._stop.set()
         thread = self._thread
         self._thread = None
@@ -148,6 +153,7 @@ class MockSim(SimProvider):
         return True
 
     def read(self) -> dict[str, Any]:
+        """Снимок значений."""
         with self._lock:
             return dict(self._values)
 
@@ -155,6 +161,7 @@ class MockSim(SimProvider):
     # Команды
     # ------------------------------------------------------------------
     def apply_command(self, key: str, value: Any) -> None:
+        """Применяет команду."""
         variable = telemetry.get(key)
         if variable is None or not variable.writable:
             raise SimCommandError(f"Переменная {key!r} не принимает команды")

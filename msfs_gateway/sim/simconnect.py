@@ -518,6 +518,7 @@ class SimConnectSim(SimProvider):
     # Жизненный цикл
     # ------------------------------------------------------------------
     def start(self) -> None:
+        """Запускает поток диспетчеризации/переподключения."""
         if self._thread is not None:
             return
         self._stop.clear()
@@ -525,6 +526,7 @@ class SimConnectSim(SimProvider):
         self._thread.start()
 
     def stop(self) -> None:
+        """Останавливает поток и закрывает соединение."""
         self._stop.set()
         thread = self._thread
         self._thread = None
@@ -726,20 +728,24 @@ class SimConnectSim(SimProvider):
     # Данные и команды
     # ------------------------------------------------------------------
     def read(self) -> dict[str, Any]:
+        """Снимок значений."""
         with self._lock:
             return dict(self._values)
 
     @property
     def aircraft_title(self) -> str | None:
+        """Название борта из TITLE."""
         title = self._values.get("aircraft.title")
         return title or None
 
     @property
     def atc_model(self) -> str | None:
+        """Модель ATC."""
         model = self._values.get("aircraft.atcModel")
         return model or None
 
     def apply_command(self, key: str, value: Any) -> None:
+        """Применяет команду событием SimConnect."""
         variable = telemetry.get(key)
         if variable is None or not variable.writable or not variable.sim_event:
             raise SimCommandError(f"Переменная {key!r} не принимает команды")

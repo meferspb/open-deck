@@ -43,6 +43,8 @@ class IntegrityError(RuntimeError):
 
 @dataclass(frozen=True, slots=True)
 class IntegrityReport:
+    """Результат проверки целостности."""
+
     verified: bool
     checked_at: str
     files: dict[str, str]
@@ -50,6 +52,7 @@ class IntegrityReport:
     manifest_present: bool
 
     def as_dict(self) -> dict[str, Any]:
+        """Сериализует отчёт для API."""
         return {
             "verified": self.verified,
             "checkedAt": self.checked_at,
@@ -61,10 +64,12 @@ class IntegrityReport:
 
 
 def sha256_bytes(data: bytes) -> str:
+    """SHA-256 байтов в hex."""
     return hashlib.sha256(data).hexdigest()
 
 
 def sha256_file(path: Path) -> str:
+    """SHA-256 файла в hex."""
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(65536), b""):
@@ -73,6 +78,7 @@ def sha256_file(path: Path) -> str:
 
 
 def build_manifest(root: Path = REPO_ROOT) -> dict[str, Any]:
+    """Строит манифест по критичным файлам."""
     files: dict[str, str] = {}
     missing: list[str] = []
     for relative in CRITICAL_FILES:
@@ -111,6 +117,7 @@ def write_manifest(root: Path = REPO_ROOT, manifest_path: Path = MANIFEST_PATH) 
 
 
 def load_manifest(manifest_path: Path = MANIFEST_PATH) -> dict[str, Any] | None:
+    """Читает манифест; None — файла нет или он битый."""
     try:
         raw = manifest_path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError):
@@ -172,6 +179,7 @@ def verify(root: Path = REPO_ROOT, manifest_path: Path = MANIFEST_PATH) -> Integ
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI проверки/записи манифеста."""
     parser = argparse.ArgumentParser(
         prog="python -m msfs_gateway.integrity",
         description="Проверка/обновление манифеста целостности критичных файлов.",

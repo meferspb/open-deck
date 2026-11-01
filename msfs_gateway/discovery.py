@@ -140,6 +140,7 @@ class DiscoveryBeacon:
 
     # ------------------------------------------------------------------
     def start(self) -> None:
+        """Запускает рассылку."""
         if self._thread is not None:
             return
         self._stop.clear()
@@ -150,6 +151,7 @@ class DiscoveryBeacon:
         )
 
     def stop(self) -> None:
+        """Останавливает рассылку."""
         self._stop.set()
         thread = self._thread
         self._thread = None

@@ -11,7 +11,8 @@
 | Внутри | `RudPanelGateway.exe` — шлюз со встроенным Python 3.13 и стандартной библиотекой |
 | | `web/` — веб-клиент (панель и редактор), `profiles/` — профили ВС |
 | | `config/donation.json` — реквизиты автора, `integrity/` — манифест целостности |
-| | `android/` — исходники Android и готовый APK (`android/dist`), `config/android-build.json` — настройки сборки APK |
+| | `android/` — исходники Android и готовый APK (`android/dist/RudPanel-Android-<версия>.apk`), `config/android-build.json` — настройки сборки APK |
+| | `docs/` — полная документация (сервис, протокол, переменные, приборы, схема профиля) |
 | Ярлыки | рабочий стол, меню «Пуск» (запуск, панель в браузере, сборка Android APK, «Задать пароль», удаление) |
 | Удаление | «Программы и компоненты» или ярлык «Удалить» |
 
@@ -38,6 +39,9 @@ pwsh -File scripts/build-installer.ps1 -Version 0.1.0 -NsisPath "C:\Program File
 `dist/RudPanelGateway-Setup-<версия>.exe`.
 
 Флаги: `-SkipTests`, `-NsisPath <папка>`, `-Version 0.2.0`.
+
+Скрипт также проверяет, что установщик собрался, и печатает итоговый путь и
+размер. Полный список шагов — в начале файла `scripts/build-installer.ps1`.
 
 Вход по паролю: ярлык «Задать пароль» запускает
 `RudPanelGateway.exe --set-password` и спрашивает пароль в консоли;

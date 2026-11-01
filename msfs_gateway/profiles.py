@@ -65,6 +65,8 @@ class ProfileError(ValueError):
 
 
 class ProfileNotFound(ProfileError):
+    """Профиль не найден в каталоге."""
+
     pass
 
 
@@ -341,6 +343,7 @@ def validate_profile(profile: Any) -> list[str]:
 
 
 def ensure_valid(profile: Any) -> None:
+    """Проверяет профиль и бросает ProfileError со списком ошибок."""
     errors = validate_profile(profile)
     if errors:
         raise ProfileError("Профиль не прошёл валидацию", errors)
@@ -350,6 +353,7 @@ def ensure_valid(profile: Any) -> None:
 # Файлы
 # ----------------------------------------------------------------------
 def load_profile_file(path: Path) -> dict[str, Any]:
+    """Читает JSON-профиль и применяет legacy-адаптер."""
     try:
         raw = path.read_text(encoding="utf-8")
     except OSError as exc:
@@ -403,6 +407,7 @@ class ProfileStore:
         return self.root / f"{profile_id}.json"
 
     def list_summaries(self) -> list[dict[str, Any]]:
+        """Краткие карточки всех валидных профилей."""
         summaries: list[dict[str, Any]] = []
         for path in sorted(self.root.glob("*.json")):
             try:
@@ -413,12 +418,14 @@ class ProfileStore:
         return summaries
 
     def get(self, profile_id: str) -> dict[str, Any]:
+        """Возвращает профиль по id или бросает ProfileNotFound."""
         path = self._path_for(profile_id)
         if not path.is_file():
             raise ProfileNotFound(f"Профиль не найден: {profile_id}")
         return load_profile_file(path)
 
     def save(self, profile: dict[str, Any]) -> dict[str, Any]:
+        """Атомарно сохраняет профиль после валидации."""
         ensure_valid(profile)
         path = self._path_for(profile["id"])
         payload = json.dumps(profile, ensure_ascii=False, indent=2) + "\n"

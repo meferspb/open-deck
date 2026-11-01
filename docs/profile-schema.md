@@ -36,6 +36,7 @@
 | `sim.match` | object | нет | правила автоопределения борта |
 | `panel` | object | да | фон, сетка, подпись |
 | `widgets` | array 1..64 | да | приборы |
+| `variables` | array 0..64 | нет | пользовательские LVAR/RPN (см. §6) |
 
 `sim.match.title` — glob по названию ВС в симуляторе (регистронезависимо),
 например `"Cessna Skyhawk*"` подхватит любой ливер и вариант названия.
@@ -88,7 +89,9 @@
 Ключи — из канонического реестра `msfs_gateway/telemetry.py` (плоские, с
 точками): `power.batteryMaster`, `attitude.pitchDeg`, `engine.rpm`,
 `speed.iasKt`, `autopilot.headingBugDeg` и т. д. Сервер отвергает неизвестные
-ключи при валидации.
+ключи при валидации. Полный список с типами и единицами —
+[telemetry.md](telemetry.md); описание типов приборов и опций —
+[widgets.md](widgets.md).
 
 ---
 
@@ -117,11 +120,11 @@
 
 | `type` | Что делает | `bindings` (обязательные роли) | `command` | Ключевые `options` |
 | --- | --- | --- | --- | --- |
-| `attitude` | авиагоризонт (canvas) | `pitch`, `bank` | — | `caption` |
+| `attitude` | авиагоризонт (canvas) | `pitch`, `bank` | — | — |
 | `gauge.radial` | круговая шкала со стрелкой | `value` | — | `min`, `max`, `redline`, `unit`, `decimals`, `majorTicks`, `minorTicks`, `zones[]` |
 | `readout` | цифровое табло | `value` | — | `caption`, `unit`, `decimals`, `alarm.{below,above}` |
 | `switch.toggle` | тумблер | `state` | `{key, action: set|toggle}` | `caption`, `onLabel`, `offLabel` |
-| `knob.rotary` | галетник (свайп/колесо/стрелки) | `value` | `{key, action: set}` | `min`, `max`, `step`, `wrap`, `unit`, `decimals` |
+| `knob.rotary` | галетник (свайп/колесо/стрелки) | `value` | `{key, action: set}` | `min`, `max`, `step`, `wrap`, `unit`, `decimals`, `caption` |
 | `annunciator` | табло-лампа | `active` | — | `caption`, `tone: ok|warn|danger`, `invert` |
 | `vsi` | вариометр (canvas) | `value` | — | `limit` (по умолчанию 2000 FPM) |
 | `altimeter` | высотомер с тремя стрелками | `value` | — | — |
@@ -145,6 +148,9 @@
   уходит на ±90° при достижении предела.
 - **`heading`**: необязательная привязка `bug` рисует заданный курс
   (`autopilot.headingBugDeg`) отдельным указателем.
+- **`attitude`**: опций нет; подпись берётся из `label` прибора.
+- Неизвестные опции не отвергаются (для совместимости), но и не используются
+  клиентом — сверяйтесь с [widgets.md](widgets.md).
 
 ### `command`
 

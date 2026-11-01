@@ -14,7 +14,7 @@ Android-приложению по HTTP + WebSocket. Панели описыва�
 | | |
 | --- | --- |
 | Версия | 0.1.0 |
-| Тесты | 221 Python + 29 Node.js |
+| Тесты | 225 Python + 29 Node.js |
 | Платформа хоста | Windows 10/11 (Python 3.11+ или установщик) |
 | Клиенты | браузер (любой современный), Android 8+ |
 | Лицензия | [CC-BY-NC-ND-MODIFIED](LICENSE) — бесплатно, с обязательным блоком поддержки автора |
@@ -170,6 +170,8 @@ python -m msfs_gateway --sim simconnect --simconnect-dll C:\SDK\SimConnect.dll -
 | `--telemetry-hz` | `30` | частота рассылки, 1..60 Гц |
 | `--simconnect-host` / `--simconnect-port` | `127.0.0.1` / `19999` | адрес SimConnect (в т.ч. удалённый симулятор) |
 | `--profile-dir` | `profiles/` | каталог JSON-профилей |
+| `--password` / `--set-password` | — | пароль на запуск / сохранить хеш и выйти |
+| `--auth-file` / `--no-auth` | `config/auth.json` | файл хеша / отключить вход |
 | `--no-wasm` | — | отключить WASM-мост |
 | `--no-discovery` | — | отключить UDP-автообнаружение |
 | `--build-apk [CONFIG]` | — | собрать Android APK и выйти |
@@ -193,10 +195,15 @@ RudPanelGateway.exe --build-apk C:\path\settings.json
 
 ## Документация
 
-- [Описание сервиса: назначение, API, аутентификация, эксплуатация](docs/service.md)
+Полный индекс — [docs/README.md](docs/README.md). Основное:
+
+- [Описание сервиса: назначение, API, аутентификация, ассистент, эксплуатация](docs/service.md)
 - [Архитектура и зоны ответственности](docs/architecture.md)
-- [HTTP/WebSocket-протокол](docs/protocol.md)
+- [Сетевой протокол: REST, WebSocket, вход, QR, автообнаружение](docs/protocol.md)
+- [Каталог переменных телеметрии](docs/telemetry.md) *(генерируется из кода)*
+- [Каталог приборов и опций](docs/widgets.md) *(генерируется из кода)*
 - [Схема профиля самолёта](docs/profile-schema.md)
+- [Android-клиент: сборка, вход, отладка](android/README.md)
 - [Сборка установщика](packaging/windows/README.md)
 - [Стоимость подключённых сервисов vs локальные аналоги](docs/pricing.md)
 - [История изменений](CHANGELOG.md)
@@ -224,7 +231,7 @@ integrity/               # SHA-256 манифест критичных файл�
 ## Тесты
 
 ```powershell
-python -m unittest discover -s tests        # 221 тест
+python -m unittest discover -s tests        # 225 тестов
 node --test "tests/web/*.test.mjs"          # 29 тестов
 python -m ruff check msfs_gateway tests scripts
 ```

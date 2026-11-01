@@ -34,6 +34,8 @@ CUSTOM_REFRESH_SECONDS: Final = 0.25
 
 @dataclass(slots=True)
 class ClientInfo:
+    """Подписчик шины: соединение, идентификатор и лимит команд."""
+
     connection: WebSocketConnection
     client_id: str
     user_agent: str = ""
@@ -172,6 +174,7 @@ class Hub:
     # Клиенты
     # ------------------------------------------------------------------
     def attach(self, connection: WebSocketConnection, user_agent: str = "") -> ClientInfo:
+        """Регистрирует WebSocket-клиента и отправляет hello."""
         client = ClientInfo(
             connection=connection, client_id=uuid.uuid4().hex[:8], user_agent=user_agent
         )
@@ -199,6 +202,7 @@ class Hub:
         return client
 
     def detach(self, connection: WebSocketConnection) -> None:
+        """Убирает клиента из рассылки."""
         with self._lock:
             client = self._clients.pop(id(connection), None)
             total = len(self._clients)
@@ -206,6 +210,7 @@ class Hub:
             self.logger.info("Клиент %s отключился, всего: %d", client.client_id, total)
 
     def close_all(self) -> None:
+        """Закрывает все соединения (например, при остановке)."""
         with self._lock:
             clients = list(self._clients.values())
             self._clients.clear()
@@ -221,6 +226,7 @@ class Hub:
     # Цикл рассылки
     # ------------------------------------------------------------------
     def start(self) -> None:
+        """Запускает поток рассылки телеметрии."""
         if self._thread is not None:
             return
         self._stop.clear()
@@ -228,6 +234,7 @@ class Hub:
         self._thread.start()
 
     def stop(self) -> None:
+        """Останавливает поток рассылки."""
         self._stop.set()
         thread = self._thread
         self._thread = None
@@ -264,12 +271,14 @@ class Hub:
                 self.detach(client.connection)
 
     def broadcast(self, message: dict[str, Any]) -> None:
+        """Отправляет сообщение всем клиентам."""
         self._broadcast_text(json.dumps(message, ensure_ascii=False, separators=(",", ":")))
 
     # ------------------------------------------------------------------
     # Состояние
     # ------------------------------------------------------------------
     def build_message(self) -> dict[str, Any]:
+        """Собирает кадр телеметрии с seq/ts и метаданными sim."""
         try:
             values = self.sim.read()
         except Exception as exc:
@@ -361,10 +370,12 @@ class Hub:
         return dict(values)
 
     def latest_message(self) -> dict[str, Any]:
+        """Последний отправленный кадр (для /api/telemetry)."""
         message = self._last_message
         return message if message else self.build_message()
 
     def health(self) -> dict[str, Any]:
+        """Сводка состояния для /api/health."""
         return {
             "status": "ok",
             "version": __version__,
@@ -381,12 +392,14 @@ class Hub:
         }
 
     def announce_profiles(self) -> None:
+        """Сообщает клиентам об обновлении каталога профилей."""
         self.refresh_profile_index()
         self.broadcast({"type": "profiles", "profiles": self.profiles.list_summaries()})
 
     def announce_aircraft(self) -> None:
         # ВАЖНО: именно свежий кадр, а не latest_message(): кэш последнего тика
         # ещё содержит старый борт, и клиент переключился бы обратно.
+        """Сообщает клиентам о смене борта."""
         message = self.build_message()
         self.broadcast(
             {

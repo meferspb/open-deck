@@ -29,6 +29,10 @@ Invoke-Step "compileall" {
     python -m compileall -q msfs_gateway tests
 }
 
+Invoke-Step "docsgen --check" {
+    python -m msfs_gateway.docsgen --check
+}
+
 Invoke-Step "python unittest" {
     python -m unittest discover -s tests
 }

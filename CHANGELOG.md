@@ -65,6 +65,20 @@
   который слушает MSFS 2020/2024; адрес и порт настраиваются
   `--simconnect-host` / `--simconnect-port`.
 
+### Документация
+
+- Полный индекс документации `docs/README.md`; руководство разработчика
+  `docs/development.md` (карта кода, добавление переменной/прибора/профиля/
+  провайдера/страницы, тесты, релиз).
+- Каталоги `docs/telemetry.md` и `docs/widgets.md` генерируются из кода
+  (`python -m msfs_gateway.docsgen --write`); тест и CI проверяют актуальность
+  и относительные ссылки.
+- Полностью переписан `docs/protocol.md`: доступ, пароль и QR, все endpoint'ы,
+  WebSocket, ассистент, сборка APK, коды ошибок и примеры.
+- Обновлены `docs/architecture.md`, `docs/service.md` (глоссарий, поддержка),
+  `docs/profile-schema.md`, README, `android/README.md`,
+  `packaging/windows/README.md`; документация входит в установщик.
+
 ### Безопасность
 
 - Проверка SHA-256 критичных файлов интерфейса при старте и в браузере.

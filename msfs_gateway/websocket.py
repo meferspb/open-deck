@@ -188,9 +188,11 @@ class WebSocketConnection:
     # Запись
     # ------------------------------------------------------------------
     def send_text(self, text: str) -> None:
+        """Отправляет текстовый кадр."""
         self._send_frame(OP_TEXT, text.encode("utf-8"))
 
     def send_ping(self, payload: bytes = b"") -> None:
+        """Отправляет ping."""
         self._send_frame(OP_PING, payload)
 
     def send_telemetry(self, text: str) -> None:

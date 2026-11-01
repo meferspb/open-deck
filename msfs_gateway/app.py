@@ -76,6 +76,7 @@ class GatewayApplication:
 
     # ------------------------------------------------------------------
     def start(self) -> None:
+        """Запускает провайдер, шину, ассистента, автообнаружение и HTTP-сервер."""
         if self._check_integrity:
             report = verify()
             if not report.verified:
@@ -117,6 +118,7 @@ class GatewayApplication:
         )
 
     def serve_forever(self) -> None:
+        """Блокирующий цикл HTTP-сервера (режим CLI)."""
         if self.httpd is None:
             raise RuntimeError("Сервер не создан: вызовите start()")
         self.httpd.serve_forever(poll_interval=0.2)
@@ -136,6 +138,7 @@ class GatewayApplication:
         return self._serve_thread
 
     def shutdown(self) -> None:
+        """Останавливает подсистемы в безопасном порядке."""
         self.assist.stop()
         if self.discovery is not None:
             self.discovery.stop()
@@ -149,11 +152,13 @@ class GatewayApplication:
 
     # ------------------------------------------------------------------
     def base_urls(self) -> list[str]:
+        """Адреса, по которым панель доступна в браузере."""
         host = self.settings.host
         addresses = local_addresses() if host in {"0.0.0.0", "::", ""} else [host]
         return [f"http://{address}:{self.settings.port}/" for address in addresses]
 
     def banner(self) -> str:
+        """Приветствие в консоли с адресами и состоянием подсистем."""
         urls = "\n".join(f"  {url}" for url in self.base_urls())
         provider = self.sim.name
         connection = "подключён" if self.sim.connected else "нет связи"
@@ -242,6 +247,7 @@ def _configure_console() -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Точка входа CLI: разбирает аргументы и запускает шлюз."""
     _configure_console()
     settings = parse_args(argv)
 

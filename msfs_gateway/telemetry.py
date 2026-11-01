@@ -35,6 +35,7 @@ class Variable:
 
     @property
     def writable(self) -> bool:
+        """Принимает ли переменная команды."""
         return self.sim_event is not None
 
 
@@ -323,14 +324,17 @@ VARIABLES: Final[dict[str, Variable]] = {item.key: item for item in _VARIABLES}
 
 
 def get(key: str) -> Variable | None:
+    """Возвращает описание переменной по ключу."""
     return VARIABLES.get(key)
 
 
 def is_known(key: str) -> bool:
+    """Есть ли такой ключ в реестре."""
     return key in VARIABLES
 
 
 def is_writable(key: str) -> bool:
+    """Можно ли менять переменную командой."""
     variable = VARIABLES.get(key)
     return bool(variable and variable.writable)
 

@@ -61,6 +61,8 @@ class AndroidBuildError(RuntimeError):
 
 @dataclass
 class AndroidBuildSettings:
+    """Настройки сборки APK (имя, id, версия, пути)."""
+
     app_name: str = "RUD Panel"
     application_id: str = "com.rudpanel.gateway"
     version_name: str = "0.1.0"
@@ -76,6 +78,7 @@ class AndroidBuildSettings:
 
     @classmethod
     def from_dict(cls, data: dict) -> AndroidBuildSettings:
+        """Создаёт настройки из JSON-словаря."""
         values = {}
         for key, target in _FIELDS.items():
             if key in data:
@@ -83,10 +86,12 @@ class AndroidBuildSettings:
         return cls(**values)
 
     def to_dict(self) -> dict:
+        """Сериализует настройки в JSON-словарь."""
         raw = asdict(self)
         return {key: raw[target] for key, target in _FIELDS.items()}
 
     def validate(self) -> list[str]:
+        """Проверяет настройки и возвращает список ошибок."""
         errors: list[str] = []
         name = (self.app_name or "").strip()
         if not 1 <= len(name) <= 48:
@@ -116,6 +121,7 @@ class AndroidBuildSettings:
 
 
 def load_settings(path: Path = DEFAULT_SETTINGS_PATH) -> AndroidBuildSettings:
+    """Читает config/android-build.json."""
     if not path.is_file():
         return AndroidBuildSettings()
     try:
@@ -132,6 +138,7 @@ def load_settings(path: Path = DEFAULT_SETTINGS_PATH) -> AndroidBuildSettings:
 
 
 def save_settings(settings: AndroidBuildSettings, path: Path = DEFAULT_SETTINGS_PATH) -> None:
+    """Сохраняет настройки сборки."""
     errors = settings.validate()
     if errors:
         raise AndroidBuildError("; ".join(errors))
@@ -145,6 +152,8 @@ def save_settings(settings: AndroidBuildSettings, path: Path = DEFAULT_SETTINGS_
 # ---------------------------------------------------------------------
 @dataclass
 class Toolchain:
+    """Найденные JDK, Android SDK и Gradle."""
+
     jdk: Path
     sdk: Path
     gradle: Path
@@ -235,6 +244,7 @@ def resolve_toolchain(settings: AndroidBuildSettings) -> Toolchain:
 
 
 def toolchain_status(settings: AndroidBuildSettings) -> dict:
+    """Статус инструментов для страницы сборки."""
     try:
         chain = resolve_toolchain(settings)
     except AndroidBuildError as exc:
@@ -252,6 +262,8 @@ def toolchain_status(settings: AndroidBuildSettings) -> dict:
 # ---------------------------------------------------------------------
 @dataclass
 class BuildResult:
+    """Результат сборки APK."""
+
     ok: bool
     apk: Path | None
     log: list[str]
@@ -322,6 +334,7 @@ def build_apk(
     runner: Callable[..., tuple[int, list[str]]] = _default_runner,
     on_log: LogSink | None = None,
 ) -> BuildResult:
+    """Собирает debug-APK через Gradle."""
     started = time.monotonic()
     errors = settings.validate()
     if errors:

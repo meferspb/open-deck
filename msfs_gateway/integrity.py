@@ -93,7 +93,16 @@ def build_manifest(root: Path = REPO_ROOT) -> dict[str, Any]:
 
 
 def write_manifest(root: Path = REPO_ROOT, manifest_path: Path = MANIFEST_PATH) -> dict[str, Any]:
+    """Записывает манифест. Если хеши не изменились — файл не трогаем.
+
+    Так `generatedAt` не «дёргается» на каждом запуске, а в git не появляется
+    шумных диффов после каждой сборки.
+    """
     manifest = build_manifest(root)
+    existing = load_manifest(manifest_path)
+    if existing is not None and existing.get("files") == manifest["files"]:
+        return existing
+
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     manifest_path.write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

@@ -49,6 +49,28 @@ class ManifestTest(unittest.TestCase):
         self.assertFalse(report.verified)
         self.assertFalse(report.manifest_present)
 
+    def test_write_manifest_keeps_timestamp_when_hashes_unchanged(self):
+        manifest_path = self.root / "manifest.json"
+        first = integrity.write_manifest(self.root, manifest_path)
+        first_text = manifest_path.read_text(encoding="utf-8")
+
+        second = integrity.write_manifest(self.root, manifest_path)
+        second_text = manifest_path.read_text(encoding="utf-8")
+
+        self.assertEqual(first["files"], second["files"])
+        self.assertEqual(second["generatedAt"], first["generatedAt"])
+        self.assertEqual(second_text, first_text)
+
+    def test_write_manifest_updates_when_file_changes(self):
+        manifest_path = self.root / "manifest.json"
+        first = integrity.write_manifest(self.root, manifest_path)
+
+        target = self.root / integrity.CRITICAL_FILES[0]
+        target.write_text("changed\n", encoding="utf-8")
+        second = integrity.write_manifest(self.root, manifest_path)
+
+        self.assertNotEqual(first["files"], second["files"])
+
 
 if __name__ == "__main__":
     unittest.main()

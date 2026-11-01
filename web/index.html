@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="description" content="Локальный клиент приборной панели MSFS: профили самолётов с шлюза, телеметрия по WebSocket." />
+    <title>RUD Panel Gateway — приборная панель</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/css/tokens.css" />
+    <link rel="stylesheet" href="/css/a11y.css" />
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/widgets.css" />
+    <link rel="stylesheet" href="/css/donation.css" />
+  </head>
+  <body>
+    <header class="app-bar">
+      <div class="app-bar__identity">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+            <circle cx="12" cy="12" r="8.2" />
+            <path d="M4.6 14.4h14.8" />
+            <path d="M9 3.9 7.4 9.1h9.2L15 3.9" />
+          </svg>
+        </span>
+        <span class="brand-text">
+          <span class="brand-title">RUD Panel Gateway</span>
+          <span class="brand-sub">локальный шлюз · air-gapped</span>
+        </span>
+      </div>
+
+      <div class="app-bar__controls">
+        <label class="field" for="aircraft-select">
+          <span class="field__label">Самолёт</span>
+          <span class="select-wrap">
+            <select id="aircraft-select" class="select" aria-label="Профиль самолёта"></select>
+            <svg class="select-wrap__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </span>
+        </label>
+
+        <div class="field">
+          <span class="field__label" id="device-switch-label">Форм-фактор</span>
+          <div class="segmented" id="device-switch" role="group" aria-labelledby="device-switch-label">
+            <button type="button" class="segmented__item" data-device="phone" aria-pressed="false" title="Телефон · 390×844">Phone</button>
+            <button type="button" class="segmented__item" data-device="tablet-sm" aria-pressed="false" title="Малый планшет · 1024×768">Small Tablet</button>
+            <button type="button" class="segmented__item" data-device="tablet-lg" aria-pressed="false" title="Большой планшет · 1366×1024">Large Tablet</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="app-bar__status">
+        <button
+          type="button"
+          class="icon-btn"
+          id="brightness-toggle"
+          title="Яркость панели (B)"
+          aria-label="Яркость панели"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4.2" />
+            <path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7" />
+          </svg>
+          <span class="visually-hidden">Яркость</span>
+        </button>
+        <button
+          type="button"
+          class="icon-btn"
+          id="kiosk-toggle"
+          aria-pressed="false"
+          title="Режим киоска — скрыть интерфейс (F)"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+          </svg>
+          <span class="visually-hidden">Режим киоска</span>
+        </button>
+        <button
+          type="button"
+          class="icon-btn"
+          id="connect-phone"
+          aria-haspopup="dialog"
+          title="Подключить телефон по QR-коду"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="7" y="2.5" width="10" height="19" rx="2.2" />
+            <path d="M10.5 18.5h3" />
+          </svg>
+          <span class="visually-hidden">Подключить телефон</span>
+        </button>
+        <button
+          type="button"
+          class="donation-chip"
+          id="donation-badge"
+          data-donation-badge
+          aria-haspopup="dialog"
+          title="Поддержать автора проекта"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 20.3 4.7 13a4.6 4.6 0 0 1 0-6.5 4.5 4.5 0 0 1 6.4 0l.9.9.9-.9a4.5 4.5 0 0 1 6.4 0 4.6 4.6 0 0 1 0 6.5Z" />
+          </svg>
+          <span>Поддержать</span>
+        </button>
+
+        <span class="conn" id="connection" data-state="connecting" title="Состояние потока телеметрии">
+          <i class="conn__dot" aria-hidden="true"></i>
+          <span id="connection-text">подключение…</span>
+        </span>
+        <a class="icon-btn" href="/android.html" title="Собрать Android APK">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="7" y="2.5" width="10" height="19" rx="2.2" />
+            <path d="M10.5 18.5h3" />
+          </svg>
+          <span class="visually-hidden">Сборка Android APK</span>
+        </a>
+        <a class="icon-btn" href="/editor.html" title="Открыть редактор панелей">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 4h6l2 2h8v12H4Z" />
+            <path d="M8 12h8M12 8l4 4-4 4" />
+          </svg>
+          <span class="visually-hidden">Редактор панелей</span>
+        </a>
+        <button type="button" class="icon-btn" id="devtools-toggle" aria-pressed="false" aria-controls="devtools" title="Показать телеметрию">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 13h4l2.4-6.6 3.2 12 2.4-6.6H21" />
+          </svg>
+          <span class="visually-hidden">Телеметрия</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="stage" id="stage" data-mode="frame">
+      <div class="device-frame" id="device-frame" data-device="tablet-lg" data-mode="frame">
+        <div class="device-screen" id="device-screen">
+          <div class="panel" id="panel" role="group" aria-label="Приборная панель самолёта"></div>
+          <div class="panel-state" id="panel-state" hidden>
+            <p class="panel-state__title" id="panel-state-title">Загрузка профиля…</p>
+            <p class="panel-state__hint" id="panel-state-hint"></p>
+            <button type="button" class="btn" id="panel-retry" hidden>Повторить</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="status-bar">
+      <span class="status-bar__item" id="status-profile">профиль: —</span>
+      <span class="status-bar__item" id="status-layout">раскладка: —</span>
+      <span class="status-bar__item" id="status-rate">поток: —</span>
+      <span class="status-bar__item" id="status-gateway">шлюз: —</span>
+    </footer>
+
+    <aside class="devtools" id="devtools" hidden aria-label="Телеметрия в JSON">
+      <div class="devtools__head">
+        <span>Последний кадр телеметрии</span>
+        <button type="button" class="icon-btn" id="devtools-close" aria-label="Закрыть панель отладки">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+      <pre class="devtools__json" id="devtools-json">нет данных</pre>
+    </aside>
+
+    <dialog class="donation-dialog" id="connect-dialog" aria-labelledby="connect-title">
+      <div class="donation-dialog__head">
+        <h2 id="connect-title">Подключить телефон</h2>
+        <button type="button" class="icon-btn" id="connect-close" aria-label="Закрыть">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+      <div class="donation-dialog__body connect">
+        <p class="connect__hint">
+          Наведите камеру телефона на код — панель откроется в браузере. Устройство и самолёт
+          определятся автоматически.
+        </p>
+        <div class="connect__qr">
+          <img id="connect-qr" alt="QR-код адреса панели" width="240" height="240" />
+        </div>
+        <div class="connect__row">
+          <code class="connect__url" id="connect-url">—</code>
+          <button type="button" class="btn" id="connect-copy">Копировать</button>
+        </div>
+        <div class="connect__list" id="connect-list" role="group" aria-label="Другие адреса хоста"></div>
+        <p class="connect__alt" id="connect-alt"></p>
+      </div>
+    </dialog>
+
+    <dialog class="donation-dialog" id="donation-dialog" aria-labelledby="donation-title">
+      <div class="donation-dialog__head">
+        <h2 id="donation-title">Поддержать проект</h2>
+        <button type="button" class="icon-btn" id="donation-close" aria-label="Закрыть">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+      <div class="donation-dialog__body" id="donation-body"></div>
+      <p class="donation-dialog__note">
+        Проект бесплатный. Реквизиты задаются конфигурацией автора на хосте — клиент не может их изменить.
+      </p>
+    </dialog>
+
+    <div class="lock-screen" id="lock-screen" hidden role="alertdialog" aria-modal="true" aria-labelledby="lock-title">
+      <div class="lock-screen__card">
+        <p class="lock-screen__eyebrow">Ошибка целостности</p>
+        <h2 class="lock-screen__title" id="lock-title">Работа приложения заблокирована</h2>
+        <p class="lock-screen__detail" id="lock-detail"></p>
+        <code class="lock-screen__code" id="lock-code"></code>
+        <button type="button" class="btn" id="lock-retry">Проверить снова</button>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+    <button type="button" class="kiosk-exit" id="kiosk-exit" hidden title="Выйти из режима киоска (Esc)">
+      <span aria-hidden="true">✕</span>
+      <span class="visually-hidden">Выйти из режима киоска</span>
+    </button>
+
+    <noscript>
+      <p style="padding: 24px; color: #ffb020">Для работы приборной панели нужен JavaScript.</p>
+    </noscript>
+
+    <script type="module" src="/js/main.js"></script>
+  </body>
+</html>

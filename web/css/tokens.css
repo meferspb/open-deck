@@ -1,0 +1,43 @@
+/* Дизайн-токены: единственное место с цветами и типографикой.
+   Внешних шрифтов и картинок нет — всё работает без интернета. */
+:root {
+  color-scheme: dark;
+
+  /* Поверхности */
+  --bg: #070a0e;
+  --bg-elevated: #0c1219;
+  --surface: #111a22;
+  --surface-2: #16222c;
+  --line: rgba(148, 180, 205, 0.14);
+  --line-strong: rgba(148, 180, 205, 0.3);
+
+  /* Текст */
+  --text: #e8f0f7;
+  --text-muted: #8fa3b8;
+  --text-dim: #647689;
+
+  /* Акценты */
+  --accent: #4cc2ff;
+  --accent-soft: rgba(76, 194, 255, 0.16);
+  --ok: #38d39f;
+  --warn: #ffb020;
+  --danger: #ff5d5d;
+  --danger-soft: rgba(255, 93, 93, 0.16);
+
+  /* Геометрия */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+
+  /* Типографика */
+  --font-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Cascadia Mono", "Consolas", "SFMono-Regular", "Roboto Mono", monospace;
+
+  --shadow-panel: 0 30px 80px rgba(0, 0, 0, 0.65);
+  --shadow-card: 0 12px 28px rgba(0, 0, 0, 0.35);
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* Размер «единицы» панели задаётся из JS: --u = ширина панели / 100. */
+  --u: 4px;
+}

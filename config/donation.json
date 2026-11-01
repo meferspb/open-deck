@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "author": "RUD",
+  "title": "Поддержать RUD Panel Gateway",
+  "chipLabel": "Поддержать",
+  "message": "Проект бесплатный и работает без интернета. Если панель экономит ваше время в полёте — поддержите автора.",
+  "updatedAt": "2026-10-30",
+  "license": "CC-BY-NC-ND-MODIFIED (Open Free-to-Use with Mandatory Unmodified Attribution)",
+  "links": [
+    {
+      "label": "Boosty",
+      "url": "https://example.invalid/boosty",
+      "note": "Замените ссылку на свою в config/donation.json"
+    },
+    {
+      "label": "ЮMoney",
+      "url": "https://example.invalid/yoomoney",
+      "note": "Замените ссылку на свою в config/donation.json"
+    },
+    {
+      "label": "USDT (TRC-20)",
+      "value": "ЗАМЕНИТЕ_НА_АДРЕС_КОШЕЛЬКА",
+      "note": "Реквизиты автора проекта"
+    }
+  ]
+}

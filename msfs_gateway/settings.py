@@ -1,0 +1,173 @@
+"""Конфигурация шлюза: значения по умолчанию и разбор аргументов командной строки."""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+
+from .discovery import DEFAULT_DISCOVERY_INTERVAL, DEFAULT_DISCOVERY_PORT
+
+PACKAGE_DIR = Path(__file__).resolve().parent
+
+#: Каталог приложения: в исходниках — корень репозитория, в установленной
+#: сборке (PyInstaller) — папка рядом с .exe, куда ставится статика и профили.
+APP_ROOT = (
+    Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else PACKAGE_DIR.parent
+)
+REPO_ROOT = APP_ROOT
+DEFAULT_WEB_DIR = APP_ROOT / "web"
+DEFAULT_PROFILE_DIR = APP_ROOT / "profiles"
+DEFAULT_DONATION_PATH = APP_ROOT / "config" / "donation.json"
+
+SIM_CHOICES = ("auto", "mock", "simconnect")
+DEFAULT_HOST = "0.0.0.0"
+DEFAULT_PORT = 8760
+#: Требование ТЗ: 30–60 Гц. 30 Гц достаточно для стрелок и экономит CPU.
+DEFAULT_TELEMETRY_HZ = 30.0
+DEFAULT_LOG_LEVEL = "INFO"
+#: Автообнаружение хоста по UDP broadcast включено по умолчанию.
+DEFAULT_DISCOVERY = True
+
+
+@dataclass(frozen=True, slots=True)
+class Settings:
+    """Неизменяемый набор параметров запуска."""
+
+    host: str = DEFAULT_HOST
+    port: int = DEFAULT_PORT
+    web_dir: Path = DEFAULT_WEB_DIR
+    profile_dir: Path = DEFAULT_PROFILE_DIR
+    donation_path: Path = DEFAULT_DONATION_PATH
+    sim: str = "auto"
+    simconnect_dll: Path | None = None
+    telemetry_hz: float = DEFAULT_TELEMETRY_HZ
+    log_level: str = DEFAULT_LOG_LEVEL
+    discovery: bool = DEFAULT_DISCOVERY
+    discovery_port: int = DEFAULT_DISCOVERY_PORT
+    discovery_interval: float = DEFAULT_DISCOVERY_INTERVAL
+    #: Обмен LVAR/RPN через Client Data Area WASM-модуля.
+    wasm: bool = True
+    #: Режим «собрать APK и выйти»: путь к JSON с настройками (или пустой).
+    build_apk: str | None = None
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="msfs_gateway",
+        description="Локальный HTTP/WebSocket шлюз между MSFS и клиентскими панелями.",
+    )
+    parser.add_argument(
+        "--host",
+        default=DEFAULT_HOST,
+        help="Адрес прослушивания (по умолчанию все интерфейсы).",
+    )
+    parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="TCP-порт HTTP и WebSocket.")
+    parser.add_argument(
+        "--sim",
+        choices=SIM_CHOICES,
+        default="auto",
+        help="Телеметрия: auto (SimConnect, иначе mock), mock (демо), simconnect.",
+    )
+    parser.add_argument(
+        "--simconnect-dll",
+        type=Path,
+        default=None,
+        help="Путь к SimConnect.dll, если он не находится автоматически.",
+    )
+    parser.add_argument(
+        "--web-dir",
+        type=Path,
+        default=DEFAULT_WEB_DIR,
+        help="Каталог со статикой клиента (web/).",
+    )
+    parser.add_argument(
+        "--profile-dir",
+        type=Path,
+        default=DEFAULT_PROFILE_DIR,
+        help="Каталог с JSON-профилями самолётов.",
+    )
+    parser.add_argument(
+        "--donation-config",
+        type=Path,
+        default=DEFAULT_DONATION_PATH,
+        help="Конфигурация реквизитов поддержки автора (config/donation.json).",
+    )
+    parser.add_argument(
+        "--telemetry-hz",
+        type=float,
+        default=DEFAULT_TELEMETRY_HZ,
+        help="Частота широковещательной рассылки телеметрии, Гц (1..60).",
+    )
+    parser.add_argument(
+        "--log-level",
+        default=DEFAULT_LOG_LEVEL,
+        choices=("DEBUG", "INFO", "WARNING", "ERROR"),
+        help="Уровень логирования.",
+    )
+    parser.add_argument(
+        "--no-discovery",
+        action="store_true",
+        help="Отключить автообнаружение хоста по UDP broadcast.",
+    )
+    parser.add_argument(
+        "--discovery-port",
+        type=int,
+        default=DEFAULT_DISCOVERY_PORT,
+        help="UDP-порт бикона автообнаружения.",
+    )
+    parser.add_argument(
+        "--discovery-interval",
+        type=float,
+        default=DEFAULT_DISCOVERY_INTERVAL,
+        help="Период рассылки бикона автообнаружения, секунды.",
+    )
+    parser.add_argument(
+        "--no-wasm",
+        action="store_true",
+        help="Отключить WASM-мост (LVAR/RPN через Client Data Area).",
+    )
+    parser.add_argument(
+        "--build-apk",
+        nargs="?",
+        const="",
+        default=None,
+        metavar="CONFIG",
+        help="Собрать Android APK из android/ и выйти (путь к android-build.json опционален).",
+    )
+    return parser
+
+
+def parse_args(argv: list[str] | None = None) -> Settings:
+    args = build_parser().parse_args(argv)
+
+    if not 1 <= args.port <= 65535:
+        raise SystemExit(f"Некорректный порт: {args.port}")
+    if not 1.0 <= args.telemetry_hz <= 60.0:
+        raise SystemExit(f"Некорректная частота телеметрии: {args.telemetry_hz}")
+    if not 1 <= args.discovery_port <= 65535:
+        raise SystemExit(f"Некорректный порт автообнаружения: {args.discovery_port}")
+    if not 0.5 <= args.discovery_interval <= 60.0:
+        raise SystemExit(f"Некорректный период автообнаружения: {args.discovery_interval}")
+    if not args.web_dir.is_dir():
+        raise SystemExit(f"Каталог статики не найден: {args.web_dir}")
+
+    args.profile_dir.mkdir(parents=True, exist_ok=True)
+
+    return Settings(
+        host=args.host,
+        port=args.port,
+        web_dir=args.web_dir.resolve(),
+        profile_dir=args.profile_dir.resolve(),
+        donation_path=args.donation_config.resolve(),
+        sim=args.sim,
+        simconnect_dll=args.simconnect_dll,
+        telemetry_hz=args.telemetry_hz,
+        log_level=args.log_level,
+        discovery=not args.no_discovery,
+        discovery_port=args.discovery_port,
+        discovery_interval=args.discovery_interval,
+        wasm=not args.no_wasm,
+        build_apk=args.build_apk,
+    )

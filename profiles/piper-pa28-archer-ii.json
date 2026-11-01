@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "id": "piper-pa28-archer-ii",
+  "name": "Piper PA-28-181 Archer II",
+  "icao": "P28A",
+  "revision": 1,
+  "description": "Минимальная панель без переопределений под форм-фактор: проверка fallback-раскладки (только layout.base).",
+  "sim": {
+    "match": {
+      "title": "Piper PA-28*",
+      "atcModel": "P28A"
+    }
+  },
+  "panel": {
+    "background": "#0c1014",
+    "gridSize": 8,
+    "footer": "PA-28-181 · RUD PANEL"
+  },
+  "widgets": [
+    {
+      "id": "attitude",
+      "type": "attitude",
+      "label": "Авиагоризонт",
+      "bindings": {
+        "pitch": "attitude.pitchDeg",
+        "bank": "attitude.bankDeg"
+      },
+      "layout": {
+        "base": { "x": 0.02, "y": 0.03, "w": 0.42, "h": 0.56 }
+      }
+    },
+    {
+      "id": "airspeed",
+      "type": "gauge.radial",
+      "label": "Скорость",
+      "bindings": {
+        "value": "speed.iasKt"
+      },
+      "options": {
+        "min": 0,
+        "max": 180,
+        "unit": "KT",
+        "decimals": 0,
+        "majorTicks": 6,
+        "minorTicks": 2,
+        "zones": [
+          { "from": 50, "to": 129, "tone": "ok" },
+          { "from": 129, "to": 180, "tone": "warn" }
+        ]
+      },
+      "layout": {
+        "base": { "x": 0.46, "y": 0.03, "w": 0.25, "h": 0.3 }
+      }
+    },
+    {
+      "id": "tachometer",
+      "type": "gauge.radial",
+      "label": "Обороты",
+      "bindings": {
+        "value": "engine.rpm"
+      },
+      "options": {
+        "min": 0,
+        "max": 3000,
+        "redline": 2600,
+        "unit": "RPM",
+        "decimals": 0,
+        "majorTicks": 6,
+        "minorTicks": 3
+      },
+      "layout": {
+        "base": { "x": 0.73, "y": 0.03, "w": 0.25, "h": 0.3 }
+      }
+    },
+    {
+      "id": "altitude",
+      "type": "readout",
+      "label": "Высота",
+      "bindings": {
+        "value": "altitude.indicatedFt"
+      },
+      "options": {
+        "caption": "ALT",
+        "unit": "FT",
+        "decimals": 0
+      },
+      "layout": {
+        "base": { "x": 0.46, "y": 0.36, "w": 0.25, "h": 0.14 }
+      }
+    },
+    {
+      "id": "battery-switch",
+      "type": "switch.toggle",
+      "label": "Аккумулятор",
+      "bindings": {
+        "state": "power.batteryMaster"
+      },
+      "command": {
+        "key": "power.batteryMaster",
+        "action": "set"
+      },
+      "options": {
+        "caption": "BATTERY"
+      },
+      "layout": {
+        "base": { "x": 0.73, "y": 0.36, "w": 0.25, "h": 0.14 }
+      }
+    },
+    {
+      "id": "bus-off-lamp",
+      "type": "annunciator",
+      "label": "Шина обесточена",
+      "bindings": {
+        "active": "power.batteryMaster"
+      },
+      "options": {
+        "caption": "BUS OFF",
+        "tone": "danger",
+        "invert": true
+      },
+      "layout": {
+        "base": { "x": 0.46, "y": 0.53, "w": 0.52, "h": 0.1 }
+      }
+    },
+    {
+      "id": "fuel-gauge",
+      "type": "gauge.radial",
+      "label": "Топливо",
+      "bindings": {
+        "value": "fuel.totalGal"
+      },
+      "options": {
+        "min": 0,
+        "max": 50,
+        "unit": "GAL",
+        "decimals": 1,
+        "majorTicks": 5,
+        "minorTicks": 2
+      },
+      "layout": {
+        "base": { "x": 0.02, "y": 0.62, "w": 0.42, "h": 0.3 }
+      }
+    }
+  ]
+}

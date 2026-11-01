@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">RUD Panel Gateway</string>
+
+    <!-- Экран подключения -->
+    <string name="setup_title">RUD Panel Gateway</string>
+    <string name="setup_subtitle">Локальная панель MSFS · air-gapped</string>
+    <string name="setup_status_searching">Ищем хост в локальной сети…</string>
+    <string name="setup_status_found">Найдено хостов: %1$d</string>
+    <string name="setup_status_probing">Проверяем %1$s…</string>
+    <string name="setup_status_none">Хосты не найдены. Введите адрес вручную.</string>
+    <string name="discovery_failed">Поиск хостов недоступен: %1$s. Введите адрес вручную.</string>
+    <string name="setup_hosts_label">Найденные хосты</string>
+    <string name="setup_manual_label">Адрес вручную</string>
+    <string name="setup_manual_hint">192.168.1.10:8760</string>
+    <string name="setup_connect">Подключиться</string>
+    <string name="setup_bad_address">Некорректный адрес. Пример: 192.168.1.10:8760</string>
+    <string name="setup_hint">Хост — это ПК с запущенным шлюзом (python -m msfs_gateway). Если сеть блокирует поиск, введите IP вручную.</string>
+    <string name="setup_host_card">%1$s\n%2$s · v%3$s · профилей: %4$d</string>
+
+    <!-- Ошибки -->
+    <string name="panel_load_error">Не удалось открыть панель %1$s. Проверьте, что шлюз запущен и устройство в той же сети.</string>
+    <string name="host_unreachable">Хост не отвечает. Выберите другой или проверьте сеть.</string>
+    <string name="integrity_title">Работа заблокирована</string>
+    <string name="integrity_message">Хост сообщил о нарушении целостности интерфейса (блок поддержки автора). Пока целостность не восстановлена, панель не открывается — это условие лицензии.</string>
+    <string name="action_retry">Повторить</string>
+    <string name="action_other_host">Другой хост</string>
+    <string name="action_close">Закрыть</string>
+    <string name="link_blocked">Переходы за пределы хоста заблокированы</string>
+
+    <!-- Поддержка автора -->
+    <string name="donation_bar">Проект бесплатный · поддержать автора</string>
+    <string name="donation_title">Поддержать автора</string>
+    <string name="donation_offline">Реквизиты приходят с хоста. Сначала подключитесь к шлюзу.</string>
+    <string name="donation_unavailable">Не удалось получить реквизиты с %1$s. Убедитесь, что хост доступен.</string>
+    <string name="donation_default_message">Проект бесплатный и работает без интернета. Если панель экономит ваше время в полёте — поддержите автора.</string>
+    <string name="donation_author">Автор: %1$s</string>
+    <string name="donation_no_browser">Не удалось открыть ссылку на этом устройстве.</string>
+</resources>

@@ -1,0 +1,484 @@
+{
+  "schemaVersion": 1,
+  "id": "cessna-172-skyhawk",
+  "name": "Cessna 172S Skyhawk SP",
+  "icao": "C172",
+  "revision": 3,
+  "description": "Базовая панель C172S: авиагоризонт, обороты, топливо, приборы скорости/высоты/шины, тумблеры массы и авионики.",
+  "sim": {
+    "match": {
+      "title": "Cessna Skyhawk*",
+      "atcModel": "C172"
+    }
+  },
+  "panel": {
+    "background": "#0b1117",
+    "gridSize": 8,
+    "footer": "C172S · RUD PANEL"
+  },
+  "widgets": [
+    {
+      "id": "attitude",
+      "type": "attitude",
+      "label": "Авиагоризонт",
+      "bindings": {
+        "pitch": "attitude.pitchDeg",
+        "bank": "attitude.bankDeg"
+      },
+      "options": {
+        "caption": "ATTITUDE"
+      },
+      "layout": {
+        "base": {
+          "x": 0.02,
+          "y": 0.03,
+          "w": 0.36,
+          "h": 0.62
+        },
+        "phone": {
+          "x": 0.03,
+          "y": 0.015,
+          "w": 0.94,
+          "h": 0.3
+        },
+        "tablet-sm": {
+          "x": 0.02,
+          "y": 0.03,
+          "w": 0.34,
+          "h": 0.52
+        },
+        "tablet-lg": {
+          "x": 0.02,
+          "y": 0.03,
+          "w": 0.36,
+          "h": 0.78
+        }
+      }
+    },
+    {
+      "id": "airspeed",
+      "type": "readout",
+      "label": "Скорость",
+      "bindings": {
+        "value": "speed.iasKt"
+      },
+      "options": {
+        "caption": "IAS",
+        "unit": "KT",
+        "decimals": 0
+      },
+      "layout": {
+        "base": {
+          "x": 0.8,
+          "y": 0.03,
+          "w": 0.18,
+          "h": 0.11
+        },
+        "phone": {
+          "x": 0.03,
+          "y": 0.325,
+          "w": 0.3,
+          "h": 0.085
+        },
+        "tablet-sm": {
+          "x": 0.8,
+          "y": 0.03,
+          "w": 0.18,
+          "h": 0.095
+        },
+        "tablet-lg": {
+          "x": 0.8,
+          "y": 0.03,
+          "w": 0.18,
+          "h": 0.11
+        }
+      }
+    },
+    {
+      "id": "altitude",
+      "type": "readout",
+      "label": "Высота",
+      "bindings": {
+        "value": "altitude.indicatedFt"
+      },
+      "options": {
+        "caption": "ALT",
+        "unit": "FT",
+        "decimals": 0
+      },
+      "layout": {
+        "base": {
+          "x": 0.8,
+          "y": 0.155,
+          "w": 0.18,
+          "h": 0.11
+        },
+        "phone": {
+          "x": 0.345,
+          "y": 0.325,
+          "w": 0.3,
+          "h": 0.085
+        },
+        "tablet-sm": {
+          "x": 0.8,
+          "y": 0.14,
+          "w": 0.18,
+          "h": 0.095
+        },
+        "tablet-lg": {
+          "x": 0.8,
+          "y": 0.155,
+          "w": 0.18,
+          "h": 0.11
+        }
+      }
+    },
+    {
+      "id": "bus-volts",
+      "type": "readout",
+      "label": "Напряжение шины",
+      "bindings": {
+        "value": "power.busVolts"
+      },
+      "options": {
+        "caption": "BUS",
+        "unit": "V",
+        "decimals": 1
+      },
+      "layout": {
+        "base": {
+          "x": 0.8,
+          "y": 0.28,
+          "w": 0.18,
+          "h": 0.11
+        },
+        "phone": {
+          "x": 0.66,
+          "y": 0.325,
+          "w": 0.31,
+          "h": 0.085
+        },
+        "tablet-sm": {
+          "x": 0.8,
+          "y": 0.25,
+          "w": 0.18,
+          "h": 0.095
+        },
+        "tablet-lg": {
+          "x": 0.8,
+          "y": 0.28,
+          "w": 0.18,
+          "h": 0.11
+        }
+      }
+    },
+    {
+      "id": "tachometer",
+      "type": "gauge.radial",
+      "label": "Обороты",
+      "bindings": {
+        "value": "engine.rpm"
+      },
+      "options": {
+        "min": 0,
+        "max": 3500,
+        "redline": 2700,
+        "unit": "RPM",
+        "decimals": 0,
+        "majorTicks": 7,
+        "minorTicks": 4
+      },
+      "layout": {
+        "base": {
+          "x": 0.38,
+          "y": 0.03,
+          "w": 0.19,
+          "h": 0.28
+        },
+        "phone": {
+          "x": 0.02,
+          "y": 0.42,
+          "w": 0.47,
+          "h": 0.24
+        },
+        "tablet-sm": {
+          "x": 0.38,
+          "y": 0.03,
+          "w": 0.19,
+          "h": 0.28
+        },
+        "tablet-lg": {
+          "x": 0.4,
+          "y": 0.03,
+          "w": 0.18,
+          "h": 0.3
+        }
+      }
+    },
+    {
+      "id": "fuel-gauge",
+      "type": "gauge.radial",
+      "label": "Топливо",
+      "bindings": {
+        "value": "fuel.totalGal"
+      },
+      "options": {
+        "min": 0,
+        "max": 56,
+        "unit": "GAL",
+        "decimals": 1,
+        "majorTicks": 7,
+        "minorTicks": 4,
+        "zones": [
+          {
+            "from": 8,
+            "to": 56,
+            "tone": "ok"
+          },
+          {
+            "from": 0,
+            "to": 8,
+            "tone": "danger"
+          }
+        ]
+      },
+      "layout": {
+        "base": {
+          "x": 0.585,
+          "y": 0.03,
+          "w": 0.19,
+          "h": 0.28
+        },
+        "phone": {
+          "x": 0.51,
+          "y": 0.42,
+          "w": 0.47,
+          "h": 0.24
+        },
+        "tablet-sm": {
+          "x": 0.585,
+          "y": 0.03,
+          "w": 0.19,
+          "h": 0.28
+        },
+        "tablet-lg": {
+          "x": 0.595,
+          "y": 0.03,
+          "w": 0.18,
+          "h": 0.3
+        }
+      }
+    },
+    {
+      "id": "battery-switch",
+      "type": "switch.toggle",
+      "label": "Аккумулятор",
+      "bindings": {
+        "state": "power.batteryMaster"
+      },
+      "command": {
+        "key": "power.batteryMaster",
+        "action": "set"
+      },
+      "options": {
+        "caption": "BATTERY",
+        "onLabel": "ON",
+        "offLabel": "OFF"
+      },
+      "layout": {
+        "base": {
+          "x": 0.4,
+          "y": 0.37,
+          "w": 0.17,
+          "h": 0.15
+        },
+        "phone": {
+          "x": 0.03,
+          "y": 0.675,
+          "w": 0.44,
+          "h": 0.125
+        },
+        "tablet-sm": {
+          "x": 0.38,
+          "y": 0.34,
+          "w": 0.18,
+          "h": 0.13
+        },
+        "tablet-lg": {
+          "x": 0.4,
+          "y": 0.37,
+          "w": 0.17,
+          "h": 0.15
+        }
+      }
+    },
+    {
+      "id": "avionics-switch",
+      "type": "switch.toggle",
+      "label": "Авионика",
+      "bindings": {
+        "state": "power.avionicsMaster"
+      },
+      "command": {
+        "key": "power.avionicsMaster",
+        "action": "set"
+      },
+      "options": {
+        "caption": "AVIONICS",
+        "onLabel": "ON",
+        "offLabel": "OFF"
+      },
+      "layout": {
+        "base": {
+          "x": 0.4,
+          "y": 0.545,
+          "w": 0.17,
+          "h": 0.15
+        },
+        "phone": {
+          "x": 0.53,
+          "y": 0.675,
+          "w": 0.44,
+          "h": 0.125
+        },
+        "tablet-sm": {
+          "x": 0.575,
+          "y": 0.34,
+          "w": 0.18,
+          "h": 0.13
+        },
+        "tablet-lg": {
+          "x": 0.4,
+          "y": 0.545,
+          "w": 0.17,
+          "h": 0.15
+        }
+      }
+    },
+    {
+      "id": "bus-off-lamp",
+      "type": "annunciator",
+      "label": "Шина обесточена",
+      "bindings": {
+        "active": "power.batteryMaster"
+      },
+      "options": {
+        "caption": "BUS OFF",
+        "tone": "danger",
+        "invert": true
+      },
+      "layout": {
+        "base": {
+          "x": 0.595,
+          "y": 0.37,
+          "w": 0.18,
+          "h": 0.08
+        },
+        "phone": {
+          "x": 0.03,
+          "y": 0.815,
+          "w": 0.94,
+          "h": 0.055
+        },
+        "tablet-sm": {
+          "x": 0.775,
+          "y": 0.37,
+          "w": 0.205,
+          "h": 0.075
+        },
+        "tablet-lg": {
+          "x": 0.595,
+          "y": 0.37,
+          "w": 0.18,
+          "h": 0.08
+        }
+      }
+    },
+    {
+      "id": "flaps",
+      "type": "readout",
+      "label": "Закрылки",
+      "bindings": {
+        "value": "flaps.percent"
+      },
+      "options": {
+        "caption": "FLAPS",
+        "unit": "%",
+        "decimals": 0
+      },
+      "layout": {
+        "base": {
+          "x": 0.595,
+          "y": 0.48,
+          "w": 0.18,
+          "h": 0.12
+        },
+        "phone": {
+          "x": 0.03,
+          "y": 0.87,
+          "w": 0.52,
+          "h": 0.11
+        },
+        "tablet-sm": {
+          "x": 0.38,
+          "y": 0.5,
+          "w": 0.37,
+          "h": 0.13
+        },
+        "tablet-lg": {
+          "x": 0.595,
+          "y": 0.48,
+          "w": 0.18,
+          "h": 0.14
+        }
+      }
+    },
+    {
+      "id": "heading-bug",
+      "type": "knob.rotary",
+      "label": "Задатчик курса",
+      "bindings": {
+        "value": "autopilot.headingBugDeg"
+      },
+      "command": {
+        "key": "autopilot.headingBugDeg",
+        "action": "set"
+      },
+      "options": {
+        "caption": "HDG BUG",
+        "min": 0,
+        "max": 359,
+        "step": 1,
+        "wrap": true,
+        "unit": "°",
+        "decimals": 0
+      },
+      "layout": {
+        "base": {
+          "x": 0.595,
+          "y": 0.68,
+          "w": 0.18,
+          "h": 0.2
+        },
+        "phone": {
+          "x": 0.57,
+          "y": 0.87,
+          "w": 0.4,
+          "h": 0.11
+        },
+        "tablet-sm": {
+          "x": 0.775,
+          "y": 0.52,
+          "w": 0.205,
+          "h": 0.2
+        },
+        "tablet-lg": {
+          "x": 0.595,
+          "y": 0.68,
+          "w": 0.18,
+          "h": 0.2
+        }
+      }
+    }
+  ]
+}

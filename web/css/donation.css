@@ -1,0 +1,188 @@
+/* Блок поддержки проекта: часть лицензии, не удаляется и не скрывается.
+   Стили вынесены отдельно, потому что файл входит в проверку целостности. */
+
+.donation-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 126, 182, 0.35);
+  background: linear-gradient(180deg, rgba(255, 93, 141, 0.16), rgba(255, 93, 141, 0.07));
+  color: #ffd3e3;
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 0.16s var(--ease), background 0.16s var(--ease);
+}
+
+.donation-chip:hover {
+  border-color: rgba(255, 126, 182, 0.65);
+  background: linear-gradient(180deg, rgba(255, 93, 141, 0.26), rgba(255, 93, 141, 0.12));
+}
+
+.donation-chip svg {
+  width: 13px;
+  height: 13px;
+  color: #ff7eb6;
+}
+
+.donation-dialog {
+  width: min(520px, 94vw);
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 18px;
+  background: #0b1117;
+  color: var(--text);
+  box-shadow: var(--shadow-panel);
+}
+
+.donation-dialog::backdrop {
+  background: rgba(3, 5, 8, 0.72);
+  backdrop-filter: blur(3px);
+}
+
+.donation-dialog__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 10px;
+}
+
+.donation-dialog__head h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.donation-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 18px 4px;
+  max-height: 60vh;
+  overflow: auto;
+}
+
+.donation-dialog__note {
+  margin: 0;
+  padding: 0 18px 16px;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+.donation-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.donation-card__label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.donation-card__value {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #ffd3e3;
+  word-break: break-all;
+}
+
+.donation-card a {
+  color: #9fd8f5;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.donation-card__note {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.donation-dialog__empty {
+  margin: 0;
+  padding: 6px 0 14px;
+  font-size: 13px;
+  color: var(--warn);
+}
+
+/* Экран блокировки при нарушении целостности. */
+.lock-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(5, 7, 10, 0.94);
+  backdrop-filter: blur(8px);
+}
+
+.lock-screen[hidden] {
+  display: none;
+}
+
+.lock-screen__card {
+  width: min(560px, 100%);
+  padding: 28px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 93, 93, 0.45);
+  background: linear-gradient(170deg, rgba(46, 20, 24, 0.96), rgba(12, 10, 12, 0.98));
+  box-shadow: var(--shadow-panel);
+}
+
+.lock-screen__eyebrow {
+  margin: 0 0 8px;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #ff9d9d;
+}
+
+.lock-screen__title {
+  margin: 0 0 10px;
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.lock-screen__detail {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #f0c9c9;
+}
+
+.lock-screen__code {
+  display: block;
+  margin-bottom: 18px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.45);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #ffb4b4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.lock-screen__code:empty {
+  display: none;
+}
+
+body.is-locked .app-bar,
+body.is-locked .stage,
+body.is-locked .status-bar {
+  pointer-events: none;
+  user-select: none;
+  filter: blur(2px) saturate(0.6);
+}

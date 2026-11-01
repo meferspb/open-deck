@@ -1,0 +1,70 @@
+name: Ошибка
+description: Что-то работает не так, как ожидалось
+title: "[bug] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Спасибо за отчёт! Пожалуйста, не прикладывайте приватные данные
+        (IP-адреса, ключи, личные пути) — замените их примерами.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Где проблема?
+      options:
+        - Шлюз (Python / HTTP / WebSocket)
+        - Веб-клиент / панель
+        - Редактор панелей
+        - Android-приложение
+        - SimConnect / WASM-мост
+        - Установщик / сборка APK
+        - Документация
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Версия
+      description: Версия шлюза (в баннере при старте) или установщика
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Окружение
+      description: Windows, версия MSFS, аддон/самолёт, браузер, Android-устройство
+      placeholder: |
+        Windows 11, MSFS 2020, Cessna 172S (Asobo), Chrome 130
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Шаги воспроизведения
+      placeholder: |
+        1. Запустить `RudPanelGateway.exe --sim auto`
+        2. Открыть панель на телефоне
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ожидаемое поведение
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Фактическое поведение и логи
+      description: Вывод консоли шлюза, скриншоты, JSON-кадр телеметрии
+    validations:
+      required: true

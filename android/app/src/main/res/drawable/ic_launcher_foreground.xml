@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Корпус прибора -->
+    <path
+        android:fillColor="#0E1A24"
+        android:pathData="M54,54m-30,0a30,30 0,1 1,60 0a30,30 0,1 1,-60 0" />
+
+    <!-- Небо -->
+    <path
+        android:fillColor="#2F8FD0"
+        android:pathData="M54,54m-27,0a27,27 0,1 1,54 0a27,27 0,1 1,-54 0" />
+
+    <!-- Земля -->
+    <path
+        android:fillColor="#6B4423"
+        android:pathData="M27,54 L81,54 A27,27 0 0 1 27,54 Z" />
+
+    <!-- Линия горизонта -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M26,53 h56 v2 h-56 z" />
+
+    <!-- Символ самолёта -->
+    <path
+        android:fillColor="#FFCF4A"
+        android:pathData="M38,54 h8 v3 h-8 z M62,54 h8 v3 h-8 z" />
+
+    <!-- Обод -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M54,54m-30,0a30,30 0,1 1,60 0a30,30 0,1 1,-60 0"
+        android:strokeColor="#4CC2FF"
+        android:strokeWidth="3" />
+</vector>

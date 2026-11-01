@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Локальная изолированная сеть: трафик к шлюзу идёт по HTTP без TLS,
+  поэтому cleartext разрешён осознанно. Android не умеет ограничивать
+  cleartext по CIDR-подсетям, а фиксированный список IP невозможен —
+  адрес хоста выдаётся DHCP. См. android/README.md, раздел «Ограничения».
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

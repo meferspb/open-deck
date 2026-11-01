@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "id": "demo-lvar-panel",
+  "name": "Demo · LVAR (PMDG-style)",
+  "revision": 1,
+  "description": "Демонстрация пользовательских переменных (LVAR): приборы привязаны к custom.*, значения берутся из mock-провайдера (initial) или из WASM-моста в реальном полёте.",
+  "sim": {
+    "match": {
+      "title": "Demo LVAR*"
+    }
+  },
+  "panel": {
+    "background": "#0a1015",
+    "gridSize": 8,
+    "footer": "LVAR DEMO · RUD PANEL"
+  },
+  "variables": [
+    {
+      "key": "custom.fuelLbs",
+      "kind": "number",
+      "source": "lvar",
+      "name": "PMDG_FUEL_LBS",
+      "label": "Топливо (фунты)",
+      "unit": "LBS",
+      "initial": 1200
+    },
+    {
+      "key": "custom.apuOn",
+      "kind": "bool",
+      "source": "lvar",
+      "name": "PMDG_APU_ON",
+      "label": "APU работает",
+      "initial": true
+    },
+    {
+      "key": "custom.cabinAlt",
+      "kind": "number",
+      "source": "rpn",
+      "expression": "(A:CABIN ALTITUDE, feet)",
+      "label": "Высота в кабине",
+      "unit": "FT",
+      "initial": 0
+    }
+  ],
+  "widgets": [
+    {
+      "id": "fuel-lbs",
+      "type": "readout",
+      "label": "Топливо, фунты",
+      "bindings": {
+        "value": "custom.fuelLbs"
+      },
+      "options": {
+        "caption": "FUEL",
+        "unit": "LBS",
+        "decimals": 0
+      },
+      "layout": {
+        "base": { "x": 0.04, "y": 0.04, "w": 0.42, "h": 0.2 }
+      }
+    },
+    {
+      "id": "fuel-gauge",
+      "type": "gauge.radial",
+      "label": "Топливо",
+      "bindings": {
+        "value": "custom.fuelLbs"
+      },
+      "options": {
+        "min": 0,
+        "max": 3000,
+        "unit": "LBS",
+        "decimals": 0,
+        "majorTicks": 6,
+        "minorTicks": 2,
+        "zones": [
+          { "from": 300, "to": 3000, "tone": "ok" },
+          { "from": 0, "to": 300, "tone": "warn" }
+        ]
+      },
+      "layout": {
+        "base": { "x": 0.04, "y": 0.27, "w": 0.42, "h": 0.44 }
+      }
+    },
+    {
+      "id": "apu-lamp",
+      "type": "annunciator",
+      "label": "APU",
+      "bindings": {
+        "active": "custom.apuOn"
+      },
+      "options": {
+        "caption": "APU AVAIL",
+        "tone": "ok"
+      },
+      "layout": {
+        "base": { "x": 0.5, "y": 0.04, "w": 0.46, "h": 0.1 }
+      }
+    },
+    {
+      "id": "cabin-alt",
+      "type": "readout",
+      "label": "Высота в кабине",
+      "bindings": {
+        "value": "custom.cabinAlt"
+      },
+      "options": {
+        "caption": "CABIN ALT",
+        "unit": "FT",
+        "decimals": 0
+      },
+      "layout": {
+        "base": { "x": 0.5, "y": 0.17, "w": 0.46, "h": 0.2 }
+      }
+    },
+    {
+      "id": "rpm",
+      "type": "readout",
+      "label": "Обороты",
+      "bindings": {
+        "value": "engine.rpm"
+      },
+      "options": {
+        "caption": "RPM",
+        "unit": "RPM",
+        "decimals": 0
+      },
+      "layout": {
+        "base": { "x": 0.5, "y": 0.4, "w": 0.46, "h": 0.2 }
+      }
+    }
+  ]
+}

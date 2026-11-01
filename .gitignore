@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ruff_cache/
+.pytest_cache/
+.coverage
+
+# Node
+node_modules/
+package-lock.json
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/.kotlin/
+android/local.properties
+android/.idea/
+
+# APK: сборки игнорируются, но готовый APK для установщика — в репозитории
+*.apk
+!android/dist/RudPanel-Android-*.apk
+
+# Локальные артефакты сборки
+.gradle-home/
+.android-home/
+.tmp/
+*.log
+.DS_Store
+Thumbs.db
+
+# Сборка Windows-установщика
+/build/
+/dist/
+packaging/windows/_*.nsi
+
+# IDE
+.idea/
+.vscode/
+
+# Симулятор / SDK (не хранить в репозитории)
+SimConnect.dll

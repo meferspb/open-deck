@@ -1,0 +1,22 @@
+# Инструменты разработки. Пакет не публикуется в PyPI: поставка — установщик
+# Windows (packaging/windows) или запуск из репозитория (python -m msfs_gateway).
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = ["build", "dist", "android", "web", "node_modules", ".git"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+# Кириллица в строках и комментариях: RUF001-003 считают похожие символы
+# неоднозначными, но для русских текстов это норма.
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.per-file-ignores]
+# Тесты намеренно используют длинные литералы и «магические» значения.
+"tests/*" = ["E501", "B017"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"

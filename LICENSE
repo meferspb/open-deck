@@ -1,0 +1,94 @@
+# LICENSE
+
+## Open Free-to-Use with Mandatory Unmodified Attribution License
+### (CC-BY-NC-ND-MODIFIED) — "RUD Panel Gateway"
+
+**Copyright (c) 2026 RUD Panel Gateway contributors. All rights reserved.**
+
+This is a **modified** version of the Creative Commons
+Attribution-NonCommercial-NoDerivatives 4.0 International license
+(CC BY-NC-ND 4.0), with additional mandatory terms governing the author's
+donation attribution and penalties for its removal or substitution.
+
+The full unmodified CC BY-NC-ND 4.0 legal code is available at:
+<https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode>
+
+The modifications below form an integral part of this license. In the event of
+a conflict between these modifications and the CC BY-NC-ND 4.0 text, these
+modifications prevail.
+
+---
+
+## 1. Grant and scope
+
+Subject to the terms of CC BY-NC-ND 4.0 and the additional terms below, you are
+granted a royalty-free, non-exclusive, non-transferable right to **use** and
+**share verbatim copies** of this Software for **non-commercial** purposes,
+including the operation of the Software in your own local environment.
+
+## 2. Attribution — Mandatory and Unmodified
+
+2.1. You must give **appropriate credit** to the Author, provide a link to this
+license, and indicate if changes were made. You may do so in any reasonable
+manner, but not in any way that suggests the Author endorses you or your use.
+
+2.2. **Non-Removable Donation Badge.** Every user-facing interface of the
+Software (Windows Host Gateway, Web client, Android client, and any other
+surface) **must** permanently and visibly display the Author's donation badge
+with the Author's current donation credentials.
+
+2.3. **Integrity enforcement.** The Software ships with integrity checks
+(checksum / hash verification) over the user-interface components that render
+the donation badge. The Software will refuse to start and will display an
+integrity error if those components are modified, hidden, or removed. You must
+not circumvent, disable, or re-key these integrity checks.
+
+## 3. Exclusive source of donation credentials
+
+3.1. The **sole legitimate source** of the Author's donation credentials is the
+Author's configuration (`config/donation.json` in this repository, or a
+subsequent configuration channel designated by the Author).
+
+3.2. Replacing, hiding, or substituting the Author's donation contacts in any
+third-party fork, release, build, or copy is **strictly prohibited**.
+
+3.3. When the Author updates the donation credentials, every third-party
+builder and distributor is obliged to reflect those updated credentials in
+their distributions.
+
+## 4. Penalty clause
+
+4.1. Any natural or legal person who distributes a modified, unofficial, or
+third-party build of this Software in which the Author's original donation
+credentials are missing, altered, or not current **shall pay a License penalty
+fee of USD $5,900 (five thousand nine hundred US dollars) per calendar month**
+of publication, distribution, or provision of access to such a copy.
+
+4.2. The penalty accrues for each full or partial calendar month during which
+such a non-compliant copy is published, distributed, or made available.
+
+## 5. No warranties
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## Russian summary (не юридический перевод)
+
+Проект распространяется по модифицированной лицензии **CC-BY-NC-ND** со
+следующими ключевыми условиями:
+
+- разрешено бесплатное некоммерческое использование и распространение
+  неизменённых копий;
+- блок доната автора **обязателен и неудаляем** во всех интерфейсах;
+- целостность файлов, отображающих блок доната, защищена проверкой хешей —
+  при модификации приложение блокирует запуск;
+- единственный источник реквизитов доната — конфигурация автора;
+- замена/удаление/неактуальность реквизитов в сторонних сборках влечёт
+  штраф **$5 900 за каждый календарный месяц** публикации такой копии.

@@ -1,0 +1,280 @@
+/* Редактор панелей: канвас с drag-and-drop, боковая панель свойств. */
+
+.editor-body {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.ed-main {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------ канвас */
+.ed-canvas-wrap {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(900px 520px at 70% -10%, rgba(76, 194, 255, 0.06), transparent 60%),
+    var(--bg);
+}
+
+.ed-stage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+}
+
+.ed-stage .device-frame {
+  position: absolute;
+  transform-origin: center center;
+}
+
+.ed-panel {
+  cursor: crosshair;
+}
+
+/* ------------------------------------------------------------ виджет */
+.ed-widget {
+  position: absolute;
+  cursor: move;
+  touch-action: none;
+}
+
+.ed-widget__preview {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* события ловит обёртка, а не прибор */
+}
+
+.ed-widget__frame {
+  position: absolute;
+  inset: -2px;
+  border: 1.5px dashed transparent;
+  border-radius: 8px;
+  pointer-events: none;
+  transition: border-color 0.12s var(--ease), background 0.12s var(--ease);
+}
+
+.ed-widget.is-selected .ed-widget__frame {
+  border-color: var(--accent);
+  background: rgba(76, 194, 255, 0.05);
+}
+
+.ed-widget.is-dragging .ed-widget__frame {
+  border-style: solid;
+  border-color: var(--accent);
+  background: rgba(76, 194, 255, 0.1);
+}
+
+.ed-widget__handle {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #06121c;
+  cursor: nwse-resize;
+  touch-action: none;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s var(--ease);
+}
+
+.ed-widget.is-selected .ed-widget__handle {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ed-widget__id {
+  position: absolute;
+  top: -20px;
+  left: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.ed-widget.is-selected .ed-widget__id {
+  opacity: 1;
+}
+
+/* ------------------------------------------------------------ боковая панель */
+.ed-sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--line);
+  background: rgba(9, 14, 19, 0.7);
+  overflow: hidden;
+}
+
+.ed-sidebar__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.ed-sidebar__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px;
+}
+
+.ed-empty {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
+/* ------------------------------------------------------------ формы */
+.ed-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 14px;
+}
+
+.ed-field__label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.ed-input,
+.ed-select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: rgba(7, 10, 14, 0.7);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.ed-input:focus,
+.ed-select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.ed-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.ed-section {
+  margin: 20px 0 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.ed-palette {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.ed-palette__item {
+  display: block;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  text-align: left;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.12s var(--ease), background 0.12s var(--ease);
+}
+
+.ed-palette__item:hover {
+  border-color: rgba(76, 194, 255, 0.4);
+  background: var(--accent-soft);
+}
+
+.ed-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(7, 10, 14, 0.55);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ed-btn--ghost:hover {
+  border-color: var(--line-strong);
+}
+
+.ed-btn--primary {
+  border-color: rgba(76, 194, 255, 0.45);
+  background: linear-gradient(180deg, rgba(76, 194, 255, 0.26), rgba(76, 194, 255, 0.1));
+  color: #d6efff;
+}
+
+.ed-btn--primary:hover {
+  border-color: rgba(76, 194, 255, 0.7);
+}
+
+.ed-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(7, 10, 14, 0.7);
+  color: var(--text-dim);
+  font-size: 11px;
+  pointer-events: none;
+}
+
+@media (max-width: 900px) {
+  .ed-main {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .ed-sidebar {
+    order: 2;
+    border-right: 0;
+    border-top: 1px solid var(--line);
+    max-height: 45vh;
+  }
+
+  .ed-stage {
+    padding: 12px;
+  }
+}

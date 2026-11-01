@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <title>RUD Panel Designer — редактор панелей</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/css/tokens.css" />
+    <link rel="stylesheet" href="/css/a11y.css" />
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/widgets.css" />
+    <link rel="stylesheet" href="/css/donation.css" />
+    <link rel="stylesheet" href="/css/editor.css" />
+  </head>
+  <body class="editor-body">
+    <header class="app-bar">
+      <div class="app-bar__identity">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+            <circle cx="12" cy="12" r="8.2" />
+            <path d="M4.6 14.4h14.8" />
+            <path d="M9 3.9 7.4 9.1h9.2L15 3.9" />
+          </svg>
+        </span>
+        <span class="brand-text">
+          <span class="brand-title">Panel Designer</span>
+          <span class="brand-sub">drag-and-drop · локально</span>
+        </span>
+      </div>
+
+      <div class="app-bar__controls">
+        <label class="field" for="ed-profile">
+          <span class="field__label">Профиль</span>
+          <span class="select-wrap">
+            <select id="ed-profile" class="select" aria-label="Профиль"></select>
+            <svg class="select-wrap__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </span>
+        </label>
+
+        <div class="field">
+          <span class="field__label" id="ed-device-label">Форм-фактор</span>
+          <div class="segmented" id="ed-device" role="group" aria-labelledby="ed-device-label">
+            <button type="button" class="segmented__item" data-device="phone" aria-pressed="false">Phone</button>
+            <button type="button" class="segmented__item" data-device="tablet-sm" aria-pressed="false">Small Tablet</button>
+            <button type="button" class="segmented__item" data-device="tablet-lg" aria-pressed="false">Large Tablet</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="app-bar__status">
+        <label class="ed-btn ed-btn--ghost ed-snap" title="Привязка к сетке 1% (Shift — без привязки)">
+          <input type="checkbox" id="ed-snap" />
+          <span>Сетка</span>
+        </label>
+        <button type="button" class="ed-btn ed-btn--ghost" id="ed-undo" title="Отменить (Ctrl+Z)" disabled>↶ Отменить</button>
+        <button type="button" class="ed-btn ed-btn--ghost" id="ed-redo" title="Повторить (Ctrl+Y)" disabled>↷ Повторить</button>
+        <button
+          type="button"
+          class="donation-chip"
+          id="donation-badge"
+          data-donation-badge
+          aria-haspopup="dialog"
+          title="Поддержать автора проекта"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 20.3 4.7 13a4.6 4.6 0 0 1 0-6.5 4.5 4.5 0 0 1 6.4 0l.9.9.9-.9a4.5 4.5 0 0 1 6.4 0 4.6 4.6 0 0 1 0 6.5Z" />
+          </svg>
+          <span>Поддержать</span>
+        </button>
+        <button type="button" class="ed-btn ed-btn--ghost" id="ed-add" title="Добавить прибор">＋ Прибор</button>
+        <button type="button" class="ed-btn ed-btn--primary" id="ed-save" title="Сохранить профиль">Сохранить</button>
+        <a class="ed-btn ed-btn--ghost" href="/" title="Открыть приборную панель">Панель →</a>
+      </div>
+    </header>
+
+    <main class="ed-main">
+      <aside class="ed-sidebar" id="ed-sidebar">
+        <div class="ed-sidebar__head">
+          <span>Свойства</span>
+          <button type="button" class="icon-btn" id="ed-delete" title="Удалить прибор" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2m-8 0 1 13h8l1-13" /></svg>
+          </button>
+        </div>
+        <div class="ed-sidebar__body" id="ed-props"></div>
+      </aside>
+
+      <div class="ed-canvas-wrap">
+        <div class="ed-stage" id="ed-stage">
+          <div class="device-frame" id="ed-frame" data-device="tablet-lg" data-mode="frame">
+            <div class="device-screen" id="ed-screen">
+              <div class="panel ed-panel" id="ed-panel"></div>
+            </div>
+          </div>
+        </div>
+        <div class="ed-hint" id="ed-hint">Кликните по прибору, чтобы выбрать · тяните за угол для размера · Ctrl+Z / Ctrl+Y — отмена и повтор · Shift — без привязки к сетке</div>
+      </div>
+    </main>
+
+    <div class="toast" id="ed-toast" role="status" aria-live="polite" hidden></div>
+
+    <dialog class="donation-dialog" id="donation-dialog" aria-labelledby="donation-title">
+      <div class="donation-dialog__head">
+        <h2 id="donation-title">Поддержать проект</h2>
+        <button type="button" class="icon-btn" id="donation-close" aria-label="Закрыть">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+      <div class="donation-dialog__body" id="donation-body"></div>
+      <p class="donation-dialog__note">
+        Проект бесплатный. Реквизиты задаются конфигурацией автора на хосте — клиент не может их изменить.
+      </p>
+    </dialog>
+
+    <noscript><p style="padding:24px;color:#ffb020">Для редактора нужен JavaScript.</p></noscript>
+    <script type="module" src="/js/editor.js"></script>
+  </body>
+</html>

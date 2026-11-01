@@ -1,0 +1,14 @@
+{
+  "appName": "RUD Panel",
+  "applicationId": "com.rudpanel.gateway",
+  "versionName": "0.1.0",
+  "versionCode": 1,
+  "defaultHost": "",
+  "defaultPort": 8760,
+  "outputDir": "dist",
+  "jdkPath": "",
+  "sdkPath": "",
+  "gradlePath": "",
+  "timeoutSec": 900,
+  "extraGradleArgs": []
+}

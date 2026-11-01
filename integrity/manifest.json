@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "algorithm": "sha256",
-  "generatedAt": "2026-11-01T13:50:00+00:00",
+  "generatedAt": "2026-11-01T16:57:39+00:00",
   "files": {
-    "web/index.html": "4b462fef6ee7b9314e5fe2caa2ca3e46ccb35b708e0613a26afd122e9c3030cb",
+    "web/index.html": "a7a9013a306acce4a60a3b7adafadbb499df4d114d76e39c2ddedb9192f03b1e",
     "web/editor.html": "bf42977e8a8de72df76bcbbda07417eae50558305f1316159dfb68c4b9e6a1ab",
     "web/js/ui/donation.js": "96f6fd76a420204cf44563f98c83b5799ddcfb6060e2145e9faa9479c816cf1d",
     "web/js/ui/integrity.js": "9cfe4b45165b8ba9d5178e8e7e321e17526e44718a61098041585ffe0c9e8ca5",

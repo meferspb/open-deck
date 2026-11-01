@@ -14,7 +14,7 @@ Android-приложению по HTTP + WebSocket. Панели описыва�
 | | |
 | --- | --- |
 | Версия | 0.1.0 |
-| Тесты | 194 Python + 29 Node.js |
+| Тесты | 221 Python + 29 Node.js |
 | Платформа хоста | Windows 10/11 (Python 3.11+ или установщик) |
 | Клиенты | браузер (любой современный), Android 8+ |
 | Лицензия | [CC-BY-NC-ND-MODIFIED](LICENSE) — бесплатно, с обязательным блоком поддержки автора |
@@ -30,6 +30,8 @@ Android-приложению по HTTP + WebSocket. Панели описыва�
 | ![Six-pack](docs/screenshots/sixpack-phone.png) | ![Редактор](docs/screenshots/editor.png) |
 
 ![Вход по паролю с телефона](docs/screenshots/login.png)
+
+![Ассистент посадки и руления](docs/screenshots/assist.png)
 
 ## Возможности
 
@@ -79,6 +81,15 @@ Android-приложению по HTTP + WebSocket. Панели описыва�
 - Публично доступны только страница входа, проверка здоровья/целостности и
   блок поддержки автора — остальное (профили, телеметрия, команды, сборка APK)
   закрыто.
+
+### Ассистент посадки и руления
+
+- **Руление**: удержание заданной скорости (3–25 уз) и курса — тягу и руль
+  направления считает шлюз; «СТОП» даёт тягу 0 и стояночный тормоз.
+- **Посадка**: ARM включает AP и APR, на 60–15 футах ассистент плавно убирает
+  тягу, на касании выключает автопилот; TOGA — уход на второй круг.
+- Страница `/assist.html` (кнопка «Ассистент» в шапке панели); работает и на
+  телефоне. Ассистент — вспомогательный контур, пилот контролирует полёт.
 
 ### Инструменты
 
@@ -196,6 +207,7 @@ RudPanelGateway.exe --build-apk C:\path\settings.json
 msfs_gateway/            # шлюз на Python (stdlib)
   sim/                   # провайдеры: mock, simconnect, client_data, wasm_bridge
   qr.py                  # собственный генератор QR (SVG)
+  assist.py              # ассистент посадки и руления
   android_build.py       # сборка APK из дистрибутива
   http_api.py, hub.py, profiles.py, integrity.py, discovery.py, websocket.py
 web/                     # веб-клиент и редактор (vanilla JS, без сборки)
@@ -212,7 +224,7 @@ integrity/               # SHA-256 манифест критичных файл�
 ## Тесты
 
 ```powershell
-python -m unittest discover -s tests        # 194 теста
+python -m unittest discover -s tests        # 221 тест
 node --test "tests/web/*.test.mjs"          # 29 тестов
 python -m ruff check msfs_gateway tests scripts
 ```

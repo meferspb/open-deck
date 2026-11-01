@@ -573,6 +573,9 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
             if parts == ["api", "auth", "status"]:
                 self._handle_auth_status()
                 return
+            if parts == ["api", "assist"]:
+                self._send_json(HTTPStatus.OK, self.gateway.assist.status())
+                return
             if parts == ["api", "connect"]:
                 self._send_json(HTTPStatus.OK, self._connect_payload())
                 return
@@ -804,6 +807,26 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
                 return
             if parts == ["api", "pair"]:
                 self._handle_pair()
+                return
+            if parts == ["api", "assist", "taxi"]:
+                payload = self._read_json_body()
+                if not isinstance(payload, dict):
+                    raise ApiError(HTTPStatus.BAD_REQUEST, "Ожидался JSON-объект")
+                ok, message = self.gateway.assist.taxi_action(payload)
+                self._send_json(
+                    HTTPStatus.OK if ok else HTTPStatus.CONFLICT,
+                    {"ok": ok, "message": message, "status": self.gateway.assist.status()},
+                )
+                return
+            if parts == ["api", "assist", "landing"]:
+                payload = self._read_json_body()
+                if not isinstance(payload, dict):
+                    raise ApiError(HTTPStatus.BAD_REQUEST, "Ожидался JSON-объект")
+                ok, message = self.gateway.assist.landing_action(payload)
+                self._send_json(
+                    HTTPStatus.OK if ok else HTTPStatus.CONFLICT,
+                    {"ok": ok, "message": message, "status": self.gateway.assist.status()},
+                )
                 return
 
             if parts == ["api", "android", "build"]:

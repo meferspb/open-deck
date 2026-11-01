@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Ассистент посадки и руления — RUD Panel Gateway</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/css/tokens.css" />
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/assist.css" />
+  </head>
+  <body class="assist-page">
+    <header class="assist-bar">
+      <a class="assist-back" href="/">← Панель</a>
+      <div class="assist-heading">
+        <div class="assist-title">Ассистент</div>
+        <div class="assist-sub">посадка · руление</div>
+      </div>
+      <span class="assist-link" id="assist-link">нет данных</span>
+    </header>
+
+    <main class="assist-grid">
+      <section class="assist-card" aria-labelledby="landing-title">
+        <div class="assist-card__head">
+          <h2 id="landing-title">Посадка</h2>
+          <span class="assist-badge" id="landing-phase">выключен</span>
+        </div>
+        <p class="assist-msg" id="landing-message">
+          ARM включает автопилот и режим APR. На 60–15 футах ассистент плавно
+          убирает тягу, на касании выключает AP.
+        </p>
+
+        <dl class="assist-readouts">
+          <div><dt>RA</dt><dd id="l-ra">—</dd></div>
+          <div><dt>IAS</dt><dd id="l-ias">—</dd></div>
+          <div><dt>VS</dt><dd id="l-vs">—</dd></div>
+          <div><dt>LOC</dt><dd id="l-loc">—</dd></div>
+          <div><dt>GS</dt><dd id="l-gs">—</dd></div>
+          <div><dt>AP / APR</dt><dd id="l-ap">—</dd></div>
+        </dl>
+
+        <div class="assist-actions">
+          <button class="assist-btn assist-btn--primary" type="button" id="landing-arm">ARM</button>
+          <button class="assist-btn" type="button" id="landing-disarm">Выключить</button>
+          <button class="assist-btn assist-btn--danger" type="button" id="landing-toga">TOGA</button>
+        </div>
+        <p class="assist-hint">TOGA: полная тяга и выключение автопилота (уход на второй круг).</p>
+      </section>
+
+      <section class="assist-card" aria-labelledby="taxi-title">
+        <div class="assist-card__head">
+          <h2 id="taxi-title">Руление</h2>
+          <span class="assist-badge" id="taxi-phase">выключен</span>
+        </div>
+        <p class="assist-msg" id="taxi-message">
+          Ассистент держит заданную скорость и курс: тягу и руль считает сам.
+          Работает только на земле и ниже 35 уз.
+        </p>
+
+        <dl class="assist-readouts">
+          <div><dt>GS</dt><dd id="t-gs">—</dd></div>
+          <div><dt>Курс</dt><dd id="t-hdg">—</dd></div>
+          <div><dt>Тяга</dt><dd id="t-thr">—</dd></div>
+          <div><dt>Руль</dt><dd id="t-rud">—</dd></div>
+          <div><dt>Задано</dt><dd id="t-target">—</dd></div>
+          <div><dt>Тормоз</dt><dd id="t-brake">—</dd></div>
+        </dl>
+
+        <div class="assist-speed">
+          <label for="taxi-speed">Скорость руления: <output id="taxi-speed-value">12</output> уз</label>
+          <input id="taxi-speed" type="range" min="3" max="25" step="1" value="12" />
+        </div>
+
+        <div class="assist-heading-row">
+          <span>Курс: <strong id="taxi-heading">—</strong></span>
+          <button class="assist-btn assist-btn--small" type="button" data-heading="-5">−5°</button>
+          <button class="assist-btn assist-btn--small" type="button" data-heading="-1">−1°</button>
+          <button class="assist-btn assist-btn--small" type="button" data-heading="1">+1°</button>
+          <button class="assist-btn assist-btn--small" type="button" data-heading="5">+5°</button>
+        </div>
+
+        <div class="assist-actions">
+          <button class="assist-btn assist-btn--primary" type="button" id="taxi-engage">Включить</button>
+          <button class="assist-btn" type="button" id="taxi-disengage">Выключить</button>
+          <button class="assist-btn assist-btn--danger" type="button" id="taxi-stop">СТОП</button>
+        </div>
+        <p class="assist-hint">СТОП: тяга 0 и стояночный тормоз. Курс меняйте кнопками — самолёт плавно доворачивает.</p>
+      </section>
+    </main>
+
+    <p class="assist-warning" id="assist-warning" hidden></p>
+
+    <footer class="assist-note">
+      Ассистент — вспомогательный контур, а не сертифицированный автопилот.
+      Пилот контролирует полёт, состояние ВПП и может выключить ассистент в любой момент.
+    </footer>
+
+    <script type="module" src="/js/assist.js"></script>
+  </body>
+</html>

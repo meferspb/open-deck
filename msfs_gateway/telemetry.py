@@ -30,6 +30,8 @@ class Variable:
     sim_event: str | None = None
     #: Событие принимает числовой параметр (например, HEADING_BUG_SET).
     sim_event_param: bool = False
+    #: Множитель значения перед отправкой события (THROTTLE_SET ждёт 0..16383).
+    sim_event_scale: float = 1.0
 
     @property
     def writable(self) -> bool:
@@ -186,6 +188,105 @@ _VARIABLES: Final[tuple[Variable, ...]] = (
         sim_var="AUTOPILOT MASTER",
         sim_unit="bool",
         sim_event="AP_MASTER",
+    ),
+    Variable(
+        "autopilot.approachHold",
+        "bool",
+        "Approach hold",
+        sim_var="AUTOPILOT APPROACH HOLD",
+        sim_unit="bool",
+        sim_event="AP_APR_HOLD",
+    ),
+    Variable(
+        "autopilot.approach",
+        "bool",
+        "Approach mode active",
+        sim_var="AUTOPILOT APPROACH HOLD",
+        sim_unit="bool",
+    ),
+    # --- Ассистент посадки и руления ------------------------------------
+    Variable(
+        "aircraft.onGround",
+        "bool",
+        "On ground",
+        sim_var="SIM ON GROUND",
+        sim_unit="bool",
+    ),
+    Variable(
+        "aircraft.radioAltitudeFt",
+        "number",
+        "Radio altitude",
+        unit="FT",
+        sim_var="PLANE ALT ABOVE GROUND",
+        sim_unit="feet",
+    ),
+    Variable(
+        "groundSpeed.kt",
+        "number",
+        "Ground speed",
+        unit="KT",
+        sim_var="GPS GROUND SPEED",
+        sim_unit="knots",
+    ),
+    Variable(
+        "nav.localizer",
+        "number",
+        "Localizer deviation",
+        unit="°",
+        sim_var="NAV LOCALIZER",
+        sim_unit="degrees",
+    ),
+    Variable(
+        "nav.glideSlope",
+        "number",
+        "Glide slope deviation",
+        unit="°",
+        sim_var="NAV GLIDE SLOPE",
+        sim_unit="degrees",
+    ),
+    Variable(
+        "nav.locFlag",
+        "bool",
+        "Localizer valid",
+        sim_var="NAV LOC FLAG",
+        sim_unit="bool",
+    ),
+    Variable(
+        "nav.gsFlag",
+        "bool",
+        "Glide slope valid",
+        sim_var="NAV GS FLAG",
+        sim_unit="bool",
+    ),
+    Variable(
+        "controls.throttlePct",
+        "number",
+        "Throttle",
+        unit="%",
+        sim_var="GENERAL ENG THROTTLE LEVER POSITION:1",
+        sim_unit="percent",
+        sim_event="THROTTLE_SET",
+        sim_event_param=True,
+        sim_event_scale=163.83,
+    ),
+    Variable(
+        "controls.rudder",
+        "number",
+        "Rudder",
+        unit="%",
+        sim_var="RUDDER POSITION",
+        sim_unit="percent",
+        sim_event="RUDDER_SET",
+        sim_event_param=True,
+        sim_event_scale=163.83,
+    ),
+    Variable(
+        "brakes.parking",
+        "bool",
+        "Parking brake",
+        sim_var="BRAKE PARKING POSITION",
+        sim_unit="bool",
+        sim_event="PARKING_BRAKES",
     ),
     # --- Механизация и топливо ------------------------------------------
     Variable(

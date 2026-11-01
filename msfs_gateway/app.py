@@ -13,6 +13,7 @@ from typing import Any
 
 from . import APP_NAME, __version__
 from .android_build import BuildManager
+from .assist import AssistManager
 from .auth import AuthError, AuthService, load_record, save_record, validate_password
 from .discovery import DiscoveryBeacon
 from .http_api import GatewayHTTPServer, create_server
@@ -54,6 +55,7 @@ class GatewayApplication:
         self.profiles = ProfileStore(settings.profile_dir)
         self.sim: SimProvider = create_sim(settings, self.profiles)
         self.hub = Hub(self.sim, self.profiles, hz=settings.telemetry_hz)
+        self.assist = AssistManager(self.hub)
         self.httpd: GatewayHTTPServer | None = None
         self._serve_thread: threading.Thread | None = None
         self._check_integrity = check_integrity
@@ -90,6 +92,7 @@ class GatewayApplication:
         self.sim.start()
         self._setup_wasm()
         self.hub.start()
+        self.assist.start()
         if self.discovery is not None:
             self.discovery.start()
         self.httpd = create_server(self)
@@ -133,6 +136,7 @@ class GatewayApplication:
         return self._serve_thread
 
     def shutdown(self) -> None:
+        self.assist.stop()
         if self.discovery is not None:
             self.discovery.stop()
         self.hub.close_all()

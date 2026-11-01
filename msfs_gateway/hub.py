@@ -448,6 +448,16 @@ class Hub:
             "value": values.get(key),
         }
 
+    def apply_assist_command(self, key: str, value: Any) -> None:
+        """Команда внутреннего ассистента: без лимита и без чтения после записи.
+
+        Используется контурами руления/посадки, которые отправляют уставки
+        несколько раз в секунду. Валидация переменной остаётся общей.
+        """
+        if not isinstance(key, str) or not telemetry.is_writable(key):
+            raise SimCommandError(f"Переменная {key!r} не принимает команды")
+        self.sim.apply_command(key, value)
+
     def _allow_command(self, client: ClientInfo) -> bool:
         now = time.monotonic()
         window = client.command_times

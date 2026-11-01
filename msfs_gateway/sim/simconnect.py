@@ -751,7 +751,8 @@ class SimConnectSim(SimProvider):
         if variable.sim_event_param:
             if isinstance(target, bool) or not isinstance(target, (int, float)):
                 raise SimCommandError(f"{key}: событие {variable.sim_event} ожидает число")
-            event_data = round(float(target)) & 0xFFFFFFFF
+            scaled = float(target) * variable.sim_event_scale
+            event_data = round(scaled) & 0xFFFFFFFF
         else:
             # Событие TOGGLE_* переключает состояние, поэтому «set» реализуем
             # сравнением с текущим значением и отправкой события только при различии.

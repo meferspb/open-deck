@@ -107,6 +107,11 @@ class AuthHttpTest(unittest.TestCase):
         self.assertEqual(json.loads(body)["code"], "unauthorized")
         self.assertIn("Bearer", headers.get("WWW-Authenticate", ""))
 
+    def test_assist_requires_login(self):
+        status, _, body = self.call("GET", "/api/assist")
+        self.assertEqual(status, 401)
+        self.assertEqual(json.loads(body)["code"], "unauthorized")
+
     def test_page_redirects_to_login(self):
         status, headers, _ = self.call("GET", "/")
         self.assertEqual(status, 302)

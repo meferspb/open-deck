@@ -431,6 +431,22 @@ async function boot() {
 
   await donation.load();
 
+  // Сессия может истечь, пока панель открыта: раз в минуту сверяемся со
+  // шлюзом и уводим на вход, а не оставляем мёртвый экран.
+  setInterval(() => {
+    api
+      .authStatus()
+      .then((status) => {
+        if (status?.required && !status.authenticated) {
+          const next = window.location.pathname + window.location.search;
+          window.location.replace(`/login.html?next=${encodeURIComponent(next)}`);
+        }
+      })
+      .catch(() => {
+        // Сетевые сбои обрабатывает WebSocket-клиент.
+      });
+  }, 60000);
+
   const verdict = await verifyUiIntegrity();
   if (!verdict.ok) {
     lockUi(verdict.reason, verdict.code);

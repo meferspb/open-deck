@@ -6,6 +6,8 @@
  * библиотеки и интернет.
  */
 
+import { api } from '../core/api.js';
+
 export function createConnect({
   button,
   dialog,
@@ -22,10 +24,17 @@ export function createConnect({
   let currentUrl = '';
   let scale = 6;
   let border = 4;
+  /** Одноразовый токен для входа с телефона без ввода пароля. */
+  let pairToken = '';
+
+  function withQuery(url, params) {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}${params}`;
+  }
 
   function phoneUrlFor(url) {
-    const separator = url.includes('?') ? '&' : '?';
-    return `${url}${separator}device=phone`;
+    const query = pairToken ? `device=phone&pair=${encodeURIComponent(pairToken)}` : 'device=phone';
+    return withQuery(url, query);
   }
 
   function qrSource(url) {
@@ -93,14 +102,26 @@ export function createConnect({
       scale = payload.qr?.scale ?? 6;
       border = payload.qr?.border ?? 4;
 
+      // Если включён пароль, просим одноразовый QR-токен: телефон войдёт
+      // одним сканированием. Без пароля всё работает по-прежнему.
+      pairToken = '';
+      try {
+        const pair = await api.pair();
+        if (pair?.required && typeof pair.token === 'string') pairToken = pair.token;
+      } catch {
+        // Одноразовый вход недоступен — покажем обычный адрес.
+      }
+
       const primary = payload.primaryUrl || urls[0].url;
       renderList(urls, primary);
       await selectUrl(primary);
 
       const others = urls.map((entry) => entry.url).filter((url) => url !== primary);
-      altField.textContent = others.length
-        ? 'Если телефон в другой сети, выберите адрес выше.'
-        : '';
+      altField.textContent = pairToken
+        ? 'QR действует 10 минут и входит без пароля. Если телефон в другой сети, выберите адрес выше.'
+        : others.length
+          ? 'Если телефон в другой сети, выберите адрес выше.'
+          : '';
 
       loaded = true;
     } catch (error) {

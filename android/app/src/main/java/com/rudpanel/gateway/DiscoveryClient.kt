@@ -21,6 +21,7 @@ data class HostInfo(
     val port: Int,
     val version: String,
     val profileCount: Int,
+    val authRequired: Boolean = false,
     val lastSeenAt: Long = System.currentTimeMillis(),
 ) {
     val key: String get() = "$address:$port"
@@ -168,6 +169,7 @@ class DiscoveryClient(
             port = httpPort,
             version = payload.optString("version", "?"),
             profileCount = payload.optJSONArray("profiles")?.length() ?: 0,
+            authRequired = payload.optBoolean("auth", false),
         )
 
         synchronized(hostsLock) { hosts[host.key] = host }

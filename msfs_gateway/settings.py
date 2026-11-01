@@ -7,6 +7,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from .auth import validate_password
 from .discovery import DEFAULT_DISCOVERY_INTERVAL, DEFAULT_DISCOVERY_PORT
 
 PACKAGE_DIR = Path(__file__).resolve().parent
@@ -20,6 +21,8 @@ REPO_ROOT = APP_ROOT
 DEFAULT_WEB_DIR = APP_ROOT / "web"
 DEFAULT_PROFILE_DIR = APP_ROOT / "profiles"
 DEFAULT_DONATION_PATH = APP_ROOT / "config" / "donation.json"
+#: Файл с PBKDF2-хешем пароля; создаётся командой --set-password.
+DEFAULT_AUTH_PATH = APP_ROOT / "config" / "auth.json"
 
 SIM_CHOICES = ("auto", "mock", "simconnect")
 DEFAULT_HOST = "0.0.0.0"
@@ -51,6 +54,14 @@ class Settings:
     wasm: bool = True
     #: Режим «собрать APK и выйти»: путь к JSON с настройками (или пустой).
     build_apk: str | None = None
+    #: Аутентификация: файл с хешем пароля (config/auth.json).
+    auth_path: Path = DEFAULT_AUTH_PATH
+    #: Пароль из командной строки (не сохраняется на диск).
+    password: str | None = None
+    #: Режим «задать пароль и выйти».
+    set_password: str | None = None
+    #: Принудительно открытый доступ, даже если файл пароля существует.
+    no_auth: bool = False
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -129,6 +140,32 @@ def build_parser() -> argparse.ArgumentParser:
         help="Отключить WASM-мост (LVAR/RPN через Client Data Area).",
     )
     parser.add_argument(
+        "--password",
+        default=None,
+        metavar="PWD",
+        help="Включить вход по паролю (не короче 6 символов). Не сохраняется на диск.",
+    )
+    parser.add_argument(
+        "--set-password",
+        nargs="?",
+        const="",
+        default=None,
+        metavar="PWD",
+        help="Сохранить пароль (PBKDF2-хеш) в config/auth.json и выйти; "
+        "без значения — спросить пароль в консоли.",
+    )
+    parser.add_argument(
+        "--auth-file",
+        type=Path,
+        default=DEFAULT_AUTH_PATH,
+        help="Файл с хешем пароля (по умолчанию config/auth.json).",
+    )
+    parser.add_argument(
+        "--no-auth",
+        action="store_true",
+        help="Игнорировать пароль и пускать без входа (только для доверенной сети).",
+    )
+    parser.add_argument(
         "--build-apk",
         nargs="?",
         const="",
@@ -152,6 +189,16 @@ def parse_args(argv: list[str] | None = None) -> Settings:
         raise SystemExit(f"Некорректный период автообнаружения: {args.discovery_interval}")
     if not args.web_dir.is_dir():
         raise SystemExit(f"Каталог статики не найден: {args.web_dir}")
+    if args.password is not None:
+        error = validate_password(args.password)
+        if error:
+            raise SystemExit(f"--password: {error}")
+    if args.set_password:
+        error = validate_password(args.set_password)
+        if error:
+            raise SystemExit(f"--set-password: {error}")
+    if args.password is not None and args.set_password is not None:
+        raise SystemExit("--password и --set-password несовместимы")
 
     args.profile_dir.mkdir(parents=True, exist_ok=True)
 
@@ -170,4 +217,8 @@ def parse_args(argv: list[str] | None = None) -> Settings:
         discovery_interval=args.discovery_interval,
         wasm=not args.no_wasm,
         build_apk=args.build_apk,
+        auth_path=args.auth_file.resolve(),
+        password=args.password,
+        set_password=args.set_password,
+        no_auth=args.no_auth,
     )

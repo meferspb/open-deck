@@ -16,6 +16,7 @@ import threading
 import time
 import urllib.parse
 from http import HTTPStatus
+from http.cookies import CookieError, SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Final
@@ -29,6 +30,7 @@ from .android_build import (
     save_settings,
     toolchain_status,
 )
+from .auth import PAIRING_TTL, SESSION_COOKIE
 from .hub import ClientInfo, Hub
 from .profiles import ProfileError, ProfileNotFound, ProfileStore
 from .settings import REPO_ROOT
@@ -38,6 +40,24 @@ from .websocket import WebSocketConnection, WebSocketError, handshake_headers
 MAX_BODY_BYTES: Final = 2 * 1024 * 1024
 #: Клиент и профили — живые данные: кэширование только мешает при разработке.
 STATIC_CACHE_CONTROL: Final = "no-cache"
+
+#: API, доступное без входа: проверка статуса, сам вход/выход и данные,
+#: которые нужны для блока поддержки автора и проверки целостности.
+PUBLIC_API_PATHS: Final[frozenset[str]] = frozenset(
+    {
+        "/api/auth/status",
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/api/health",
+        "/api/integrity",
+        "/api/donation",
+    }
+)
+#: Статика, доступная без входа: страница входа и её оформление.
+PUBLIC_STATIC_PATHS: Final[frozenset[str]] = frozenset(
+    {"/login.html", "/js/login.js", "/license", "/favicon.ico"}
+)
+PUBLIC_STATIC_PREFIXES: Final[tuple[str, ...]] = ("/css/", "/img/")
 
 CONTENT_TYPES: Final[dict[str, str]] = {
     ".html": "text/html; charset=utf-8",
@@ -176,17 +196,21 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
-            self.send_header("Access-Control-Allow-Headers", "Content-Type")
             for name, value in (extra or {}).items():
                 self.send_header(name, value)
             self.end_headers()
             if self.command != "HEAD":
                 self.wfile.write(body)
 
-        def _send_error(self, status: int, message: str, code: str = "error") -> None:
-            self._send_json(status, {"error": message, "code": code})
+        def _send_error(
+            self,
+            status: int,
+            message: str,
+            code: str = "error",
+            *,
+            extra: dict[str, str] | None = None,
+        ) -> None:
+            self._send_json(status, {"error": message, "code": code}, extra=extra)
 
         def _read_body_bytes(self) -> bytes:
             """Читает тело один раз, чтобы не ломать keep-alive.
@@ -223,26 +247,206 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
             except (UnicodeDecodeError, json.JSONDecodeError) as exc:
                 raise ApiError(HTTPStatus.BAD_REQUEST, "Некорректный JSON") from exc
 
+        # --- аутентификация -------------------------------------------
+        def _cookie_token(self) -> str | None:
+            raw = self.headers.get("Cookie")
+            if not raw:
+                return None
+            jar = SimpleCookie()
+            try:
+                jar.load(raw)
+            except CookieError:
+                return None
+            morsel = jar.get(SESSION_COOKIE)
+            return morsel.value if morsel else None
+
+        def _bearer_token(self) -> str | None:
+            header = self.headers.get("Authorization", "")
+            if header.lower().startswith("bearer "):
+                return header[7:].strip() or None
+            return None
+
+        def _session_token(self) -> str | None:
+            return self._bearer_token() or self._cookie_token()
+
+        def _authorized(self) -> bool:
+            return self.gateway.auth.valid(self._session_token())
+
+        def _unauthorized(self) -> None:
+            # Тело POST/PUT могло остаться непрочитанным — закрываем соединение.
+            self.close_connection = True
+            self._send_error(
+                HTTPStatus.UNAUTHORIZED,
+                "Требуется вход по паролю",
+                "unauthorized",
+                extra={"WWW-Authenticate": 'Bearer realm="rud-panel"'},
+            )
+
+        def _redirect(self, location: str, *, cookie: str | None = None) -> None:
+            self.send_response(HTTPStatus.FOUND)
+            self.send_header("Location", location)
+            self.send_header("Cache-Control", "no-store")
+            if cookie is not None:
+                self.send_header("Set-Cookie", cookie)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
+        def _redirect_to_login(self, next_path: str = "") -> None:
+            target = "/login.html"
+            if next_path and next_path not in {"/", "/login.html"}:
+                target += "?next=" + urllib.parse.quote(next_path, safe="")
+            self._redirect(target)
+
+        def _session_cookie(self, token: str, *, max_age: int) -> str:
+            return f"{SESSION_COOKIE}={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={max_age}"
+
+        def _handle_auth_status(self) -> None:
+            auth = self.gateway.auth
+            token = self._session_token()
+            self._send_json(
+                HTTPStatus.OK,
+                {
+                    "required": auth.required,
+                    "authenticated": (not auth.required) or auth.valid(token),
+                },
+            )
+
+        def _handle_auth_login(self) -> None:
+            payload = self._read_json_body()
+            if not isinstance(payload, dict):
+                raise ApiError(HTTPStatus.BAD_REQUEST, "Ожидался JSON-объект")
+            password = payload.get("password")
+            if not isinstance(password, str) or not password:
+                raise ApiError(HTTPStatus.BAD_REQUEST, "Не указан пароль", "missing_password")
+
+            auth = self.gateway.auth
+            if not auth.required:
+                self._send_json(HTTPStatus.OK, {"ok": True, "required": False})
+                return
+
+            address = self.client_address[0]
+            retry_after = auth.limiter.retry_after(address)
+            if retry_after > 0:
+                seconds = max(1, int(retry_after) + 1)
+                self._send_json(
+                    HTTPStatus.TOO_MANY_REQUESTS,
+                    {
+                        "ok": False,
+                        "error": "Слишком много неверных попыток, подождите",
+                        "code": "rate_limited",
+                        "retryAfter": seconds,
+                    },
+                    extra={"Retry-After": str(seconds)},
+                )
+                return
+
+            token = auth.login(password)
+            if token is None:
+                retry_after = auth.limiter.register_failure(address)
+                logger.warning("Неудачный вход по паролю с %s", address)
+                extra = (
+                    {"Retry-After": str(max(1, int(retry_after) + 1))} if retry_after > 0 else None
+                )
+                self._send_error(
+                    HTTPStatus.UNAUTHORIZED,
+                    "Неверный пароль",
+                    "bad_password",
+                    extra=extra,
+                )
+                return
+
+            auth.limiter.reset(address)
+            logger.info("Вход по паролю с %s", address)
+            self._send_json(
+                HTTPStatus.OK,
+                {
+                    "ok": True,
+                    "required": True,
+                    "token": token,
+                    "expiresIn": int(auth.session_ttl),
+                },
+                extra={"Set-Cookie": self._session_cookie(token, max_age=int(auth.session_ttl))},
+            )
+
+        def _handle_auth_logout(self) -> None:
+            auth = self.gateway.auth
+            auth.sessions.revoke(self._session_token())
+            self._send_json(
+                HTTPStatus.OK,
+                {"ok": True},
+                extra={"Set-Cookie": self._session_cookie("", max_age=0)},
+            )
+
+        def _primary_url(self) -> str | None:
+            return self._connect_payload().get("primaryUrl")
+
+        def _handle_pair(self) -> None:
+            auth = self.gateway.auth
+            base = self._primary_url() or f"http://127.0.0.1:{self.gateway.settings.port}/"
+            if not auth.required:
+                self._send_json(HTTPStatus.OK, {"url": base, "expiresIn": 0, "required": False})
+                return
+            token = auth.issue_pairing()
+            self._send_json(
+                HTTPStatus.OK,
+                {
+                    "url": f"{base}?pair={token}",
+                    "token": token,
+                    "expiresIn": int(PAIRING_TTL),
+                    "required": True,
+                },
+            )
+
+        def _handle_pair_entry(self, token: str) -> None:
+            if not self.gateway.auth.required:
+                self._redirect("/")
+                return
+            session = self.gateway.auth.sessions.consume_pairing(token)
+            if session is None:
+                self._redirect("/login.html?error=pair")
+                return
+            self._redirect(
+                "/",
+                cookie=self._session_cookie(session, max_age=int(self.gateway.auth.session_ttl)),
+            )
+
         # --- HTTP-методы ----------------------------------------------
         def do_OPTIONS(self) -> None:
+            # CORS намеренно не включён: API — same-origin, а открытый
+            # Access-Control-Allow-Origin позволял бы сторонним страницам
+            # перебирать пароль через браузер пользователя.
             self.send_response(HTTPStatus.NO_CONTENT)
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
-            self.send_header("Access-Control-Allow-Headers", "Content-Type")
             self.send_header("Content-Length", "0")
             self.end_headers()
 
         def do_GET(self) -> None:
-            path = urllib.parse.urlsplit(self.path).path
+            parsed = urllib.parse.urlsplit(self.path)
+            path = parsed.path
             try:
                 if path == "/ws":
+                    token = self._session_token()
+                    if token is None:
+                        token = (urllib.parse.parse_qs(parsed.query).get("token") or [None])[0]
+                    if not self.gateway.auth.valid(token):
+                        self._unauthorized()
+                        return
                     self._handle_websocket()
+                    return
+                if path == "/" and "pair" in urllib.parse.parse_qs(parsed.query):
+                    values = urllib.parse.parse_qs(parsed.query).get("pair") or [""]
+                    self._handle_pair_entry(values[0])
                     return
                 if path == "/license":
                     self._serve_license()
                     return
                 if path.startswith("/api/"):
+                    if path not in PUBLIC_API_PATHS and not self._authorized():
+                        self._unauthorized()
+                        return
                     self._handle_api_get(path)
+                    return
+                if not self._authorized() and not self._is_public_static(path):
+                    self._redirect_to_login(path)
                     return
                 self._serve_static(path)
             except ApiError as exc:
@@ -259,10 +463,16 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
                     "method_not_allowed",
                 )
                 return
+            if not self._authorized() and not self._is_public_static(path):
+                self._redirect_to_login(path)
+                return
             self._serve_static(path, head_only=True)
 
         def do_PUT(self) -> None:
             path = urllib.parse.urlsplit(self.path).path
+            if path not in PUBLIC_API_PATHS and not self._authorized():
+                self._unauthorized()
+                return
             try:
                 # Тело вычитываем всегда: иначе лишние байты «превратятся»
                 # в следующую строку запроса на keep-alive соединении.
@@ -273,6 +483,9 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
 
         def do_POST(self) -> None:
             path = urllib.parse.urlsplit(self.path).path
+            if path not in PUBLIC_API_PATHS and not self._authorized():
+                self._unauthorized()
+                return
             try:
                 self._raw_body = self._read_body_bytes()
                 self._handle_api_post(path)
@@ -280,6 +493,9 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
                 self._send_error(exc.status, exc.message, exc.code)
 
         # --- статика ---------------------------------------------------
+        def _is_public_static(self, path: str) -> bool:
+            return path in PUBLIC_STATIC_PATHS or path.startswith(PUBLIC_STATIC_PREFIXES)
+
         def _serve_static(self, path: str, *, head_only: bool = False) -> None:
             web_root = self.gateway.settings.web_dir.resolve()
             try:
@@ -349,7 +565,13 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
             store: ProfileStore = self.gateway.profiles
 
             if parts == ["api", "health"]:
-                self._send_json(HTTPStatus.OK, hub.health())
+                self._send_json(
+                    HTTPStatus.OK,
+                    {**hub.health(), "authRequired": self.gateway.auth.required},
+                )
+                return
+            if parts == ["api", "auth", "status"]:
+                self._handle_auth_status()
                 return
             if parts == ["api", "connect"]:
                 self._send_json(HTTPStatus.OK, self._connect_payload())
@@ -574,6 +796,16 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
             hub: Hub = self.gateway.hub
             sim: SimProvider = self.gateway.sim
 
+            if parts == ["api", "auth", "login"]:
+                self._handle_auth_login()
+                return
+            if parts == ["api", "auth", "logout"]:
+                self._handle_auth_logout()
+                return
+            if parts == ["api", "pair"]:
+                self._handle_pair()
+                return
+
             if parts == ["api", "android", "build"]:
                 try:
                     load_settings()
@@ -660,6 +892,15 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
                     "Ожидался WebSocket handshake (Upgrade: websocket, версия 13)",
                     "bad_handshake",
                 )
+                return
+
+            # Браузер присылает куку, нативные клиенты — Bearer или ?token=.
+            token = self._session_token()
+            if token is None:
+                query = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query)
+                token = (query.get("token") or [None])[0]
+            if not self.gateway.auth.valid(token):
+                self._unauthorized()
                 return
 
             # Ответ 101 пишем напрямую: BaseHTTPRequestHandler добавил бы

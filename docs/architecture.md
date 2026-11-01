@@ -102,6 +102,8 @@ Variable("power.batteryMaster", "bool", "Master battery",
 - `ThreadingHTTPServer` раздаёт статику `web/`, REST API и делает WebSocket
   upgrade на одном порту — одно правило брандмауэра;
 - `websocket.py` — минимальный RFC 6455 (текст, ping/pong, close) на stdlib;
+- `auth.py` — необязательный вход по паролю: PBKDF2-хеш, сессии в памяти,
+  cookie `HttpOnly`, Bearer-токены, одноразовые QR-токены, лимит попыток;
 - заголовки безопасности: CSP `default-src 'self'`, `X-Content-Type-Options`,
   `Referrer-Policy`; статика без кэша (живая разработка);
 - `/api/connect` + `qr.py` — быстрое подключение телефона: хост перечисляет

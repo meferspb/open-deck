@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex" />
+    <title>Вход — RUD Panel Gateway</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/css/tokens.css" />
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/donation.css" />
+    <link rel="stylesheet" href="/css/login.css" />
+  </head>
+  <body class="login-page">
+    <main class="login-card">
+      <div class="login-brand">
+        <span class="login-brand__mark" aria-hidden="true">✈</span>
+        <div>
+          <div class="login-brand__name">RUD Panel Gateway</div>
+          <div class="login-brand__version" id="login-version">локальный шлюз</div>
+        </div>
+      </div>
+
+      <h1 class="login-title" id="login-title">Вход в панель</h1>
+      <p class="login-note" id="login-note">
+        Введите пароль, который задан на компьютере с симулятором.
+      </p>
+
+      <form class="login-form" id="login-form" novalidate>
+        <label class="login-label" for="login-password">Пароль</label>
+        <div class="login-field">
+          <input
+            class="login-input"
+            id="login-password"
+            name="password"
+            type="password"
+            minlength="6"
+            maxlength="256"
+            required
+            autocomplete="current-password"
+            autocapitalize="off"
+            spellcheck="false"
+          />
+          <button class="login-reveal" type="button" id="login-reveal" aria-pressed="false">
+            показать
+          </button>
+        </div>
+        <p class="login-hint">Не короче 6 символов. Пароль задаётся флагом
+          <code>--set-password</code> при запуске шлюза.</p>
+        <button class="login-submit" type="submit" id="login-submit">Войти</button>
+      </form>
+
+      <p class="login-error" id="login-error" role="alert" hidden></p>
+
+      <div class="login-actions" id="login-actions" hidden>
+        <a class="login-action" id="login-continue" href="/">Открыть панель</a>
+        <button class="login-action login-action--ghost" type="button" id="login-logout">
+          Выйти
+        </button>
+      </div>
+
+      <footer class="login-donation" id="login-donation">
+        <div class="login-donation__title">Поддержать автора проекта</div>
+        <div class="login-donation__body" id="login-donation-body">загружаем реквизиты…</div>
+      </footer>
+    </main>
+
+    <script type="module" src="/js/login.js"></script>
+  </body>
+</html>

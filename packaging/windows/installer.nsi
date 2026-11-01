@@ -92,6 +92,7 @@ Section "Приложение" SecMain
   CreateShortcut "$DESKTOP\${PRODUCT_NAME}.lnk" "$INSTDIR\${PRODUCT_EXE}" "" "$INSTDIR\${PRODUCT_EXE}" 0
   CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
   CreateShortcut "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk" "$INSTDIR\${PRODUCT_EXE}"
+  CreateShortcut "$SMPROGRAMS\${PRODUCT_NAME}\Задать пароль.lnk" "$INSTDIR\${PRODUCT_EXE}" "--set-password" "$INSTDIR\${PRODUCT_EXE}" 0
   WriteINIStr "$SMPROGRAMS\${PRODUCT_NAME}\Панель в браузере.url" "InternetShortcut" "URL" "http://127.0.0.1:8760/"
   WriteINIStr "$SMPROGRAMS\${PRODUCT_NAME}\Собрать Android APK.url" "InternetShortcut" "URL" "http://127.0.0.1:8760/android.html"
   CreateShortcut "$SMPROGRAMS\${PRODUCT_NAME}\Удалить ${PRODUCT_NAME}.lnk" "$INSTDIR\Uninstall.exe"
@@ -121,6 +122,7 @@ Section "Uninstall"
 
   Delete "$DESKTOP\${PRODUCT_NAME}.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk"
+  Delete "$SMPROGRAMS\${PRODUCT_NAME}\Задать пароль.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Панель в браузере.url"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Собрать Android APK.url"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Удалить ${PRODUCT_NAME}.lnk"

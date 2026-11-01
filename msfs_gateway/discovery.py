@@ -82,12 +82,14 @@ class DiscoveryBeacon:
         http_port: int = 8760,
         telemetry_hz: float = 30.0,
         profiles_provider: Any = None,
+        auth_required: bool = False,
     ) -> None:
         self.port = port
         self.interval = interval
         self.http_port = http_port
         self.telemetry_hz = telemetry_hz
         self._profiles_provider = profiles_provider  # callable -> list[dict]
+        self._auth_required = auth_required
         self._hostname = socket.gethostname()
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
@@ -104,7 +106,7 @@ class DiscoveryBeacon:
 
     def payload(self) -> dict[str, Any]:
         """Тело бикона. Вынесено отдельно для тестов."""
-        return {
+        payload = {
             "type": BEACON_TYPE,
             "protocol": PROTOCOL_VERSION,
             "name": self._hostname,
@@ -114,6 +116,9 @@ class DiscoveryBeacon:
             "profiles": self._profile_ids(),
             "ts": int(time.time()),
         }
+        if self._auth_required:
+            payload["auth"] = True
+        return payload
 
     def _broadcast_once(self) -> None:
         data = json.dumps(self.payload(), ensure_ascii=False, separators=(",", ":")).encode("utf-8")

@@ -17,6 +17,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
+import android.webkit.CookieManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
@@ -96,6 +97,9 @@ class MainActivity : Activity() {
 
     override fun onPause() {
         webView?.onPause()
+        // Сессия входа живёт в cookie WebView: сохраняем её на диск, чтобы
+        // после перезапуска приложения не вводить пароль заново.
+        CookieManager.getInstance().flush()
         super.onPause()
     }
 
@@ -209,7 +213,9 @@ class MainActivity : Activity() {
     private fun renderHosts(hosts: List<HostInfo>) {
         val container = setupView?.findViewById<LinearLayout>(R.id.hostList) ?: return
 
-        val signature = hosts.joinToString("|") { "${it.key}:${it.name}:${it.profileCount}" }
+        val signature = hosts.joinToString("|") {
+            "${it.key}:${it.name}:${it.profileCount}:${it.authRequired}"
+        }
         if (signature == hostsSignature) return
         hostsSignature = signature
 
@@ -231,7 +237,7 @@ class MainActivity : Activity() {
             val card = TextView(this).apply {
                 text = getString(
                     R.string.setup_host_card,
-                    host.name,
+                    if (host.authRequired) "🔒 ${host.name}" else host.name,
                     "${host.address}:${host.port}",
                     host.version,
                     host.profileCount,
@@ -389,6 +395,7 @@ class MainActivity : Activity() {
             displayZoomControls = false
             allowFileAccess = false
             allowContentAccess = false
+            CookieManager.getInstance().setAcceptCookie(true)
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
         }
 

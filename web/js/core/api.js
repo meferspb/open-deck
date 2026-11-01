@@ -4,6 +4,16 @@
 
 const REQUEST_TIMEOUT_MS = 6000;
 
+/** Страница входа; на ней сама себя не перезагружаем. */
+const LOGIN_PAGE = '/login.html';
+
+/** Уводит на вход, сохраняя текущий путь для возврата. */
+export function redirectToLogin() {
+  if (window.location.pathname.endsWith(LOGIN_PAGE)) return;
+  const next = window.location.pathname + window.location.search;
+  window.location.replace(`${LOGIN_PAGE}?next=${encodeURIComponent(next)}`);
+}
+
 export class ApiError extends Error {
   /**
    * @param {string} message
@@ -32,7 +42,11 @@ async function request(path, { method = 'GET', body } = {}) {
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: controller.signal,
       cache: 'no-store',
+      credentials: 'same-origin',
     });
+
+    // Сессия могла истечь или пароль включили на ходу — возвращаем на вход.
+    if (response.status === 401) redirectToLogin();
 
     const text = await response.text();
     let data = null;
@@ -63,6 +77,10 @@ async function request(path, { method = 'GET', body } = {}) {
 }
 
 export const api = {
+  authStatus: () => request('/api/auth/status'),
+  login: (password) => request('/api/auth/login', { method: 'POST', body: { password } }),
+  logout: () => request('/api/auth/logout', { method: 'POST', body: {} }),
+  pair: () => request('/api/pair', { method: 'POST', body: {} }),
   health: () => request('/api/health'),
   integrity: () => request('/api/integrity'),
   donation: () => request('/api/donation'),

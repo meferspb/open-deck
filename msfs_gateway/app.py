@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import logging
+import os
 import socket
 import sys
 import threading
@@ -12,6 +13,7 @@ from typing import Any
 
 from . import APP_NAME, __version__
 from .android_build import BuildManager
+from .auth import AuthError, AuthService, load_record, save_record, validate_password
 from .discovery import DiscoveryBeacon
 from .http_api import GatewayHTTPServer, create_server
 from .hub import Hub
@@ -58,6 +60,7 @@ class GatewayApplication:
         self.integrity_report = None
         self.wasm_bridge = None
         self.android = BuildManager()
+        self.auth = _build_auth(settings)
         self.discovery: DiscoveryBeacon | None = None
         if settings.discovery:
             self.discovery = DiscoveryBeacon(
@@ -66,6 +69,7 @@ class GatewayApplication:
                 http_port=settings.port,
                 telemetry_hz=settings.telemetry_hz,
                 profiles_provider=self.profiles.list_summaries,
+                auth_required=self.auth.required,
             )
 
     # ------------------------------------------------------------------
@@ -156,6 +160,12 @@ class GatewayApplication:
         wasm_state = "подключён" if self.wasm_bridge else "недоступен"
         discovery_state = f"UDP {self.settings.discovery_port}" if self.discovery else "выключено"
         integrity_state = "подтверждена" if self.integrity_report else "не проверялась"
+        if self.auth.required:
+            auth_state = "включён (вход по паролю)"
+        elif self.settings.no_auth:
+            auth_state = "выключен (--no-auth)"
+        else:
+            auth_state = "выключен"
         return (
             f"\n{APP_NAME} v{__version__}\n"
             f"  Провайдер телеметрии : {provider} ({connection})\n"
@@ -163,10 +173,59 @@ class GatewayApplication:
             f"  Телеметрия           : {self.settings.telemetry_hz:g} Гц по WebSocket /ws\n"
             f"  WASM-мост (LVAR/RPN) : {wasm_state}\n"
             f"  Автообнаружение      : {discovery_state}\n"
+            f"  Вход по паролю       : {auth_state}\n"
             f"  Целостность          : {integrity_state}\n"
             f"  Панель в браузере    :\n{urls}\n"
             f"  Остановка            : Ctrl+C\n"
         )
+
+
+def _build_auth(settings: Settings) -> AuthService:
+    """Собирает AuthService: --no-auth важнее файла, --password важнее файла."""
+    if settings.no_auth:
+        return AuthService()
+    if settings.password is not None:
+        from .auth import hash_password
+
+        return AuthService(record=hash_password(settings.password))
+    env_password = os.environ.get("RUD_PASSWORD")
+    if env_password:
+        error = validate_password(env_password)
+        if error:
+            raise SystemExit(f"RUD_PASSWORD: {error}")
+        from .auth import hash_password
+
+        return AuthService(record=hash_password(env_password))
+    try:
+        record = load_record(settings.auth_path)
+    except AuthError as exc:
+        raise SystemExit(f"Ошибка файла пароля: {exc}") from exc
+    return AuthService(record=record)
+
+
+def _prompt_new_password() -> str | None:
+    """Спрашивает пароль в консоли (для ярлыка «Задать пароль»)."""
+    import getpass
+
+    while True:
+        try:
+            first = getpass.getpass("Новый пароль (не короче 6 символов): ")
+        except (EOFError, KeyboardInterrupt):
+            print("Отменено.", file=sys.stderr)
+            return None
+        error = validate_password(first)
+        if error:
+            print(error, file=sys.stderr)
+            continue
+        try:
+            second = getpass.getpass("Повторите пароль: ")
+        except (EOFError, KeyboardInterrupt):
+            print("Отменено.", file=sys.stderr)
+            return None
+        if first != second:
+            print("Пароли не совпадают, попробуйте ещё раз.", file=sys.stderr)
+            continue
+        return first
 
 
 def _configure_console() -> None:
@@ -181,6 +240,21 @@ def _configure_console() -> None:
 def main(argv: list[str] | None = None) -> int:
     _configure_console()
     settings = parse_args(argv)
+
+    if settings.set_password is not None:
+        password = settings.set_password
+        if not password:
+            password = _prompt_new_password()
+            if password is None:
+                return 1
+        try:
+            save_record(settings.auth_path, password)
+        except AuthError as exc:
+            print(f"Не удалось сохранить пароль: {exc}", file=sys.stderr)
+            return 1
+        print(f"Пароль сохранён: {settings.auth_path}")
+        print("Запустите шлюз без --password: вход будет по этому паролю.")
+        return 0
 
     if settings.build_apk is not None:
         # Режим сборки APK: сервер не поднимаем, только собираем и выходим.

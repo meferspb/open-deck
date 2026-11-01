@@ -28,7 +28,7 @@ pwsh -File scripts/check.ps1
 Скрипт запускает:
 
 - `ruff check` и `ruff format --check` для Python;
-- `python -m unittest discover -s tests` (191 тест);
+- `python -m unittest discover -s tests` (194 теста);
 - `node --test "tests/web/*.test.mjs"` (29 тестов), если установлен Node.js.
 
 Установить инструменты линтера: `python -m pip install ruff`.

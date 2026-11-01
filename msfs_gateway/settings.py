@@ -45,6 +45,9 @@ class Settings:
     donation_path: Path = DEFAULT_DONATION_PATH
     sim: str = "auto"
     simconnect_dll: Path | None = None
+    #: TCP-адрес SimConnect (MSFS 2020/2024 по умолчанию слушает 19999).
+    simconnect_host: str = "127.0.0.1"
+    simconnect_port: int = 19999
     telemetry_hz: float = DEFAULT_TELEMETRY_HZ
     log_level: str = DEFAULT_LOG_LEVEL
     discovery: bool = DEFAULT_DISCOVERY
@@ -86,6 +89,17 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=None,
         help="Путь к SimConnect.dll, если он не находится автоматически.",
+    )
+    parser.add_argument(
+        "--simconnect-host",
+        default="127.0.0.1",
+        help="Адрес SimConnect (для удалённого симулятора; по умолчанию localhost).",
+    )
+    parser.add_argument(
+        "--simconnect-port",
+        type=int,
+        default=19999,
+        help="TCP-порт SimConnect (MSFS 2020/2024 по умолчанию 19999).",
     )
     parser.add_argument(
         "--web-dir",
@@ -183,6 +197,8 @@ def parse_args(argv: list[str] | None = None) -> Settings:
         raise SystemExit(f"Некорректный порт: {args.port}")
     if not 1.0 <= args.telemetry_hz <= 60.0:
         raise SystemExit(f"Некорректная частота телеметрии: {args.telemetry_hz}")
+    if not 1 <= args.simconnect_port <= 65535:
+        raise SystemExit(f"Некорректный порт SimConnect: {args.simconnect_port}")
     if not 1 <= args.discovery_port <= 65535:
         raise SystemExit(f"Некорректный порт автообнаружения: {args.discovery_port}")
     if not 0.5 <= args.discovery_interval <= 60.0:
@@ -210,6 +226,8 @@ def parse_args(argv: list[str] | None = None) -> Settings:
         donation_path=args.donation_config.resolve(),
         sim=args.sim,
         simconnect_dll=args.simconnect_dll,
+        simconnect_host=args.simconnect_host,
+        simconnect_port=args.simconnect_port,
         telemetry_hz=args.telemetry_hz,
         log_level=args.log_level,
         discovery=not args.no_discovery,

@@ -102,6 +102,9 @@ Variable("power.batteryMaster", "bool", "Master battery",
 - `ThreadingHTTPServer` раздаёт статику `web/`, REST API и делает WebSocket
   upgrade на одном порту — одно правило брандмауэра;
 - `websocket.py` — минимальный RFC 6455 (текст, ping/pong, close) на stdlib;
+- `simconnect.py` — если пользовательский `SimConnect.cfg` не работает,
+  подключение повторяется по TCP `127.0.0.1:19999` (порт MSFS 2020/2024)
+  через временный конфиг;
 - `auth.py` — необязательный вход по паролю: PBKDF2-хеш, сессии в памяти,
   cookie `HttpOnly`, Bearer-токены, одноразовые QR-токены, лимит попыток;
 - заголовки безопасности: CSP `default-src 'self'`, `X-Content-Type-Options`,

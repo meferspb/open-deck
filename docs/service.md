@@ -132,7 +132,7 @@ JSON-профилями самолётов и редактируются пря�
 
 | Провайдер | Когда используется | Особенности |
 | --- | --- | --- |
-| `simconnect` | реальный полёт | `ctypes` + `SimConnect.dll`; строковые датумы `TITLE`, `ATC MODEL`; Client Data Area для LVAR/RPN |
+| `simconnect` | реальный полёт | `ctypes` + `SimConnect.dll`; строковые датумы `TITLE`, `ATC MODEL`; Client Data Area для LVAR/RPN. Если стандартный `SimConnect.cfg` не работает, шлюз сам пробует TCP `127.0.0.1:19999` (порт MSFS 2020/2024) через временный конфиг |
 | `mock` | демо, разработка, тесты | Процедурная модель полёта, стартовые значения LVAR из профиля |
 | `auto` | по умолчанию | Пытается подключить SimConnect, при неудаче переходит на mock |
 
@@ -368,6 +368,8 @@ python -m msfs_gateway --password "secret123"
 | `--sim` | `auto` | `auto`, `mock`, `simconnect` |
 | `--telemetry-hz` | `30` | частота кадров, 1..60 |
 | `--simconnect-dll` | автопоиск | путь к `SimConnect.dll` |
+| `--simconnect-host` | `127.0.0.1` | адрес SimConnect (удалённый симулятор) |
+| `--simconnect-port` | `19999` | TCP-порт SimConnect |
 | `--profile-dir` | `profiles/` | каталог профилей |
 | `--password` | — | пароль на этот запуск |
 | `--set-password [PWD]` | — | сохранить хеш и выйти |
@@ -391,10 +393,11 @@ python -m msfs_gateway --password "secret123"
 | Панель не открывается с телефона | один Wi-Fi, адрес из баннера, брандмауэр Windows (порт 8760), `--host 0.0.0.0` |
 | «Требуется вход по паролю» | пароль задан; введите его на `/login.html`; QR-токен живёт 10 минут |
 | «Неверный пароль» | раскладка/регистр; сбросить: удалить `config/auth.json` или `--no-auth` |
-| Приборы показывают «--» | нет SimConnect/WASM, выбран mock, самолёт без профиля |
+| Приборы показывают «--» | нет SimConnect/WASM, выбран mock, самолёт без профиля, симулятор ещё в главном меню |
 | Профиль не переключается | `sim.match` не совпадает с названием/моделью; выберите вручную |
 | Сборка APK не стартует | JDK/SDK/Gradle не найдены; укажите пути на `/android.html` |
 | «Целостность нарушена» | изменены критичные файлы; `python -m msfs_gateway.integrity --write` |
+| `SimConnect_Open … 0x80004005` | шлюз сам пробует TCP `127.0.0.1:19999`; если не помогло — проверьте `%APPDATA%\Microsoft Flight Simulator\SimConnect.cfg` (он перекрывает настройки) и что полёт загружен; для удалённого симулятора задайте `--simconnect-host/--simconnect-port` |
 
 Логи: консоль шлюза (уровень `--log-level DEBUG`), вкладка «Сеть» браузера,
 `adb logcat` для Android (тег `RudDiscovery`).

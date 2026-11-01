@@ -14,7 +14,7 @@ Android-приложению по HTTP + WebSocket. Панели описыва�
 | | |
 | --- | --- |
 | Версия | 0.1.0 |
-| Тесты | 191 Python + 29 Node.js |
+| Тесты | 194 Python + 29 Node.js |
 | Платформа хоста | Windows 10/11 (Python 3.11+ или установщик) |
 | Клиенты | браузер (любой современный), Android 8+ |
 | Лицензия | [CC-BY-NC-ND-MODIFIED](LICENSE) — бесплатно, с обязательным блоком поддержки автора |
@@ -157,6 +157,7 @@ python -m msfs_gateway --sim simconnect --simconnect-dll C:\SDK\SimConnect.dll -
 | `--port` | `8760` | порт HTTP и WebSocket |
 | `--sim` | `auto` | `auto` / `mock` / `simconnect` |
 | `--telemetry-hz` | `30` | частота рассылки, 1..60 Гц |
+| `--simconnect-host` / `--simconnect-port` | `127.0.0.1` / `19999` | адрес SimConnect (в т.ч. удалённый симулятор) |
 | `--profile-dir` | `profiles/` | каталог JSON-профилей |
 | `--no-wasm` | — | отключить WASM-мост |
 | `--no-discovery` | — | отключить UDP-автообнаружение |
@@ -211,7 +212,7 @@ integrity/               # SHA-256 манифест критичных файл�
 ## Тесты
 
 ```powershell
-python -m unittest discover -s tests        # 191 тест
+python -m unittest discover -s tests        # 194 теста
 node --test "tests/web/*.test.mjs"          # 29 тестов
 python -m ruff check msfs_gateway tests scripts
 ```

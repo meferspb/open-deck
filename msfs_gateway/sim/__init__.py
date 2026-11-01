@@ -26,7 +26,11 @@ def create_sim(settings: Settings, store: ProfileStore) -> SimProvider:
     if settings.sim == "simconnect":
         from .simconnect import SimConnectSim  # импорт только по требованию
 
-        provider: SimProvider = SimConnectSim(settings.simconnect_dll)
+        provider: SimProvider = SimConnectSim(
+            settings.simconnect_dll,
+            host=settings.simconnect_host,
+            port=settings.simconnect_port,
+        )
         return provider
 
     try:
@@ -36,7 +40,11 @@ def create_sim(settings: Settings, store: ProfileStore) -> SimProvider:
         return MockSim(store)
 
     try:
-        return SimConnectSim(settings.simconnect_dll)
+        return SimConnectSim(
+            settings.simconnect_dll,
+            host=settings.simconnect_host,
+            port=settings.simconnect_port,
+        )
     except (SimConnectError, OSError) as exc:
         logger.warning("SimConnect недоступен (%s) — запускаю mock-провайдер", exc)
         return MockSim(store)

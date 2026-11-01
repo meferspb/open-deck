@@ -1,16 +1,17 @@
 """Провайдер телеметрии MSFS через SimConnect (Windows, ctypes).
 
-Экспериментальный модуль первой итерации: он не требует MSFS SDK при
-импорте и не мешает запуску шлюза без симулятора. Проверялся на уровне
-структуры вызовов (сигнатуры SimConnect.h), но не в живом полёте — для
-production-сборки этот слой стоит заменить на C#/C++ хост, который держит
-SimConnect нативно (см. docs/architecture.md).
+SimConnect не требует SDK при импорте: DLL загружается по требованию,
+поэтому шлюз запускается и без симулятора (режим mock).
 
 Что умеет:
-  * открывает соединение с симулятором;
-  * подписывается на один блок данных (12 датумов) и кэширует значения;
-  * отправляет две команды-события (master battery, avionics master);
-  * переподключается, если симулятор закрылся.
+  * открывает соединение с MSFS 2020/2024 и переподключается после
+    перезапуска симулятора;
+  * подписывается на все числовые SimVar из `telemetry.VARIABLES`, а также
+    на строковые TITLE и ATC MODEL для автоопределения борта;
+  * отправляет команды событиями SimConnect, а LVAR/RPN — через WASM-мост
+    (Client Data Area);
+  * если стандартный конфиг SimConnect не работает, пробует TCP
+    `127.0.0.1:19999` через временный SimConnect.cfg (см. `_connect`).
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ import glob
 import logging
 import os
 import queue
+import tempfile
 import threading
 import time
 from collections.abc import Callable
@@ -196,10 +198,18 @@ class SimConnectSim(SimProvider):
 
     name = "simconnect"
 
-    def __init__(self, dll_path: Path | None = None) -> None:
+    def __init__(
+        self,
+        dll_path: Path | None = None,
+        *,
+        host: str = "127.0.0.1",
+        port: int = 19999,
+    ) -> None:
         if DispatchProc is None:
             raise SimConnectError("SimConnect поддерживается только на Windows")
         self._dll_path = dll_path
+        self._host = host
+        self._port = port
         self._dll: Any = None
         self._handle: Any = None
         self._lock = threading.RLock()
@@ -340,6 +350,61 @@ class SimConnectSim(SimProvider):
         self._dll = _load_simconnect_dll(self._dll_path)
         self._bind()
 
+        try:
+            self._open()
+            return
+        except SimConnectError as first_error:
+            # Стандартный конфиг SimConnect (SimConnect.cfg в профиле или
+            # рядом с exe) может указывать на несуществующий канал. MSFS
+            # 2020/2024 по умолчанию слушает TCP 19999 — пробуем его через
+            # временный cfg, не трогая файлы пользователя.
+            logger.warning(
+                "SimConnect не открылся (%s); пробую TCP %s:%d",
+                first_error,
+                self._host,
+                self._port,
+            )
+            try:
+                if self._open_via_generated_config():
+                    return
+            except SimConnectError as second_error:
+                raise SimConnectError(
+                    f"{first_error}; TCP {self._host}:{self._port}: {second_error}"
+                ) from second_error
+            raise SimConnectError(
+                f"{first_error}; TCP {self._host}:{self._port} тоже недоступен"
+            ) from first_error
+
+    def _open_via_generated_config(self) -> bool:
+        """Открывает соединение по TCP, подсунув SimConnect временный cfg.
+
+        Клиент SimConnect ищет `SimConnect.cfg` в текущем каталоге, поэтому
+        на время вызова переходим во временную папку и возвращаемся обратно.
+        """
+        config = (
+            "[SimConnect]\n"
+            "Protocol=IPv4\n"
+            f"Address={self._host}\n"
+            f"Port={self._port}\n"
+            "MaxClients=64\n"
+            "MaxRecvData=8192\n"
+            "MaxSendData=8192\n"
+        )
+        with tempfile.TemporaryDirectory(prefix="rud-simconnect-") as tmp:
+            Path(tmp, "SimConnect.cfg").write_text(config, encoding="ascii")
+            previous = os.getcwd()
+            try:
+                os.chdir(tmp)
+                self._open()
+                logger.info("SimConnect подключён через TCP %s:%d", self._host, self._port)
+                return True
+            except SimConnectError as exc:
+                logger.debug("TCP %s:%d не помог: %s", self._host, self._port, exc)
+                return False
+            finally:
+                os.chdir(previous)
+
+    def _open(self) -> None:
         handle = ctypes.c_void_p()
         result = self._dll.SimConnect_Open(
             ctypes.byref(handle), b"RUD Panel Gateway", None, 0, None, 0

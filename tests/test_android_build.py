@@ -1,6 +1,8 @@
 """Тесты сборщика Android APK: настройки, поиск инструментов, запуск сборки."""
 
 import json
+import os
+import sys
 import tempfile
 import threading
 import unittest
@@ -239,6 +241,18 @@ class BuildManagerTest(unittest.TestCase):
             release.set()
             manager.wait(5.0)
             self.assertEqual(manager.status()["state"], "success")
+
+
+class RunnerTimeoutTest(unittest.TestCase):
+    def test_hung_process_is_killed_by_watchdog(self):
+        with tempfile.TemporaryDirectory() as tmp, self.assertRaises(ab.AndroidBuildError) as ctx:
+            ab._default_runner(
+                [sys.executable, "-c", "import time; time.sleep(30)"],
+                cwd=Path(tmp),
+                env=dict(os.environ),
+                timeout=0.4,
+            )
+        self.assertIn("таймаут", str(ctx.exception))
 
 
 if __name__ == "__main__":

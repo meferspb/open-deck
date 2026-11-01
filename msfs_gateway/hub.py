@@ -241,9 +241,7 @@ class Hub:
             try:
                 message = self.build_message()
                 self._last_message = message
-                self._broadcast_bytes(
-                    json.dumps(message, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-                )
+                self._broadcast_text(json.dumps(message, ensure_ascii=False, separators=(",", ":")))
             except Exception:
                 self.logger.exception("Ошибка цикла телеметрии")
 
@@ -254,22 +252,19 @@ class Hub:
             else:
                 deadline = time.perf_counter()
 
-    def _broadcast_bytes(self, payload: bytes) -> None:
+    def _broadcast_text(self, text: str) -> None:
         with self._lock:
             clients = list(self._clients.values())
-        if not clients:
-            return
-        text = payload.decode("utf-8")
         for client in clients:
             try:
-                client.connection.send_text(text)
-            except WebSocketError:
+                # send_telemetry не блокирует шину: у каждого клиента своя
+                # очередь и поток-отправитель.
+                client.connection.send_telemetry(text)
+            except (WebSocketError, OSError):
                 self.detach(client.connection)
 
     def broadcast(self, message: dict[str, Any]) -> None:
-        self._broadcast_bytes(
-            json.dumps(message, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-        )
+        self._broadcast_text(json.dumps(message, ensure_ascii=False, separators=(",", ":")))
 
     # ------------------------------------------------------------------
     # Состояние

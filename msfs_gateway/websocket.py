@@ -11,6 +11,7 @@ import base64
 import contextlib
 import hashlib
 import logging
+import queue
 import socket
 import struct
 import threading
@@ -30,6 +31,8 @@ OP_PONG: Final = 0xA
 
 #: Защита от «злого» клиента, который пришлёт гигантский фрейм.
 MAX_MESSAGE_BYTES: Final = 256 * 1024
+#: Сколько кадров телеметрии держим в очереди на медленного клиента.
+OUTBOX_FRAMES: Final = 8
 
 
 class WebSocketError(Exception):
@@ -56,8 +59,9 @@ def handshake_headers(client_key: str) -> bytes:
 class WebSocketConnection:
     """Одно клиентское соединение.
 
-    Чтение выполняет поток HTTP-обработчика, запись — он же и поток рассылки
-    телеметрии, поэтому отправка защищена блокировкой.
+    Чтение выполняет поток HTTP-обработчика. Телеметрию пишет отдельный
+    поток-отправитель с ограниченной очередью: медленный клиент не должен
+    останавливать рассылку остальным.
     """
 
     def __init__(
@@ -77,6 +81,9 @@ class WebSocketConnection:
         self._send_lock = threading.Lock()
         self._closed = False
         self.last_seen = 0.0
+        self._outbox: queue.Queue[str | None] = queue.Queue(maxsize=OUTBOX_FRAMES)
+        self._writer: threading.Thread | None = None
+        self._writer_lock = threading.Lock()
         with contextlib.suppress(OSError):  # сокет мог быть уже закрыт
             self._sock.settimeout(read_timeout)
 
@@ -143,6 +150,13 @@ class WebSocketConnection:
 
         if length > MAX_MESSAGE_BYTES:
             raise WebSocketError("фрейм слишком большой")
+        if opcode in (OP_CLOSE, OP_PING, OP_PONG):
+            # RFC 6455, 5.5: управляющие фреймы не фрагментируются и
+            # несут не больше 125 байт полезной нагрузки.
+            if not fin:
+                raise WebSocketError("управляющий фрейм не может быть фрагментирован")
+            if length > 125:
+                raise WebSocketError("управляющий фрейм слишком большой")
         if not masked:
             # Клиентские фреймы обязаны быть маскированными (RFC 6455, 5.1).
             raise WebSocketError("клиентский фрейм обязан быть маскированным")
@@ -179,7 +193,50 @@ class WebSocketConnection:
     def send_ping(self, payload: bytes = b"") -> None:
         self._send_frame(OP_PING, payload)
 
+    def send_telemetry(self, text: str) -> None:
+        """Ставит кадр телеметрии в очередь и не блокирует вызывающий поток.
+
+        Если клиент не успевает читать, старые кадры выбрасываются: пропустить
+        кадр лучше, чем остановить рассылку телеметрии всем клиентам.
+        """
+        if self._closed:
+            return
+        try:
+            self._outbox.put_nowait(text)
+        except queue.Full:
+            with contextlib.suppress(queue.Empty):
+                self._outbox.get_nowait()
+            with contextlib.suppress(queue.Full):
+                self._outbox.put_nowait(text)
+        self._ensure_writer()
+
+    def _ensure_writer(self) -> None:
+        with self._writer_lock:
+            if self._writer is not None and self._writer.is_alive():
+                return
+            self._writer = threading.Thread(
+                target=self._writer_loop,
+                name=f"ws-out-{self.peer}",
+                daemon=True,
+            )
+            self._writer.start()
+
+    def _writer_loop(self) -> None:
+        while True:
+            text = self._outbox.get()
+            if text is None:
+                return
+            try:
+                self._send_frame(OP_TEXT, text.encode("utf-8"))
+            except (WebSocketError, OSError):
+                self._closed = True
+                return
+
     def _send_frame(self, opcode: int, payload: bytes) -> None:
+        with self._send_lock:
+            self._write_frame(opcode, payload)
+
+    def _write_frame(self, opcode: int, payload: bytes) -> None:
         header = bytearray([0x80 | opcode])
         length = len(payload)
         if length < 126:
@@ -192,23 +249,40 @@ class WebSocketConnection:
             header.extend(struct.pack("!Q", length))
 
         frame = bytes(header) + payload
-        with self._send_lock:
-            if self._closed:
-                raise WebSocketError("соединение уже закрыто")
-            try:
-                self._wfile.write(frame)
-                self._wfile.flush()
-            except (OSError, ValueError) as exc:
-                self._closed = True
-                raise WebSocketError("не удалось отправить фрейм") from exc
+        if self._closed:
+            raise WebSocketError("соединение уже закрыто")
+        try:
+            self._wfile.write(frame)
+            self._wfile.flush()
+        except (OSError, ValueError) as exc:
+            self._closed = True
+            raise WebSocketError("не удалось отправить фрейм") from exc
 
     def close(self, code: int = 1000, reason: str = "") -> None:
-        """Идемпотентное закрытие: отправляет close-фрейм и гасит сокет."""
+        """Идемпотентное закрытие: отправляет close-фрейм и гасит сокет.
+
+        Если отправитель занят (клиент не читает), ждём не дольше секунды:
+        иначе остановка шлюза могла бы зависнуть на каждом «зависшем» клиенте.
+        """
         if self._closed:
             return
         payload = struct.pack("!H", code) + reason.encode("utf-8")[:120]
-        with contextlib.suppress(WebSocketError, OSError):
-            self._send_frame(OP_CLOSE, payload)
+        locked = self._send_lock.acquire(timeout=1.0)
+        try:
+            if locked and not self._closed:
+                with contextlib.suppress(WebSocketError, OSError):
+                    self._write_frame(OP_CLOSE, payload)
+        finally:
+            if locked:
+                self._send_lock.release()
         self._closed = True
+        # Будим отправителя, чтобы он завершил поток.
+        try:
+            self._outbox.put_nowait(None)
+        except queue.Full:
+            with contextlib.suppress(queue.Empty):
+                self._outbox.get_nowait()
+            with contextlib.suppress(queue.Full):
+                self._outbox.put_nowait(None)
         with contextlib.suppress(OSError):
             self._sock.shutdown(socket.SHUT_RDWR)

@@ -208,6 +208,9 @@ class AnnounceAircraftTest(unittest.TestCase):
         def send_text(self, text):
             self.messages.append(json.loads(text))
 
+        def send_telemetry(self, text):
+            self.messages.append(json.loads(text))
+
         def close(self, *args, **kwargs):
             pass
 

@@ -7,6 +7,7 @@ import java.net.DatagramSocket
 import java.net.InetSocketAddress
 import java.net.SocketTimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Найденный в локальной сети хост.
@@ -44,6 +45,8 @@ class DiscoveryClient(
 ) {
 
     private val running = AtomicBoolean(false)
+    //: Поколение приёмника: старый поток не должен гасить состояние нового.
+    private val generation = AtomicInteger(0)
     private val socketLock = Any()
     private val hostsLock = Any()
 
@@ -61,7 +64,8 @@ class DiscoveryClient(
 
     fun start() {
         if (!running.compareAndSet(false, true)) return
-        thread = Thread({ loop() }, "rud-discovery").apply {
+        val gen = generation.incrementAndGet()
+        thread = Thread({ loop(gen) }, "rud-discovery").apply {
             isDaemon = true
             start()
         }
@@ -69,6 +73,7 @@ class DiscoveryClient(
 
     fun stop() {
         running.set(false)
+        generation.incrementAndGet() // старый поток больше не «хозяин» состояния
         synchronized(socketLock) {
             try {
                 socket?.close()
@@ -81,7 +86,7 @@ class DiscoveryClient(
         synchronized(hostsLock) { hosts.clear() }
     }
 
-    private fun loop() {
+    private fun loop(gen: Int) {
         var failure: String? = null
         try {
             val sock = DatagramSocket(null).apply {
@@ -90,7 +95,7 @@ class DiscoveryClient(
                 soTimeout = RECEIVE_TIMEOUT_MS
             }
             synchronized(socketLock) {
-                if (!running.get()) {
+                if (!running.get() || gen != generation.get()) {
                     // stop() успел раньше, чем поток дошёл до bind: не течём сокетом.
                     sock.close()
                     return
@@ -99,7 +104,7 @@ class DiscoveryClient(
             }
 
             val buffer = ByteArray(MAX_PACKET_BYTES)
-            while (running.get()) {
+            while (running.get() && gen == generation.get()) {
                 val packet = DatagramPacket(buffer, buffer.size)
                 try {
                     sock.receive(packet)
@@ -120,20 +125,24 @@ class DiscoveryClient(
             failure = error.message ?: error.javaClass.simpleName
             Log.w(TAG, "UDP-приёмник остановлен", error)
         } finally {
-            running.set(false)
-            synchronized(socketLock) {
-                try {
-                    socket?.close()
-                } catch (ignored: Exception) {
-                    // уже закрыт
+            // Состояние сбрасывает только «свой» поток: иначе устаревший
+            // приёмник погасил бы только что запущенный.
+            if (gen == generation.get()) {
+                running.set(false)
+                synchronized(socketLock) {
+                    try {
+                        socket?.close()
+                    } catch (ignored: Exception) {
+                        // уже закрыт
+                    }
+                    socket = null
                 }
-                socket = null
-            }
-            thread = null
-            if (failure != null) {
-                onError(failure)
-            } else {
-                emit()
+                thread = null
+                if (failure != null) {
+                    onError(failure)
+                } else {
+                    emit()
+                }
             }
         }
     }

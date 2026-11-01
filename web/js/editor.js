@@ -900,8 +900,12 @@ function deleteSelected() {
   setSelected(null);
 }
 
+let saving = false;
+
 async function save() {
-  if (!profile) return;
+  if (!profile || saving) return;
+  saving = true;
+  const previousRevision = profile.revision;
   try {
     // id в URL должен совпадать с id профиля; порядок виджетов сохраняем.
     // Ревизия растёт при каждом сохранении — по ней видно, что файл менялся.
@@ -912,7 +916,11 @@ async function save() {
     markDirty();
     toast('Профиль сохранён на хосте');
   } catch (error) {
+    // Сохранение не удалось — откатываем ревизию, чтобы не «съедать» номера.
+    profile.revision = previousRevision;
     toast(`Ошибка сохранения: ${error.message}`, 'danger');
+  } finally {
+    saving = false;
   }
 }
 

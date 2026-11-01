@@ -12,6 +12,7 @@ Android уже входят в дистрибутив. Если инструме
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import os
@@ -90,6 +91,8 @@ class AndroidBuildSettings:
         name = (self.app_name or "").strip()
         if not 1 <= len(name) <= 48:
             errors.append("appName: 1–48 символов")
+        elif any(ord(char) < 32 or ord(char) == 127 for char in name):
+            errors.append("appName: управляющие символы недопустимы")
         if not APP_ID_RE.match(self.application_id or ""):
             errors.append("applicationId: ожидается вида com.example.panel")
         if not VERSION_RE.match(self.version_name or ""):
@@ -273,16 +276,29 @@ def _default_runner(
         bufsize=1,
     )
     lines: list[str] = []
-    deadline = time.monotonic() + timeout
+    timed_out = threading.Event()
+
+    def kill_on_timeout() -> None:
+        timed_out.set()
+        with contextlib.suppress(OSError):
+            process.kill()
+
+    # Сторож срабатывает, даже если Gradle завис и ничего не печатает:
+    # проверка «после каждой строки» этого не ловит.
+    watchdog = threading.Timer(max(1.0, timeout), kill_on_timeout)
+    watchdog.daemon = True
+    watchdog.start()
     assert process.stdout is not None
     try:
         for line in process.stdout:
             lines.append(line.rstrip("\n"))
-            if time.monotonic() > deadline:
-                process.kill()
-                raise AndroidBuildError("Сборка превысила таймаут")
     finally:
-        process.wait(timeout=30)
+        watchdog.cancel()
+        with contextlib.suppress(subprocess.TimeoutExpired):
+            process.wait(timeout=30)
+
+    if timed_out.is_set():
+        raise AndroidBuildError(f"Сборка превысила таймаут ({timeout:g} с)")
     return process.returncode, lines
 
 

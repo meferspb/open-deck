@@ -7,6 +7,20 @@ const RECONNECT_BASE_MS = 500;
 const RECONNECT_MAX_MS = 8000;
 const COMMAND_TIMEOUT_MS = 4000;
 const PING_INTERVAL_MS = 20000;
+//: Если от шлюза нет ни одного сообщения дольше этого времени — считаем
+//: соединение «полуоткрытым» (Wi-Fi отвалился без TCP close) и переподключаемся.
+const STALE_TIMEOUT_MS = 45000;
+
+/**
+ * Пора ли считать соединение зависшим. Чистая функция — покрыта тестом.
+ * @param {number} now
+ * @param {number} lastMessageAt
+ * @param {number} [timeoutMs]
+ */
+export function isConnectionStale(now, lastMessageAt, timeoutMs = STALE_TIMEOUT_MS) {
+  if (!lastMessageAt) return false;
+  return now - lastMessageAt > timeoutMs;
+}
 
 /**
  * @param {{
@@ -25,6 +39,7 @@ export function createTelemetrySocket({ url, onMessage, onStatus }) {
   /** @type {ReturnType<typeof setInterval> | null} */
   let pingTimer = null;
   let latencyMs = null;
+  let lastMessageAt = 0;
   let commandSeq = 0;
 
   /** @type {Map<string, {resolve: (v: any) => void, reject: (e: Error) => void, timer: ReturnType<typeof setTimeout>}>} */
@@ -53,6 +68,11 @@ export function createTelemetrySocket({ url, onMessage, onStatus }) {
   function startPing() {
     stopPing();
     pingTimer = setInterval(() => {
+      // Полуоткрытое соединение: сообщений нет, хотя сокет «открыт».
+      if (isConnectionStale(performance.now(), lastMessageAt)) {
+        socket?.close();
+        return;
+      }
       sendRaw({ type: 'ping', t: performance.now() });
     }, PING_INTERVAL_MS);
   }
@@ -79,6 +99,7 @@ export function createTelemetrySocket({ url, onMessage, onStatus }) {
       return;
     }
     if (!message || typeof message !== 'object') return;
+    lastMessageAt = performance.now();
 
     if (message.type === 'pong') {
       if (typeof message.t === 'number') latencyMs = Math.max(0, Math.round(performance.now() - message.t));
@@ -110,6 +131,7 @@ export function createTelemetrySocket({ url, onMessage, onStatus }) {
     socket = new WebSocket(url);
     socket.addEventListener('open', () => {
       attempt = 0;
+      lastMessageAt = performance.now();
       setStatus('online');
       startPing();
     });

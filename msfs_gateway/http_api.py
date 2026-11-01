@@ -11,6 +11,7 @@ import json
 import logging
 import mimetypes
 import os
+import sys
 import threading
 import time
 import urllib.parse
@@ -134,6 +135,18 @@ class GatewayHTTPServer(ThreadingHTTPServer):
         self.app = app
         super().__init__(address, handler)
 
+    def handle_error(self, request: Any, client_address: tuple[str, int]) -> None:
+        """Не засоряем лог трейсбеками обрывов соединения клиентом.
+
+        Клиент может закрыть сокет в любой момент (мобильный браузер,
+        перезагрузка страницы) — это штатная ситуация, а не ошибка сервера.
+        """
+        exc = sys.exc_info()[1]
+        if isinstance(exc, (ConnectionError, TimeoutError)):
+            logger.debug("Клиент %s отключился: %s", client_address[0], exc)
+            return
+        super().handle_error(request, client_address)
+
 
 def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
     """Создаёт класс обработчика, связанный с конкретным приложением."""
@@ -169,12 +182,19 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
             for name, value in (extra or {}).items():
                 self.send_header(name, value)
             self.end_headers()
-            self.wfile.write(body)
+            if self.command != "HEAD":
+                self.wfile.write(body)
 
         def _send_error(self, status: int, message: str, code: str = "error") -> None:
             self._send_json(status, {"error": message, "code": code})
 
-        def _read_json_body(self) -> Any:
+        def _read_body_bytes(self) -> bytes:
+            """Читает тело один раз, чтобы не ломать keep-alive.
+
+            Обработчики, которым тело не нужно (например, запуск сборки),
+            всё равно должны его вычитать — иначе следующие байты будут
+            приняты за новую строку запроса.
+            """
             raw_length = self.headers.get("Content-Length")
             if raw_length is None:
                 raise ApiError(
@@ -184,14 +204,20 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
                 length = int(raw_length)
             except ValueError as exc:
                 raise ApiError(HTTPStatus.BAD_REQUEST, "Некорректный Content-Length") from exc
-            if length <= 0:
-                raise ApiError(HTTPStatus.BAD_REQUEST, "Пустое тело запроса", "empty_body")
+            if length < 0:
+                raise ApiError(HTTPStatus.BAD_REQUEST, "Некорректный Content-Length")
             if length > MAX_BODY_BYTES:
                 raise ApiError(
                     HTTPStatus.REQUEST_ENTITY_TOO_LARGE, "Тело запроса слишком велико", "too_large"
                 )
+            return self.rfile.read(length) if length else b""
 
-            raw = self.rfile.read(length)
+        def _read_json_body(self) -> Any:
+            if not hasattr(self, "_raw_body"):
+                self._raw_body = self._read_body_bytes()
+            raw: bytes = self._raw_body
+            if not raw:
+                raise ApiError(HTTPStatus.BAD_REQUEST, "Пустое тело запроса", "empty_body")
             try:
                 return json.loads(raw.decode("utf-8"))
             except (UnicodeDecodeError, json.JSONDecodeError) as exc:
@@ -238,6 +264,9 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
         def do_PUT(self) -> None:
             path = urllib.parse.urlsplit(self.path).path
             try:
+                # Тело вычитываем всегда: иначе лишние байты «превратятся»
+                # в следующую строку запроса на keep-alive соединении.
+                self._raw_body = self._read_body_bytes()
                 self._handle_api_put(path)
             except ApiError as exc:
                 self._send_error(exc.status, exc.message, exc.code)
@@ -245,6 +274,7 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
         def do_POST(self) -> None:
             path = urllib.parse.urlsplit(self.path).path
             try:
+                self._raw_body = self._read_body_bytes()
                 self._handle_api_post(path)
             except ApiError as exc:
                 self._send_error(exc.status, exc.message, exc.code)
@@ -252,8 +282,13 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
         # --- статика ---------------------------------------------------
         def _serve_static(self, path: str, *, head_only: bool = False) -> None:
             web_root = self.gateway.settings.web_dir.resolve()
-            relative = urllib.parse.unquote(path).lstrip("/") or "index.html"
-            candidate = (web_root / relative).resolve()
+            try:
+                relative = urllib.parse.unquote(path).lstrip("/") or "index.html"
+                candidate = (web_root / relative).resolve()
+            except (OSError, ValueError):
+                # Некорректный путь (например, NUL-байт) — просто 404.
+                self._send_error(HTTPStatus.NOT_FOUND, "Файл не найден", "not_found")
+                return
 
             if not candidate.is_relative_to(web_root):
                 self._send_error(HTTPStatus.NOT_FOUND, "Файл не найден", "not_found")
@@ -645,6 +680,8 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
                 self._websocket_loop(connection, client)
             except WebSocketError as exc:
                 logger.debug("WebSocket закрыт (%s): %s", self.client_address[0], exc)
+                # 1002 — protocol error: клиент нарушил RFC 6455.
+                connection.close(1002, "protocol error")
             except OSError:
                 logger.debug("Сокет клиента %s недоступен", self.client_address[0])
             finally:

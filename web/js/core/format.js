@@ -9,6 +9,16 @@ export function isFiniteNumber(value) {
 }
 
 /**
+ * Число из телеметрии или null. Нельзя использовать Number(value):
+ * Number(null) === 0, и «нет данных» превратилось бы в реальный ноль.
+ * @param {unknown} value
+ * @returns {number | null}
+ */
+export function toFiniteNumber(value) {
+  return isFiniteNumber(value) ? value : null;
+}
+
+/**
  * Число для дисплея: без разделителей тысяч (как на настоящих приборах),
  * с фиксированным числом знаков. Нет данных — прочерк.
  * @param {unknown} value
@@ -26,6 +36,7 @@ export function formatNumber(value, decimals = 0) {
  * @param {string} [offLabel]
  */
 export function formatBoolean(value, onLabel = 'ON', offLabel = 'OFF') {
+  if (value === null || value === undefined) return '--';
   return value ? onLabel : offLabel;
 }
 

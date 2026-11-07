@@ -67,15 +67,17 @@ class AuthHttpTest(unittest.TestCase):
         match = COOKIE_RE.search(headers.get("Set-Cookie", ""))
         return match.group(1) if match else None
 
-    def ws_status(self, path="/ws", cookie=None):
+    def ws_status(self, path="/ws", cookie=None, origin=None):
         sock = socket.create_connection(("127.0.0.1", self.port), timeout=5)
         request = (
-            f"GET {path} HTTP/1.1\r\nHost: 127.0.0.1\r\nUpgrade: websocket\r\n"
+            f"GET {path} HTTP/1.1\r\nHost: 127.0.0.1:{self.port}\r\nUpgrade: websocket\r\n"
             f"Connection: Upgrade\r\nSec-WebSocket-Key: {WS_KEY}\r\n"
             "Sec-WebSocket-Version: 13\r\n"
         )
         if cookie:
             request += f"Cookie: rud_session={cookie}\r\n"
+        if origin:
+            request += f"Origin: {origin}\r\n"
         request += "\r\n"
         try:
             sock.sendall(request.encode("ascii"))
@@ -90,6 +92,30 @@ class AuthHttpTest(unittest.TestCase):
             sock.close()
 
     # --- тесты -------------------------------------------------------
+    def test_oversized_body_closes_connection(self):
+        sock = socket.create_connection(("127.0.0.1", self.port), timeout=5)
+        request = (
+            f"POST /api/auth/login HTTP/1.1\r\nHost: 127.0.0.1:{self.port}\r\n"
+            "Content-Length: 3000000\r\n\r\n"
+        )
+        try:
+            sock.sendall(request.encode("ascii"))
+            sock.settimeout(5)
+            response = b""
+            while True:
+                chunk = sock.recv(4096)
+                if not chunk:
+                    break
+                response += chunk
+            self.assertIn(b" 413 ", response)
+        finally:
+            sock.close()
+
+    def test_unknown_host_is_rejected(self):
+        status, _, body = self.call("GET", "/api/health", headers={"Host": "evil.example"})
+        self.assertEqual(status, 403)
+        self.assertEqual(json.loads(body)["code"], "host_not_allowed")
+
     def test_health_and_status_are_public(self):
         status, _, body = self.call("GET", "/api/health")
         self.assertEqual(status, 200)
@@ -157,6 +183,39 @@ class AuthHttpTest(unittest.TestCase):
         token = json.loads(body)["token"]
         self.assertEqual(self.ws_status(cookie=token), 101)
         self.assertEqual(self.ws_status(path=f"/ws?token={token}"), 101)
+
+    def test_websocket_rejects_foreign_origin(self):
+        _, _headers, body = self.login()
+        token = json.loads(body)["token"]
+        self.assertEqual(self.ws_status(cookie=token, origin="http://evil.example"), 403)
+        same_origin = f"http://127.0.0.1:{self.port}"
+        self.assertEqual(self.ws_status(cookie=token, origin=same_origin), 101)
+
+    def test_pairing_token_is_not_a_session(self):
+        _, _headers, body = self.login()
+        token = json.loads(body)["token"]
+        status, _, body = self.call("POST", "/api/pair", body={}, cookie=token)
+        self.assertEqual(status, 200)
+        pair_token = json.loads(body)["token"]
+
+        status, _, body = self.call(
+            "GET", "/api/profiles", headers={"Authorization": f"Bearer {pair_token}"}
+        )
+        self.assertEqual(status, 401)
+        self.assertEqual(json.loads(body)["code"], "unauthorized")
+
+    def test_post_with_foreign_origin_rejected(self):
+        _, _headers, body = self.login()
+        token = json.loads(body)["token"]
+        status, _, body = self.call(
+            "POST",
+            "/api/sim/command",
+            body={"key": "power.batteryMaster", "value": True},
+            cookie=token,
+            headers={"Origin": "http://evil.example"},
+        )
+        self.assertEqual(status, 403)
+        self.assertEqual(json.loads(body)["code"], "origin_not_allowed")
 
     def test_logout_revokes_session(self):
         _, headers, _ = self.login()

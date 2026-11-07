@@ -32,7 +32,7 @@
 | --- | --- | --- | --- | --- | --- |
 | `engine.rpm` | number | RPM | GENERAL ENG RPM:1 | — | Обороты двигателя |
 | `engine.fuelFlowGph` | number | GPH | ENG FUEL FLOW GPH:1 | — | Часовой расход топлива |
-| `engine.torquePct` | number | % | TURB ENG MAX INDICATED TORQUE:1 | — | Момент турбовинтового двигателя |
+| `engine.torquePct` | number | % | TURB ENG MAX TORQUE PERCENT:1 | — | Момент турбовинтового двигателя |
 | `engine.ittC` | number | °C | TURB ENG ITT:1 | — | Температура ИТТ |
 | `engine.propRpm` | number | RPM | PROP RPM:1 | — | Обороты воздушного винта |
 | `engine.n1Pct` | number | % | TURB ENG N1:1 | — | N1 двигателя №1 |
@@ -97,7 +97,7 @@
 | Ключ | Тип | Ед. | Чтение (SimVar) | Команда | Описание |
 | --- | --- | --- | --- | --- | --- |
 | `aircraft.onGround` | bool | — | SIM ON GROUND | — | Самолёт на земле |
-| `aircraft.radioAltitudeFt` | number | FT | PLANE ALT ABOVE GROUND | — | Радиовысота над ВПП |
+| `aircraft.radioAltitudeFt` | number | FT | RADIO HEIGHT | — | Радиовысота над ВПП |
 | `aircraft.title` | string | — | TITLE | — | Название борта в симуляторе |
 
 ### Руление

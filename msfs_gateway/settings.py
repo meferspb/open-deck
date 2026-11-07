@@ -65,6 +65,8 @@ class Settings:
     set_password: str | None = None
     #: Принудительно открытый доступ, даже если файл пароля существует.
     no_auth: bool = False
+    #: Дополнительные имена, разрешённые в заголовке Host (DNS-имена хоста).
+    allowed_hosts: tuple[str, ...] = ()
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -77,6 +79,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--host",
         default=DEFAULT_HOST,
         help="Адрес прослушивания (по умолчанию все интерфейсы).",
+    )
+    parser.add_argument(
+        "--allow-host",
+        action="append",
+        default=[],
+        metavar="NAME",
+        help="Дополнительное имя в заголовке Host (если панель открывают по DNS-имени).",
     )
     parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="TCP-порт HTTP и WebSocket.")
     parser.add_argument(
@@ -241,4 +250,5 @@ def parse_args(argv: list[str] | None = None) -> Settings:
         password=args.password,
         set_password=args.set_password,
         no_auth=args.no_auth,
+        allowed_hosts=tuple(host.strip().lower() for host in args.allow_host if host.strip()),
     )

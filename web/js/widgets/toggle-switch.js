@@ -82,12 +82,13 @@ export class ToggleSwitchWidget extends Widget {
   }
 
   update(state) {
-    const on = Boolean(this.bindingValue(state, 'state'));
+    const raw = this.bindingValue(state, 'state');
+    const on = raw == null ? null : Boolean(raw);
     if (on !== this.current) {
       this.current = on;
-      this.button.classList.toggle('is-on', on);
-      this.button.setAttribute('aria-checked', String(on));
-      this.stateEl.textContent = on ? this.onLabel : this.offLabel;
+      this.button.classList.toggle('is-on', on === true);
+      this.button.setAttribute('aria-checked', String(on === true));
+      this.stateEl.textContent = on == null ? '--' : on ? this.onLabel : this.offLabel;
     }
     if (this.pendingTarget !== null && on === this.pendingTarget) this.clearPending();
   }

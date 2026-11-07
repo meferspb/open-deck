@@ -3,6 +3,7 @@
  * Прибор не «прыгает»: углы проходят через экспоненциальное сглаживание.
  */
 
+import { toFiniteNumber } from '../core/format.js';
 import { CanvasSurface, Smoother, Widget, createCard, degToRad } from './base.js';
 
 const MONO = '"Cascadia Mono", "Consolas", monospace';
@@ -23,9 +24,9 @@ export class AttitudeWidget extends Widget {
   }
 
   update(state, now = performance.now()) {
-    const pitch = Number(this.bindingValue(state, 'pitch'));
-    const bank = Number(this.bindingValue(state, 'bank'));
-    this.hasData = Number.isFinite(pitch) && Number.isFinite(bank);
+    const pitch = toFiniteNumber(this.bindingValue(state, 'pitch'));
+    const bank = toFiniteNumber(this.bindingValue(state, 'bank'));
+    this.hasData = pitch !== null && bank !== null;
 
     if (this.hasData) {
       this.pitch.update(pitch, now);

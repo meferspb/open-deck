@@ -6,7 +6,7 @@
  * свайп не заливает сеть, а последнее значение отправляется сразу.
  */
 
-import { formatNumber } from '../core/format.js';
+import { formatNumber, toFiniteNumber } from '../core/format.js';
 import { CanvasSurface, Smoother, Widget, createCard, degToRad } from './base.js';
 
 const MONO = '"Cascadia Mono", "Consolas", monospace';
@@ -42,6 +42,7 @@ export class KnobWidget extends Widget {
 
     this.value = this.min;
     this.display = new Smoother(this.min, 0.08);
+    this.hasData = false;
     this.dragging = false;
     this.lastPointerY = 0;
     this.pendingSend = null;
@@ -151,8 +152,9 @@ export class KnobWidget extends Widget {
   }
 
   update(state, now = performance.now()) {
-    const raw = Number(this.bindingValue(state, 'value'));
-    if (Number.isFinite(raw) && !this.dragging && this.pendingSend === null) {
+    const raw = toFiniteNumber(this.bindingValue(state, 'value'));
+    this.hasData = raw !== null;
+    if (raw !== null && !this.dragging && this.pendingSend === null) {
       this.value = raw;
     }
     const shown = this.display.update(this.value, now);
@@ -226,7 +228,7 @@ export class KnobWidget extends Widget {
     ctx.stroke();
 
     // Значение.
-    const text = formatNumber(shown, this.decimals);
+    const text = this.hasData ? formatNumber(shown, this.decimals) : '--';
     ctx.fillStyle = '#e8f0f7';
     ctx.font = `600 ${Math.max(12, Math.round(h * 0.16))}px ${MONO}`;
     ctx.textBaseline = 'middle';

@@ -3,6 +3,7 @@
  * `altimeterPointers` — чистый помощник, покрыт тестом.
  */
 
+import { toFiniteNumber } from '../core/format.js';
 import { CanvasSurface, Smoother, Widget, createCard, degToRad } from './base.js';
 
 const MONO = '"Cascadia Mono", "Consolas", monospace';
@@ -31,8 +32,8 @@ export class AltimeterWidget extends Widget {
   }
 
   update(state, now = performance.now()) {
-    const value = Number(this.bindingValue(state, 'value'));
-    this.hasData = Number.isFinite(value);
+    const value = toFiniteNumber(this.bindingValue(state, 'value'));
+    this.hasData = value !== null;
     if (this.hasData) this.altitude.update(value, now);
     this.surface.resize();
     this.draw();

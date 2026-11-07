@@ -105,7 +105,8 @@ function render(next) {
   $('t-thr').textContent = fmt(taxi.throttlePct, 1, ' %');
   $('t-rud').textContent = fmt(taxi.rudderPct, 1, ' %');
   $('t-target').textContent = `${fmt(taxi.targetSpeedKt, 0)} kt · ${fmt(taxi.targetHeadingDeg, 0)}°`;
-  $('t-brake').textContent = t.parkingBrake ? 'стояночный' : 'снят';
+  $('t-brake').textContent =
+    t.parkingBrake === true ? 'стояночный' : t.parkingBrake === false ? 'снят' : '—';
 
   $('taxi-heading').textContent = fmt(taxi.targetHeadingDeg, 0, '°');
 
@@ -119,7 +120,7 @@ function render(next) {
   }
 
   const landingActive = Boolean(landing.active);
-  $('landing-arm').disabled = landingActive || Boolean(t.onGround);
+  $('landing-arm').disabled = landingActive || t.onGround === true || t.onGround == null;
   $('landing-disarm').disabled = !landingActive;
   $('taxi-engage').disabled = Boolean(taxi.engaged) || !t.onGround;
   $('taxi-disengage').disabled = !taxi.engaged;

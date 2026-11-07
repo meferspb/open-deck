@@ -53,13 +53,31 @@ def wrap180(degrees: float) -> float:
     return (float(degrees) + 180.0) % 360.0 - 180.0
 
 
-def _number(values: dict[str, Any], key: str, default: float = 0.0) -> float:
+def _optional_number(values: dict[str, Any], key: str) -> float | None:
+    """Число или None, если значение отсутствует/некорректно.
+
+    Для ассистента важно отличать «ноль» от «данных нет»: подстановка 0.0
+    при пропаже радиоaltitude могла бы преждевременно убрать тягу.
+    """
     raw = values.get(key)
     if isinstance(raw, bool) or not isinstance(raw, (int, float)):
-        return default
+        return None
     if math.isnan(raw) or math.isinf(raw):
-        return default
+        return None
     return float(raw)
+
+
+def _optional_flag(values: dict[str, Any], key: str) -> bool | None:
+    """Булево значение или None, если телеметрия его не дала."""
+    if key not in values:
+        return None
+    raw = values[key]
+    return None if raw is None else bool(raw)
+
+
+def _rounded(values: dict[str, Any], key: str, digits: int) -> float | None:
+    value = _optional_number(values, key)
+    return None if value is None else round(value, digits)
 
 
 def _flag(values: dict[str, Any], key: str) -> bool:
@@ -91,11 +109,20 @@ class TaxiAssist:
     # --- управление ---------------------------------------------------
     def engage(self, values: dict[str, Any]) -> tuple[bool, str]:
         """Включает ассистент руления с проверками безопасности."""
-        if not _flag(values, "aircraft.onGround"):
+        on_ground = _optional_flag(values, "aircraft.onGround")
+        if on_ground is None:
+            return False, "Нет данных о положении самолёта — руление недоступно"
+        if not on_ground:
             return False, "Самолёт не на земле — руление недоступно"
-        if _flag(values, "brakes.parking"):
+        parking = _optional_flag(values, "brakes.parking")
+        if parking is None:
+            return False, "Нет данных о стояночном тормозе — руление недоступно"
+        if parking:
             return False, "Снимите стояночный тормоз"
-        heading = _number(values, "heading.magneticDeg", self.status.target_heading_deg)
+        heading_value = _optional_number(values, "heading.magneticDeg")
+        if heading_value is None:
+            return False, "Нет данных о курсе — руление недоступно"
+        heading = heading_value
         self.status = TaxiStatus(
             engaged=True,
             target_speed_kt=self.status.target_speed_kt,
@@ -134,14 +161,18 @@ class TaxiAssist:
 
     def stop(self) -> tuple[bool, str]:
         """Останавливает поток ассистента."""
-        self._send("controls.throttlePct", 0)
-        self._send("controls.rudder", 0)
-        self._send("brakes.parking", True)
+        sent = self._send("controls.throttlePct", 0)
+        sent = self._send("controls.rudder", 0) and sent
+        sent = self._send("brakes.parking", True) and sent
         self.status.engaged = False
         self.status.throttle_pct = 0.0
         self.status.rudder_pct = 0.0
-        self.status.message = "СТОП: тяга 0, стояночный тормоз"
-        return True, self.status.message
+        self.status.message = (
+            "СТОП: тяга 0, стояночный тормоз"
+            if sent
+            else "СТОП: команды не отправлены (нет связи с MSFS)"
+        )
+        return sent, self.status.message
 
     # --- контур -------------------------------------------------------
     def update(self, dt: float, values: dict[str, Any]) -> None:
@@ -155,8 +186,11 @@ class TaxiAssist:
             self.disengage(reason)
             return
 
-        ground_speed = _number(values, "groundSpeed.kt")
-        heading = _number(values, "heading.magneticDeg")
+        ground_speed = _optional_number(values, "groundSpeed.kt")
+        heading = _optional_number(values, "heading.magneticDeg")
+        if ground_speed is None or heading is None:
+            self.disengage("Нет данных телеметрии — руление выключено")
+            return
         error = self.status.target_speed_kt - ground_speed
 
         # ПИ по скорости: I ограничен, чтобы тяга не «накапливалась» на стоянке.
@@ -174,12 +208,23 @@ class TaxiAssist:
         self._emit(throttle, rudder)
 
     def _safety(self, values: dict[str, Any]) -> str | None:
-        if not _flag(values, "aircraft.onGround"):
+        on_ground = _optional_flag(values, "aircraft.onGround")
+        if on_ground is None:
+            return "Нет данных о положении самолёта — руление выключено"
+        if not on_ground:
             return "Самолёт оторвался от земли — руление выключено"
-        if _flag(values, "brakes.parking"):
+        parking = _optional_flag(values, "brakes.parking")
+        if parking is None:
+            return "Нет данных о стояночном тормозе — руление выключено"
+        if parking:
             return "Включён стояночный тормоз — руление выключено"
-        if _number(values, "groundSpeed.kt") > TAXI_HARD_LIMIT_KT:
+        speed = _optional_number(values, "groundSpeed.kt")
+        if speed is None:
+            return "Нет данных о путевой скорости — руление выключено"
+        if speed > TAXI_HARD_LIMIT_KT:
             return "Скорость выше 35 уз — руление выключено"
+        if _optional_number(values, "heading.magneticDeg") is None:
+            return "Нет данных о курсе — руление выключено"
         return None
 
     def _emit(self, throttle: float, rudder: float) -> None:
@@ -220,9 +265,15 @@ class LandingAssist:
 
     def arm(self, values: dict[str, Any]) -> tuple[bool, str]:
         """Включает AP и APR с проверкой условий захода."""
-        if _flag(values, "aircraft.onGround"):
+        on_ground = _optional_flag(values, "aircraft.onGround")
+        if on_ground is None:
+            return False, "Нет данных о положении самолёта — заход не включён"
+        if on_ground:
             return False, "Самолёт уже на земле"
-        if _number(values, "speed.iasKt") < LANDING_MIN_IAS_KT:
+        speed = _optional_number(values, "speed.iasKt")
+        if speed is None:
+            return False, "Нет данных о приборной скорости — заход не включён"
+        if speed < LANDING_MIN_IAS_KT:
             return False, "Скорость ниже 40 уз — заход не включён"
         self._last_throttle = -1000.0
         if not self._send("autopilot.master", True):
@@ -230,6 +281,8 @@ class LandingAssist:
             self.status.message = "Не удалось включить автопилот (нет связи с MSFS)"
             return False, self.status.message
         if not self._send("autopilot.approachHold", True):
+            # Не оставляем AP включённым, если APR включить не удалось.
+            self._send("autopilot.master", False)
             self.status.phase = "off"
             self.status.message = "Не удалось включить режим APR (нет связи с MSFS)"
             return False, self.status.message
@@ -264,12 +317,12 @@ class LandingAssist:
         if dt <= 0:
             return
 
-        on_ground = _flag(values, "aircraft.onGround")
-        radio_alt = _number(values, "aircraft.radioAltitudeFt")
-        ias = _number(values, "speed.iasKt")
-        ground_speed = _number(values, "groundSpeed.kt")
+        on_ground = _optional_flag(values, "aircraft.onGround")
+        radio_alt = _optional_number(values, "aircraft.radioAltitudeFt")
+        ias = _optional_number(values, "speed.iasKt")
+        ground_speed = _optional_number(values, "groundSpeed.kt")
 
-        if self.status.phase in {"armed", "approach", "flare"} and on_ground:
+        if self.status.phase in {"armed", "approach", "flare"} and on_ground is True:
             self.status.phase = "rollout"
             self.status.message = "Касание: тяга 0, автопилот выключен"
             self._send("autopilot.master", False)
@@ -278,12 +331,12 @@ class LandingAssist:
 
         if self.status.phase == "rollout":
             self._set_throttle(0.0)
-            if on_ground and ground_speed < 5.0:
+            if on_ground is True and ground_speed is not None and ground_speed < 5.0:
                 self.status.phase = "done"
                 self.status.message = "Пробег завершён, ассистент выключен"
             return
 
-        if not on_ground and ias < LANDING_MIN_IAS_KT:
+        if on_ground is False and ias is not None and ias < LANDING_MIN_IAS_KT:
             self.status.phase = "off"
             self.status.message = "Скорость ниже 40 уз — ассистент посадки выключен"
             return
@@ -292,11 +345,20 @@ class LandingAssist:
             self.status.phase = "approach"
             self.status.message = "APR захвачен, следим за глиссадой"
 
-        if self.status.phase == "approach" and radio_alt <= FLARE_START_FT:
+        if (
+            self.status.phase == "approach"
+            and radio_alt is not None
+            and radio_alt <= FLARE_START_FT
+        ):
             self.status.phase = "flare"
             self.status.message = "Выравнивание: убираем тягу"
 
         if self.status.phase == "flare":
+            if radio_alt is None:
+                # Не подставляем 0.0: иначе пропавшая телеметрия выглядела бы
+                # как касание и ассистент убрал бы тягу в воздухе.
+                self.status.message = "Нет данных о высоте — выравнивание приостановлено"
+                return
             span = FLARE_START_FT - FLARE_IDLE_FT
             ratio = clamp((radio_alt - FLARE_IDLE_FT) / span, 0.0, 1.0)
             self._set_throttle(round(45.0 * ratio, 1))
@@ -345,7 +407,9 @@ class AssistManager:
         thread = self._thread
         self._thread = None
         if thread is not None:
-            thread.join(timeout=2.0)
+            thread.join(timeout=5.0)
+            if thread.is_alive():
+                LOGGER.warning("Поток ассистента не завершился за 5 с")
 
     def _command(self, key: str, value: Any) -> bool:
         try:
@@ -367,10 +431,19 @@ class AssistManager:
             except Exception as exc:
                 LOGGER.debug("Телеметрия для ассистента недоступна: %s", exc)
                 values = {}
+            connected = bool(getattr(self._hub.sim, "connected", True))
             with self._lock:
                 self._snapshot = AssistSnapshot(values=values, updated_at=now)
-                self.taxi.update(dt, values)
-                self.landing.update(dt, values)
+                if connected:
+                    self.taxi.update(dt, values)
+                    self.landing.update(dt, values)
+                else:
+                    # Без живой связи не продолжаем выдавать уставки:
+                    # последние значения могли устареть.
+                    if self.taxi.status.engaged:
+                        self.taxi.disengage("Нет связи с MSFS — руление выключено")
+                    if self.landing.active:
+                        self.landing.disarm("Нет связи с MSFS — ассистент посадки выключен")
             self._stop.wait(period)
 
     # --- действия -----------------------------------------------------
@@ -417,21 +490,21 @@ class AssistManager:
             landing = self.landing.status
             return {
                 "telemetry": {
-                    "onGround": _flag(values, "aircraft.onGround"),
-                    "radioAltitudeFt": round(_number(values, "aircraft.radioAltitudeFt"), 1),
-                    "groundSpeedKt": round(_number(values, "groundSpeed.kt"), 1),
-                    "iasKt": round(_number(values, "speed.iasKt"), 1),
-                    "verticalSpeedFpm": round(_number(values, "verticalSpeed.fpm"), 0),
-                    "headingDeg": round(_number(values, "heading.magneticDeg"), 1),
-                    "localizerDeg": round(_number(values, "nav.localizer"), 3),
-                    "glideSlopeDeg": round(_number(values, "nav.glideSlope"), 3),
-                    "locValid": _flag(values, "nav.locFlag"),
-                    "gsValid": _flag(values, "nav.gsFlag"),
-                    "autopilotMaster": _flag(values, "autopilot.master"),
-                    "approach": _flag(values, "autopilot.approach"),
-                    "throttlePct": round(_number(values, "controls.throttlePct"), 1),
-                    "rudderPct": round(_number(values, "controls.rudder"), 1),
-                    "parkingBrake": _flag(values, "brakes.parking"),
+                    "onGround": _optional_flag(values, "aircraft.onGround"),
+                    "radioAltitudeFt": _rounded(values, "aircraft.radioAltitudeFt", 1),
+                    "groundSpeedKt": _rounded(values, "groundSpeed.kt", 1),
+                    "iasKt": _rounded(values, "speed.iasKt", 1),
+                    "verticalSpeedFpm": _rounded(values, "verticalSpeed.fpm", 0),
+                    "headingDeg": _rounded(values, "heading.magneticDeg", 1),
+                    "localizerDeg": _rounded(values, "nav.localizer", 3),
+                    "glideSlopeDeg": _rounded(values, "nav.glideSlope", 3),
+                    "locValid": _optional_flag(values, "nav.locFlag"),
+                    "gsValid": _optional_flag(values, "nav.gsFlag"),
+                    "autopilotMaster": _optional_flag(values, "autopilot.master"),
+                    "approach": _optional_flag(values, "autopilot.approach"),
+                    "throttlePct": _rounded(values, "controls.throttlePct", 1),
+                    "rudderPct": _rounded(values, "controls.rudder", 1),
+                    "parkingBrake": _optional_flag(values, "brakes.parking"),
                 },
                 "taxi": {
                     "engaged": taxi.engaged,

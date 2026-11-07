@@ -28,6 +28,17 @@ class VariableRegistryTest(unittest.TestCase):
         self.assertTrue(variable.sim_event_param)
         self.assertEqual(variable.sim_event, "HEADING_BUG_SET")
 
+    def test_torque_and_radio_altitude_simvars(self):
+        # Официальные SimVar MSFS: процент момента и радиовысота.
+        self.assertEqual(
+            telemetry.get("engine.torquePct").sim_var,
+            "TURB ENG MAX TORQUE PERCENT:1",
+        )
+        self.assertEqual(
+            telemetry.get("aircraft.radioAltitudeFt").sim_var,
+            "RADIO HEIGHT",
+        )
+
 
 class CoerceTest(unittest.TestCase):
     def test_bool_from_many_forms(self):

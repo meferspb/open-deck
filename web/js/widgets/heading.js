@@ -3,6 +3,7 @@
  * заданного курса. `headingRotation` вынесен для тестов.
  */
 
+import { toFiniteNumber } from '../core/format.js';
 import { CanvasSurface, Smoother, Widget, createCard, degToRad } from './base.js';
 
 const MONO = '"Cascadia Mono", "Consolas", monospace';
@@ -34,10 +35,10 @@ export class HeadingWidget extends Widget {
   }
 
   update(state, now = performance.now()) {
-    const heading = Number(this.bindingValue(state, 'heading'));
-    const bug = Number(this.bindingValue(state, 'bug'));
-    this.hasData = Number.isFinite(heading);
-    this.hasBug = Number.isFinite(bug);
+    const heading = toFiniteNumber(this.bindingValue(state, 'heading'));
+    const bug = toFiniteNumber(this.bindingValue(state, 'bug'));
+    this.hasData = heading !== null;
+    this.hasBug = bug !== null;
     if (this.hasData) this.heading.update(heading, now);
     if (this.hasBug) this.bug.update(bug, now);
     this.surface.resize();

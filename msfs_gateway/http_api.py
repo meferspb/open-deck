@@ -11,6 +11,7 @@ import json
 import logging
 import mimetypes
 import os
+import re
 import sys
 import threading
 import time
@@ -38,8 +39,12 @@ from .sim.base import SimCommandError, SimProvider
 from .websocket import WebSocketConnection, WebSocketError, handshake_headers
 
 MAX_BODY_BYTES: Final = 2 * 1024 * 1024
+#: Сколько одновременных TCP-соединений обслуживает сервер.
+MAX_CONNECTIONS: Final = 64
 #: Клиент и профили — живые данные: кэширование только мешает при разработке.
 STATIC_CACHE_CONTROL: Final = "no-cache"
+#: Не пишем pairing/WS-токены в журнал запросов.
+_SECRET_QUERY_RE: Final = re.compile(r"([?&](?:pair|token)=)[^&\s\"']+", re.IGNORECASE)
 
 #: API, доступное без входа: проверка статуса, сам вход/выход и данные,
 #: которые нужны для блока поддержки автора и проверки целостности.
@@ -155,7 +160,26 @@ class GatewayHTTPServer(ThreadingHTTPServer):
         self, address: tuple[str, int], handler: type[BaseHTTPRequestHandler], app: Any
     ) -> None:
         self.app = app
+        self._slots = threading.BoundedSemaphore(MAX_CONNECTIONS)
         super().__init__(address, handler)
+
+    def process_request(self, request: Any, client_address: tuple[str, int]) -> None:
+        """Ограничивает число одновременных соединений (защита от локального DoS)."""
+        if not self._slots.acquire(blocking=False):
+            logger.warning("Слишком много соединений: %s отклонён", client_address[0])
+            self.shutdown_request(request)
+            return
+        try:
+            super().process_request(request, client_address)
+        except BaseException:
+            self._slots.release()
+            raise
+
+    def process_request_thread(self, request: Any, client_address: tuple[str, int]) -> None:
+        try:
+            super().process_request_thread(request, client_address)
+        finally:
+            self._slots.release()
 
     def handle_error(self, request: Any, client_address: tuple[str, int]) -> None:
         """Не засоряем лог трейсбеками обрывов соединения клиентом.
@@ -179,17 +203,23 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
         server_version = f"RUDPanelGateway/{__version__}"
         protocol_version = "HTTP/1.1"
         timeout = 120  # keep-alive не должен висеть вечно
+        #: Тело запроса читается один раз; None означает «ещё не читали».
+        _raw_body: bytes | None = None
 
         # --- утилиты ---------------------------------------------------
         @property
         def gateway(self) -> Any:
             return app
 
+        @staticmethod
+        def _redact(message: str) -> str:
+            return _SECRET_QUERY_RE.sub(r"\1***", message)
+
         def log_message(self, format: str, *args: Any) -> None:
-            logger.debug("%s %s", self.address_string(), format % args)
+            logger.debug("%s %s", self.address_string(), self._redact(format % args))
 
         def log_error(self, format: str, *args: Any) -> None:
-            logger.warning("%s %s", self.address_string(), format % args)
+            logger.warning("%s %s", self.address_string(), self._redact(format % args))
 
         def _send_json(
             self, status: int, payload: Any, *, extra: dict[str, str] | None = None
@@ -241,7 +271,7 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
             return self.rfile.read(length) if length else b""
 
         def _read_json_body(self) -> Any:
-            if not hasattr(self, "_raw_body"):
+            if self._raw_body is None:
                 self._raw_body = self._read_body_bytes()
             raw: bytes = self._raw_body
             if not raw:
@@ -272,6 +302,74 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
 
         def _session_token(self) -> str | None:
             return self._bearer_token() or self._cookie_token()
+
+        @staticmethod
+        def _netloc(value: str) -> tuple[str, int | None] | None:
+            try:
+                parts = urllib.parse.urlsplit("//" + value.strip())
+                host = parts.hostname
+                port = parts.port
+            except ValueError:
+                return None
+            if not host:
+                return None
+            return host.rstrip(".").lower(), port
+
+        def _host_allowed(self) -> bool:
+            """Проверяет Host по списку локальных имён (DNS rebinding)."""
+            raw = (self.headers.get("Host") or "").strip()
+            if not raw:
+                return True  # нативные HTTP/1.0-клиенты могут не присылать Host
+            parsed = self._netloc(raw)
+            if parsed is None:
+                return False
+            host = parsed[0]
+            allowed = self.gateway.allowed_hostnames()
+            return host in allowed
+
+        def _origin_allowed(self) -> bool:
+            """Same-origin защита для браузерных запросов.
+
+            Клиенты без Origin (нативные приложения, curl) допускаются;
+            если Origin есть, его хост и effective-порт должны совпадать
+            с Host. Это закрывает cross-site WebSocket hijacking и CSRF.
+            """
+            origin = self.headers.get("Origin")
+            if not origin:
+                return True
+            if origin == "null":
+                return False
+            try:
+                parts = urllib.parse.urlsplit(origin)
+            except ValueError:
+                return False
+            if parts.scheme not in {"http", "https"}:
+                return False
+            origin_host = self._netloc(parts.netloc)
+            host_parts = self._netloc(self.headers.get("Host") or "")
+            if origin_host is None or host_parts is None:
+                return False
+            if origin_host[0] != host_parts[0]:
+                return False
+            origin_port = origin_host[1] or (443 if parts.scheme == "https" else 80)
+            host_port = host_parts[1] or 80
+            return origin_port == host_port
+
+        def _forbidden_origin(self) -> None:
+            self.close_connection = True
+            self._send_error(
+                HTTPStatus.FORBIDDEN,
+                "Запрос с чужого Origin отклонён",
+                "origin_not_allowed",
+            )
+
+        def _forbidden_host(self) -> None:
+            self.close_connection = True
+            self._send_error(
+                HTTPStatus.FORBIDDEN,
+                "Запрос с неизвестным Host отклонён",
+                "host_not_allowed",
+            )
 
         def _authorized(self) -> bool:
             return self.gateway.auth.valid(self._session_token())
@@ -424,6 +522,9 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
             self.end_headers()
 
         def do_GET(self) -> None:
+            if not self._host_allowed():
+                self._forbidden_host()
+                return
             parsed = urllib.parse.urlsplit(self.path)
             path = parsed.path
             try:
@@ -459,6 +560,9 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
                 logger.debug("Клиент разорвал соединение: %s", self.client_address[0])
 
         def do_HEAD(self) -> None:
+            if not self._host_allowed():
+                self._forbidden_host()
+                return
             path = urllib.parse.urlsplit(self.path).path
             if path.startswith("/api/"):
                 self._send_error(
@@ -473,27 +577,47 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
             self._serve_static(path, head_only=True)
 
         def do_PUT(self) -> None:
+            if not self._host_allowed():
+                self._forbidden_host()
+                return
+            if not self._origin_allowed():
+                self._forbidden_origin()
+                return
             path = urllib.parse.urlsplit(self.path).path
             if path not in PUBLIC_API_PATHS and not self._authorized():
                 self._unauthorized()
                 return
+            self._raw_body = None
             try:
                 # Тело вычитываем всегда: иначе лишние байты «превратятся»
                 # в следующую строку запроса на keep-alive соединении.
                 self._raw_body = self._read_body_bytes()
                 self._handle_api_put(path)
             except ApiError as exc:
+                if self._raw_body is None:
+                    # Тело не прочитано: keep-alive продолжил бы разбор с его
+                    # середины, поэтому соединение обязательно закрываем.
+                    self.close_connection = True
                 self._send_error(exc.status, exc.message, exc.code)
 
         def do_POST(self) -> None:
+            if not self._host_allowed():
+                self._forbidden_host()
+                return
+            if not self._origin_allowed():
+                self._forbidden_origin()
+                return
             path = urllib.parse.urlsplit(self.path).path
             if path not in PUBLIC_API_PATHS and not self._authorized():
                 self._unauthorized()
                 return
+            self._raw_body = None
             try:
                 self._raw_body = self._read_body_bytes()
                 self._handle_api_post(path)
             except ApiError as exc:
+                if self._raw_body is None:
+                    self.close_connection = True
                 self._send_error(exc.status, exc.message, exc.code)
 
         # --- статика ---------------------------------------------------
@@ -892,7 +1016,10 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
                 if not isinstance(payload, dict):
                     raise ApiError(HTTPStatus.BAD_REQUEST, "Ожидался JSON-объект")
                 ack = hub.handle_command(
-                    payload.get("key"), payload.get("value"), payload.get("id")
+                    payload.get("key"),
+                    payload.get("value"),
+                    payload.get("id"),
+                    rate_key=self.client_address[0],
                 )
                 if ack.get("ok"):
                     self._send_json(HTTPStatus.OK, ack)
@@ -909,6 +1036,9 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
 
         # --- WebSocket ------------------------------------------------
         def _handle_websocket(self) -> None:
+            if not self._origin_allowed():
+                self._forbidden_origin()
+                return
             upgrade = self.headers.get("Upgrade", "").lower()
             key = self.headers.get("Sec-WebSocket-Key")
             version = self.headers.get("Sec-WebSocket-Version")

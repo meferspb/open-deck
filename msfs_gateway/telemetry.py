@@ -88,7 +88,7 @@ _VARIABLES: Final[tuple[Variable, ...]] = (
         "number",
         "Engine torque",
         unit="%",
-        sim_var="TURB ENG MAX INDICATED TORQUE:1",
+        sim_var="TURB ENG MAX TORQUE PERCENT:1",
         sim_unit="percent",
     ),
     Variable(
@@ -218,7 +218,7 @@ _VARIABLES: Final[tuple[Variable, ...]] = (
         "number",
         "Radio altitude",
         unit="FT",
-        sim_var="PLANE ALT ABOVE GROUND",
+        sim_var="RADIO HEIGHT",
         sim_unit="feet",
     ),
     Variable(

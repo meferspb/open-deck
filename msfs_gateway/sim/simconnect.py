@@ -35,6 +35,11 @@ from .client_data import ClientDataChannel
 
 logger = logging.getLogger("msfs_gateway.simconnect")
 
+#: SimConnect ищет SimConnect.cfg в текущем каталоге, поэтому на время
+#: генерации временного cfg приходится менять CWD. Блокировка не даёт двум
+#: потокам делать это одновременно; все остальные пути в приложении абсолютные.
+_CWD_LOCK = threading.Lock()
+
 # --- Константы из SimConnect.h ----------------------------------------
 SIMCONNECT_DATATYPE_FLOAT64 = 4
 #: Строки читаются отдельными определениями: заголовок борта и модель ATC.
@@ -121,15 +126,18 @@ class _Recv(ctypes.Structure):
 
 
 class _RecvSimObjectData(ctypes.Structure):
+    #: Порядок полей — строго по SimConnect.h:
+    #: dwRequestID, dwObjectID, dwDefineID, dwFlags, dwEntryNumber, dwOutOf,
+    #: dwDefineCount. ctypes-структура должна совпадать с SDK побайтно.
     _fields_ = [
         *_Recv._fields_,
         ("dwRequestID", ctypes.c_uint32),
         ("dwObjectID", ctypes.c_uint32),
         ("dwDefineID", ctypes.c_uint32),
-        ("dwDefineCount", ctypes.c_uint32),
         ("dwFlags", ctypes.c_uint32),
         ("dwEntryNumber", ctypes.c_uint32),
         ("dwOutOf", ctypes.c_uint32),
+        ("dwDefineCount", ctypes.c_uint32),
     ]
 
 
@@ -219,6 +227,7 @@ class SimConnectSim(SimProvider):
         self._dispatch_proc = DispatchProc(self._on_dispatch)  # держим ссылку
         self._opened_at = 0.0
         self._last_data_at = 0.0
+        self._last_numeric_at = 0.0
         self._quit = threading.Event()
         self._event_ids: dict[str, int] = {}
 
@@ -231,11 +240,9 @@ class SimConnectSim(SimProvider):
         self._client_sink: Callable[[int, bytes], None] | None = None
         self._wasm: Any = None
 
-        # Датумы, которые реально есть в определении данных, в порядке добавления.
+        #: Датумы, реально принятые SimConnect, в порядке datum_id.
+        #: Заполняется в `_open()` после успешных `AddToDataDefinition`.
         self._data_keys: list[str] = []
-        for key, variable in telemetry.VARIABLES.items():
-            if variable.sim_var and variable.kind in {"number", "bool"}:
-                self._data_keys.append(key)
 
         self._connect()
 
@@ -392,17 +399,18 @@ class SimConnectSim(SimProvider):
         )
         with tempfile.TemporaryDirectory(prefix="rud-simconnect-") as tmp:
             Path(tmp, "SimConnect.cfg").write_text(config, encoding="ascii")
-            previous = os.getcwd()
-            try:
-                os.chdir(tmp)
-                self._open()
-                logger.info("SimConnect подключён через TCP %s:%d", self._host, self._port)
-                return True
-            except SimConnectError as exc:
-                logger.debug("TCP %s:%d не помог: %s", self._host, self._port, exc)
-                return False
-            finally:
-                os.chdir(previous)
+            with _CWD_LOCK:
+                previous = os.getcwd()
+                try:
+                    os.chdir(tmp)
+                    self._open()
+                    logger.info("SimConnect подключён через TCP %s:%d", self._host, self._port)
+                    return True
+                except SimConnectError as exc:
+                    logger.debug("TCP %s:%d не помог: %s", self._host, self._port, exc)
+                    return False
+                finally:
+                    os.chdir(previous)
 
     def _open(self) -> None:
         handle = ctypes.c_void_p()
@@ -416,25 +424,33 @@ class SimConnectSim(SimProvider):
         self._opened_at = time.monotonic()
         self._quit.clear()
 
-        for index, key in enumerate(self._data_keys):
-            variable = telemetry.VARIABLES[key]
-            assert variable.sim_var is not None
+        # Собираем определение только из датумов, которые SimConnect принял:
+        # иначе при отказе одной переменной индексы последующих значений
+        # сместились бы и панель показывала бы чужие величины.
+        self._data_keys = []
+        for key, variable in telemetry.VARIABLES.items():
+            sim_var = variable.sim_var
+            if not sim_var or variable.kind not in {"number", "bool"}:
+                continue
+            datum_id = len(self._data_keys)
             units = (variable.sim_unit or "number").encode("utf-8")
             hr = self._dll.SimConnect_AddToDataDefinition(
                 self._handle,
                 _DEFINE_ID,
-                variable.sim_var.encode("utf-8"),
+                sim_var.encode("utf-8"),
                 units,
                 SIMCONNECT_DATATYPE_FLOAT64,
                 0.0,
-                index,
+                datum_id,
             )
             if hr != S_OK:
                 logger.warning(
                     "AddToDataDefinition(%s) вернул 0x%08X — переменная будет недоступна",
-                    variable.sim_var,
+                    sim_var,
                     hr & 0xFFFFFFFF,
                 )
+                continue
+            self._data_keys.append(key)
 
         hr = self._dll.SimConnect_RequestDataOnSimObject(
             self._handle,
@@ -504,6 +520,11 @@ class SimConnectSim(SimProvider):
                 logger.debug("Ошибка при закрытии SimConnect", exc_info=True)
         self._handle = None
         self._last_data_at = 0.0
+        self._last_numeric_at = 0.0
+        # Event ID привязаны к соединению: после перезапуска MSFS их нужно
+        # маппить заново, иначе команды уйдут в никуда.
+        with self._lock:
+            self._event_ids.clear()
 
         # Все ожидающие запросы Client Data относятся к старому соединению.
         transport = getattr(self._wasm, "transport", None) if self._wasm is not None else None
@@ -531,7 +552,9 @@ class SimConnectSim(SimProvider):
         thread = self._thread
         self._thread = None
         if thread is not None:
-            thread.join(timeout=2.0)
+            thread.join(timeout=5.0)
+            if thread.is_alive():
+                logger.warning("Поток SimConnect не завершился за 5 с")
         self._disconnect()
 
     def _run(self) -> None:
@@ -541,7 +564,9 @@ class SimConnectSim(SimProvider):
                 if self._handle is None:
                     try:
                         self._connect()
-                    except SimConnectError as exc:
+                    except Exception as exc:
+                        # OSError при создании временного cfg/смене каталога
+                        # тоже не должен убивать поток переподключения.
                         logger.warning("Переподключение к MSFS не удалось: %s", exc)
                         self._stop.wait(5.0)
                         continue
@@ -712,6 +737,7 @@ class SimConnectSim(SimProvider):
             if isinstance(left, float) and isinstance(right, float):
                 self._values["fuel.totalGal"] = left + right
         self._last_data_at = time.monotonic()
+        self._last_numeric_at = self._last_data_at
 
     def _store_string(self, message: Any, cb_data: int, key: str) -> None:
         available = cb_data - _DATA_OFFSET
@@ -723,24 +749,48 @@ class SimConnectSim(SimProvider):
             return
         with self._lock:
             self._values[key] = text
+        self._last_data_at = time.monotonic()
 
     # ------------------------------------------------------------------
     # Данные и команды
     # ------------------------------------------------------------------
     def read(self) -> dict[str, Any]:
-        """Снимок значений."""
+        """Снимок значений.
+
+        Переменные, которых нет в принятом определении SimConnect, и все
+        числовые значения при отсутствии свежих данных помечаются `None`.
+        Иначе потребитель (панель, ассистент) не отличит отказ SimVar от
+        настоящего нуля.
+        """
         with self._lock:
-            return dict(self._values)
+            values = dict(self._values)
+            data_keys = set(self._data_keys)
+            stale = self._last_numeric_at <= 0.0 or not self.connected
+            for key, variable in telemetry.VARIABLES.items():
+                if variable.kind in {"number", "bool"}:
+                    if key not in data_keys or stale:
+                        values[key] = None
+                elif variable.kind == "string" and stale:
+                    values[key] = None
+            if stale:
+                values["aircraft.atcModel"] = None
+            if values.get("fuel.leftGal") is None or values.get("fuel.rightGal") is None:
+                values["fuel.totalGal"] = None
+            return values
 
     @property
     def aircraft_title(self) -> str | None:
-        """Название борта из TITLE."""
+        """Название борта из TITLE (только для живых данных)."""
+        if not self.connected or self._last_data_at <= 0.0:
+            return None
         title = self._values.get("aircraft.title")
         return title or None
 
     @property
     def atc_model(self) -> str | None:
-        """Модель ATC."""
+        """Модель ATC (только для живых данных)."""
+        if not self.connected or self._last_data_at <= 0.0:
+            return None
         model = self._values.get("aircraft.atcModel")
         return model or None
 
@@ -763,23 +813,34 @@ class SimConnectSim(SimProvider):
             # Событие TOGGLE_* переключает состояние, поэтому «set» реализуем
             # сравнением с текущим значением и отправкой события только при различии.
             event_data = 0
-            current = self._values.get(key)
+            with self._lock:
+                current = self._values.get(key)
             if isinstance(target, bool) and bool(current) == target:
                 return
 
-        event_id = self._event_id_for(key, variable.sim_event)
-        result = self._dll.SimConnect_TransmitClientEvent(
-            self._handle,
-            SIMCONNECT_OBJECT_ID_USER,
-            event_id,
-            event_data,
-            SIMCONNECT_GROUP_PRIORITY_HIGHEST,
-            SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY,
-        )
-        if result != S_OK:
-            raise SimCommandError(
-                f"TransmitClientEvent({variable.sim_event}) вернул 0x{result & 0xFFFFFFFF:08X}"
+        event_name = variable.sim_event
+
+        def transmit() -> None:
+            # SimConnect не рассчитан на вызовы из разных потоков: команда
+            # выполняется в потоке диспетчеризации, как и Client Data.
+            event_id = self._event_id_for(key, event_name)
+            result = self._dll.SimConnect_TransmitClientEvent(
+                self._handle,
+                SIMCONNECT_OBJECT_ID_USER,
+                event_id,
+                event_data,
+                SIMCONNECT_GROUP_PRIORITY_HIGHEST,
+                SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY,
             )
+            if result != S_OK:
+                raise SimCommandError(
+                    f"TransmitClientEvent({event_name}) вернул 0x{result & 0xFFFFFFFF:08X}"
+                )
+
+        try:
+            self.run_on_dispatch(transmit)
+        except SimConnectError as exc:
+            raise SimCommandError(f"SimConnect не выполнил команду: {exc}") from exc
 
     def _event_id_for(self, key: str, event_name: str) -> int:
         with self._lock:
@@ -941,7 +1002,7 @@ class SimConnectWasmTransport:
 
     @property
     def available(self) -> bool:
-        return self._sim.connected
+        return self._sim.connected and self.channel.available
 
     def read_area(self, area: str, size: int) -> bytes | None:
         return self.channel.read_area(area, size)

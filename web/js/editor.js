@@ -259,7 +259,22 @@ async function boot() {
 }
 
 async function loadProfile(id) {
+  if (profile && dirty && id !== profile.id) {
+    const proceed = window.confirm(
+      'В текущем профиле есть несохранённые изменения. Переключиться и потерять их?',
+    );
+    if (!proceed) {
+      refs.profileSelect.value = profile.id;
+      return;
+    }
+  }
   profile = await api.getProfile(id);
+  // История принадлежит конкретному профилю: без очистки Ctrl+Z после
+  // переключения восстановил бы виджеты предыдущего профиля.
+  history.undo.length = 0;
+  history.redo.length = 0;
+  updateHistoryButtons();
+  refs.profileSelect.value = profile.id;
   // В списки привязок попадают и пользовательские переменные профиля (LVAR/RPN).
   const custom = (profile.variables ?? [])
     .filter((item) => item && typeof item.key === 'string')
@@ -928,7 +943,10 @@ async function save() {
 // События
 // ---------------------------------------------------------------------
 refs.profileSelect.addEventListener('change', () => {
-  loadProfile(refs.profileSelect.value).catch((error) => toast(error.message, 'danger'));
+  loadProfile(refs.profileSelect.value).catch((error) => {
+    if (profile) refs.profileSelect.value = profile.id;
+    toast(error.message, 'danger');
+  });
 });
 for (const button of refs.deviceSwitch.querySelectorAll('[data-device]')) {
   button.addEventListener('click', () => {

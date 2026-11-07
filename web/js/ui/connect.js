@@ -26,6 +26,7 @@ export function createConnect({
   let border = 4;
   /** Одноразовый токен для входа с телефона без ввода пароля. */
   let pairToken = '';
+  let pairExpiresAt = 0;
 
   function withQuery(url, params) {
     const separator = url.includes('?') ? '&' : '?';
@@ -105,9 +106,13 @@ export function createConnect({
       // Если включён пароль, просим одноразовый QR-токен: телефон войдёт
       // одним сканированием. Без пароля всё работает по-прежнему.
       pairToken = '';
+      pairExpiresAt = 0;
       try {
         const pair = await api.pair();
-        if (pair?.required && typeof pair.token === 'string') pairToken = pair.token;
+        if (pair?.required && typeof pair.token === 'string') {
+          pairToken = pair.token;
+          pairExpiresAt = Date.now() + Math.max(1, Number(pair.expiresIn) || 600) * 1000;
+        }
       } catch {
         // Одноразовый вход недоступен — покажем обычный адрес.
       }
@@ -124,6 +129,13 @@ export function createConnect({
           : '';
 
       loaded = true;
+      if (pairToken) {
+        const ttl = Math.max(1000, pairExpiresAt - Date.now());
+        setTimeout(() => {
+          loaded = false;
+          if (dialog.open) load();
+        }, ttl);
+      }
     } catch (error) {
       urlField.textContent = '—';
       if (notify) notify(`Не удалось подготовить QR: ${error.message}`);
@@ -150,6 +162,10 @@ export function createConnect({
 
   function open() {
     if (!dialog.open) dialog.showModal();
+    // Одноразовый QR живёт 10 минут и «сгорает» после первого сканирования:
+    // при каждом открытии диалога запрашиваем новые адрес и токен, иначе
+    // второй телефон или повторное открытие получат недействительный код.
+    if (loaded) loaded = false;
     load();
   }
 

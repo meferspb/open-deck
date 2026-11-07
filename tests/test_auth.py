@@ -77,6 +77,8 @@ class SessionTest(unittest.TestCase):
     def test_pairing_is_single_use(self):
         store = SessionStore()
         token = store.create(ttl=10.0, pairing=True)
+        # QR-токен нельзя использовать как обычную сессию (cookie/Bearer).
+        self.assertFalse(store.validate(token))
         session = store.consume_pairing(token)
         self.assertIsNotNone(session)
         self.assertTrue(store.validate(session))

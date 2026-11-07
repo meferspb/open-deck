@@ -8,6 +8,7 @@ import os
 import socket
 import sys
 import threading
+import time
 from pathlib import Path
 from typing import Any
 
@@ -63,6 +64,9 @@ class GatewayApplication:
         self.wasm_bridge = None
         self.android = BuildManager()
         self.auth = _build_auth(settings)
+        self._allowed_hosts_lock = threading.Lock()
+        self._allowed_hosts_at = 0.0
+        self._allowed_hosts: set[str] = set()
         self.discovery: DiscoveryBeacon | None = None
         if settings.discovery:
             self.discovery = DiscoveryBeacon(
@@ -90,13 +94,19 @@ class GatewayApplication:
             self.integrity_report = report
             self.logger.info("Целостность интерфейса подтверждена (%d файлов)", len(report.files))
 
-        self.sim.start()
-        self._setup_wasm()
-        self.hub.start()
-        self.assist.start()
-        if self.discovery is not None:
-            self.discovery.start()
-        self.httpd = create_server(self)
+        try:
+            self.sim.start()
+            self._setup_wasm()
+            self.hub.start()
+            self.assist.start()
+            if self.discovery is not None:
+                self.discovery.start()
+            self.httpd = create_server(self)
+        except Exception:
+            # Не оставляем полузапущенные потоки, если порт занят или
+            # SimConnect не открылся.
+            self.shutdown()
+            raise
 
     def _setup_wasm(self) -> None:
         """Подключает LVAR/RPN через WASM-модуль, если провайдер это умеет."""
@@ -157,6 +167,30 @@ class GatewayApplication:
         addresses = local_addresses() if host in {"0.0.0.0", "::", ""} else [host]
         return [f"http://{address}:{self.settings.port}/" for address in addresses]
 
+    def allowed_hostnames(self) -> set[str]:
+        """Имена, которые допустимы в заголовке Host (защита от DNS rebinding).
+
+        Разрешаем localhost, имя машины/FQDN и локальные IP. Кэш на 30 секунд:
+        DHCP может сменить адрес, перезапускать шлюз для этого не нужно.
+        """
+        now = time.monotonic()
+        with self._allowed_hosts_lock:
+            if now - self._allowed_hosts_at < 30.0 and self._allowed_hosts:
+                return set(self._allowed_hosts)
+            hosts = {"localhost", "127.0.0.1", "::1"}
+            with contextlib.suppress(OSError):
+                hosts.add(socket.gethostname().lower())
+            with contextlib.suppress(OSError):
+                hosts.add(socket.getfqdn().lower())
+            hosts.update(address.lower() for address in local_addresses())
+            hosts.update(host.lower() for host in self.settings.allowed_hosts)
+            configured = self.settings.host.strip().lower()
+            if configured and configured not in {"0.0.0.0", "::"}:
+                hosts.add(configured)
+            self._allowed_hosts = {host.rstrip(".") for host in hosts if host}
+            self._allowed_hosts_at = now
+            return set(self._allowed_hosts)
+
     def banner(self) -> str:
         """Приветствие в консоли с адресами и состоянием подсистем."""
         urls = "\n".join(f"  {url}" for url in self.base_urls())
@@ -175,6 +209,12 @@ class GatewayApplication:
             auth_state = "выключен (--no-auth)"
         else:
             auth_state = "выключен"
+        warning = ""
+        if not self.auth.required:
+            warning = (
+                "  ВНИМАНИЕ: вход выключен — панель и команды доступны всем в локальной сети.\n"
+                "            Задайте пароль: RudPanelGateway.exe --set-password\n"
+            )
         return (
             f"\n{APP_NAME} v{__version__}\n"
             f"  Провайдер телеметрии : {provider} ({connection})\n"
@@ -183,6 +223,7 @@ class GatewayApplication:
             f"  WASM-мост (LVAR/RPN) : {wasm_state}\n"
             f"  Автообнаружение      : {discovery_state}\n"
             f"  Вход по паролю       : {auth_state}\n"
+            f"{warning}"
             f"  Целостность          : {integrity_state}\n"
             f"  Панель в браузере    :\n{urls}\n"
             f"  Остановка            : Ctrl+C\n"

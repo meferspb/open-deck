@@ -12,6 +12,7 @@ import {
   isFiniteNumber,
   normalizeHeading,
   readValue,
+  toFiniteNumber,
 } from '../../web/js/core/format.js';
 
 test('isFiniteNumber', () => {
@@ -29,6 +30,13 @@ test('formatNumber фиксирует знаки', () => {
   assert.equal(formatNumber(1, 2), '1.00');
 });
 
+test('toFiniteNumber не превращает null в ноль', () => {
+  assert.equal(toFiniteNumber(null), null);
+  assert.equal(toFiniteNumber(undefined), null);
+  assert.equal(toFiniteNumber('12'), null);
+  assert.equal(toFiniteNumber(12), 12);
+});
+
 test('formatNumber отдаёт прочерк для нечисла', () => {
   assert.equal(formatNumber(undefined), '--');
   assert.equal(formatNumber(null), '--');
@@ -38,6 +46,11 @@ test('formatNumber отдаёт прочерк для нечисла', () => {
 test('formatNumber ограничивает decimals 0..3', () => {
   assert.equal(formatNumber(1.23456, 9), '1.235');
   assert.equal(formatNumber(1.23456, -1), '1');
+});
+
+test('formatBoolean помечает отсутствие данных прочерком', () => {
+  assert.equal(formatBoolean(null), '--');
+  assert.equal(formatBoolean(undefined), '--');
 });
 
 test('formatBoolean', () => {

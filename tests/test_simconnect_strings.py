@@ -1,9 +1,12 @@
 """Тесты строковых датумов SimConnect (TITLE / ATC MODEL)."""
 
 import ctypes
+import struct
 import threading
+import time
 import unittest
 
+from msfs_gateway import telemetry
 from msfs_gateway.sim import simconnect as sc
 
 
@@ -12,7 +15,10 @@ def _make_sim(values=None):
     sim._values = dict(values or {})
     sim._lock = threading.RLock()
     sim._data_keys = []
+    sim._handle = object()
+    sim._opened_at = time.monotonic()
     sim._last_data_at = 0.0
+    sim._last_numeric_at = 0.0
     return sim
 
 
@@ -81,6 +87,41 @@ class NumericDatumStillWorksTest(unittest.TestCase):
         payload = ctypes.c_double(108.5)
         raw = bytes(memoryview(payload).cast("B"))
         _dispatch(sim, sc._DEFINE_ID, raw, count=1)
+        self.assertAlmostEqual(sim._values["speed.iasKt"], 108.5, places=3)
+        self.assertGreater(sim._last_data_at, 0.0)
+
+    def test_read_marks_unsupported_and_stale_values_as_none(self):
+        sim = _make_sim(telemetry.empty_snapshot())
+        sim._handle = object()
+        sim._opened_at = time.monotonic()
+        sim._last_data_at = time.monotonic()
+        sim._last_numeric_at = sim._last_data_at
+        sim._data_keys = ["speed.iasKt"]
+        sim._values["speed.iasKt"] = 108.5
+        values = sim.read()
+        self.assertEqual(values["speed.iasKt"], 108.5)
+        self.assertIsNone(values["engine.torquePct"])
+        self.assertIsNone(values["fuel.totalGal"])
+
+        sim._last_data_at = time.monotonic() - 10.0
+        sim._last_numeric_at = sim._last_data_at
+        stale = sim.read()
+        self.assertIsNone(stale["speed.iasKt"])
+
+    def test_packet_is_parsed_by_real_sdk_field_order(self):
+        """Независимый от `_RecvSimObjectData` тест: байты как в SimConnect.h."""
+        sim = _make_sim()
+        sim._data_keys = ["speed.iasKt"]
+        sim._values = {"speed.iasKt": 0.0}
+        total = sc._DATA_OFFSET + 8
+        buffer = ctypes.create_string_buffer(total)
+        struct.pack_into("<III", buffer, 0, total, 0, sc.SIMCONNECT_RECV_ID_SIMOBJECT_DATA)
+        # requestID, objectID, defineID, flags, entryNumber, outOf, defineCount
+        struct.pack_into("<IIIIIII", buffer, 12, 1, 0, sc._DEFINE_ID, 0, 1, 1, 1)
+        struct.pack_into("<d", buffer, sc._DATA_OFFSET, 108.5)
+
+        sc.SimConnectSim._handle_data(sim, ctypes.cast(buffer, ctypes.c_void_p), total)
+
         self.assertAlmostEqual(sim._values["speed.iasKt"], 108.5, places=3)
         self.assertGreater(sim._last_data_at, 0.0)
 

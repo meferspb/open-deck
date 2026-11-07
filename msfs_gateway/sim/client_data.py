@@ -17,8 +17,14 @@ from __future__ import annotations
 import itertools
 import logging
 import threading
+import time
 from collections.abc import Callable
 from typing import Any, Protocol, runtime_checkable
+
+#: После стольких таймаутов подряд обмен временно прекращается: иначе
+#: отсутствующий WASM-модуль «вешал» бы поток телеметрии на каждом кадре.
+DEFAULT_FAILURE_THRESHOLD = 2
+DEFAULT_CIRCUIT_COOLDOWN = 30.0
 
 
 class ClientDataError(RuntimeError):
@@ -61,6 +67,8 @@ class ClientDataChannel:
         *,
         timeout: float = 1.5,
         logger: logging.Logger | None = None,
+        failure_threshold: int = DEFAULT_FAILURE_THRESHOLD,
+        cooldown: float = DEFAULT_CIRCUIT_COOLDOWN,
     ) -> None:
         self._backend = backend
         self._timeout = timeout
@@ -73,10 +81,20 @@ class ClientDataChannel:
         self._areas: dict[str, int] = {}
         #: Чтобы не спамить лог при отсутствующем WASM-модуле.
         self._timeout_logged: set[str] = set()
+        #: Предохранитель: не долбить неответивший WASM-модуль каждый кадр.
+        self._failure_threshold = max(1, int(failure_threshold))
+        self._cooldown = max(0.0, float(cooldown))
+        self._consecutive_failures = 0
+        self._circuit_until = 0.0
 
         sink: Any = getattr(backend, "set_sink", None)
         if callable(sink):
             sink(self.deliver)
+
+    @property
+    def available(self) -> bool:
+        """Есть ли смысл обращаться к транспорту прямо сейчас."""
+        return time.monotonic() >= self._circuit_until
 
     # ------------------------------------------------------------------
     @property
@@ -97,6 +115,8 @@ class ClientDataChannel:
             return b""
         if not name:
             raise ClientDataError("Пустое имя области")
+        if not self.available:
+            return None
 
         self._ensure(name, size)
         request_id = next(self._ids)
@@ -109,12 +129,14 @@ class ClientDataChannel:
         except Exception as exc:
             with self._lock:
                 self._pending.pop(request_id, None)
+            self._register_failure(name)
             raise ClientDataError(f"{name}: запрос не отправлен ({exc})") from exc
 
         wait_for = self._timeout if timeout is None else max(0.0, timeout)
         if not pending.event.wait(wait_for):
             with self._lock:
                 self._pending.pop(request_id, None)
+            self._register_failure(name)
             if name not in self._timeout_logged:
                 self._timeout_logged.add(name)
                 self.logger.warning(
@@ -125,18 +147,44 @@ class ClientDataChannel:
             return None
 
         if pending.error:
+            self._register_failure(name)
             raise ClientDataError(f"{name}: {pending.error}")
 
         data = pending.payload or b""
+        self._register_success()
         self._timeout_logged.discard(name)
         return data[:size]
 
     def write_area(self, name: str, payload: bytes) -> None:
         if not name:
             raise ClientDataError("Пустое имя области")
+        if not self.available:
+            raise ClientDataError(f"{name}: обмен Client Data временно приостановлен")
         data = bytes(payload)
         self._ensure(name, len(data))
         self._backend.write_area(name, data)
+
+    def _register_failure(self, name: str) -> None:
+        now = time.monotonic()
+        with self._lock:
+            self._consecutive_failures += 1
+            if self._consecutive_failures < self._failure_threshold:
+                return
+            if self._circuit_until > now:
+                return
+            self._circuit_until = now + self._cooldown
+            failures = self._consecutive_failures
+        self.logger.warning(
+            "Client Data «%s»: %d таймаут(ов) подряд, обмен приостановлен на %.0f с",
+            name,
+            failures,
+            self._cooldown,
+        )
+
+    def _register_success(self) -> None:
+        with self._lock:
+            self._consecutive_failures = 0
+            self._circuit_until = 0.0
 
     # ------------------------------------------------------------------
     # Колбэки транспорта
@@ -173,6 +221,8 @@ class ClientDataChannel:
         with self._lock:
             self._areas.clear()
             self._timeout_logged.clear()
+            self._consecutive_failures = 0
+            self._circuit_until = 0.0
 
 
 class LoopbackClientDataBackend:

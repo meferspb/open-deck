@@ -21,8 +21,16 @@ const donationBody = document.getElementById('login-donation-body');
 /** Куда вернуться после входа: только локальный путь. */
 function nextTarget() {
   const raw = new URLSearchParams(window.location.search).get('next') || '/';
-  if (!raw.startsWith('/') || raw.startsWith('//')) return '/';
-  return raw;
+  // Обратный слэш браузеры нормализуют в '/', поэтому '/\evil.com' стал бы
+  // внешним адресом. Проверяем итоговый origin, а не только префикс.
+  if (raw.includes('\\') || raw.startsWith('//')) return '/';
+  try {
+    const url = new URL(raw, window.location.origin);
+    if (url.origin !== window.location.origin) return '/';
+    return url.pathname + url.search + url.hash;
+  } catch {
+    return '/';
+  }
 }
 
 function showError(message) {

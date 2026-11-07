@@ -73,6 +73,11 @@ class BuildMessageTest(unittest.TestCase):
         second = self.hub.build_message()["seq"]
         self.assertEqual(second, first + 1)
 
+    def test_none_value_is_preserved(self):
+        self.sim._values["speed.iasKt"] = None
+        message = self.hub.build_message()
+        self.assertIsNone(message["values"]["speed.iasKt"])
+
 
 class CommandTest(unittest.TestCase):
     def setUp(self):
@@ -112,6 +117,18 @@ class CommandTest(unittest.TestCase):
             self.assertTrue(ack["ok"])
         # Следующая — отказ.
         ack = self.hub.handle_command("power.batteryMaster", True, "overflow", client=client)
+        self.assertFalse(ack["ok"])
+        self.assertEqual(ack["code"], "rate_limited")
+
+    def test_rate_limit_for_rest_address(self):
+        for i in range(COMMANDS_PER_SECOND):
+            ack = self.hub.handle_command(
+                "power.batteryMaster", True, f"rest-{i}", rate_key="192.0.2.10"
+            )
+            self.assertTrue(ack["ok"])
+        ack = self.hub.handle_command(
+            "power.batteryMaster", True, "rest-overflow", rate_key="192.0.2.10"
+        )
         self.assertFalse(ack["ok"])
         self.assertEqual(ack["code"], "rate_limited")
 

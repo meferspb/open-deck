@@ -344,10 +344,10 @@ class MainActivity : Activity() {
         var text = raw.trim()
         if (text.isEmpty()) return null
         if (text.any { it.isWhitespace() }) return null
+        text = text.removePrefix("http://").removePrefix("https://").trimEnd('/')
         // IPv6 и «лишние» двоеточия не поддерживаются осознанно.
         if (text.startsWith("[") || text.count { it == ':' } > 1) return null
 
-        text = text.removePrefix("http://").removePrefix("https://").trimEnd('/')
         val parts = text.split(':')
         val address = parts[0].trim()
         if (address.isEmpty() || address.contains('/')) return null

@@ -3,7 +3,7 @@
  * линия, стрелка со сглаживанием и цифровое значение в нижнем разрыве.
  */
 
-import { formatNumber } from '../core/format.js';
+import { formatNumber, toFiniteNumber } from '../core/format.js';
 import { CanvasSurface, Smoother, TONE_COLORS, Widget, createCard } from './base.js';
 
 const MONO = '"Cascadia Mono", "Consolas", monospace';
@@ -35,8 +35,8 @@ export class RadialGaugeWidget extends Widget {
   }
 
   update(state, now = performance.now()) {
-    const raw = Number(this.bindingValue(state, 'value'));
-    this.hasData = Number.isFinite(raw);
+    const raw = toFiniteNumber(this.bindingValue(state, 'value'));
+    this.hasData = raw !== null;
     if (this.hasData) {
       this.needle.update(Math.min(this.max, Math.max(this.min, raw)), now);
     }

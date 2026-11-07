@@ -133,47 +133,58 @@ class SessionStore:
         self.ttl = ttl
         self._lock = threading.Lock()
         self._sessions: dict[str, _Session] = {}
+        self._last_prune = 0.0
 
     def create(self, *, ttl: float | None = None, pairing: bool = False) -> str:
         """Создаёт сессию и возвращает токен."""
         token = secrets.token_urlsafe(32)
         duration = self.ttl if ttl is None else ttl
         with self._lock:
-            self._prune_locked()
+            self._maybe_prune_locked()
             self._sessions[token] = _Session(
                 token=token, expires_at=time.monotonic() + duration, pairing=pairing
             )
         return token
 
     def validate(self, token: str | None, *, touch: bool = True) -> bool:
-        """Проверяет токен и при необходимости продлевает сессию."""
+        """Проверяет токен и при необходимости продлевает сессию.
+
+        Одноразовые QR-токены (`pairing=True`) здесь недействительны: их
+        единственный разрешённый путь — `consume_pairing` через `/?pair=`.
+        """
         if not token:
             return False
+        now = time.monotonic()
         with self._lock:
+            self._maybe_prune_locked(now)
             session = self._sessions.get(token)
-            if session is None or session.expires_at <= time.monotonic():
+            if session is None or session.expires_at <= now:
                 self._sessions.pop(token, None)
                 return False
+            if session.pairing:
+                # Не гасим QR-токен: его должен погасить ровно один
+                # `consume_pairing` через `/?pair=`.
+                return False
             if touch:
-                session.expires_at = time.monotonic() + self.ttl
+                session.expires_at = now + self.ttl
             return True
 
     def consume_pairing(self, token: str | None) -> str | None:
         """Гасит одноразовый QR-токен и возвращает обычную сессию."""
         if not token:
             return None
+        now = time.monotonic()
         with self._lock:
+            self._maybe_prune_locked(now)
             session = self._sessions.get(token)
             if session is None or not session.pairing:
                 return None
-            if session.expires_at <= time.monotonic():
+            if session.expires_at <= now:
                 self._sessions.pop(token, None)
                 return None
             self._sessions.pop(token, None)
             new_token = secrets.token_urlsafe(32)
-            self._sessions[new_token] = _Session(
-                token=new_token, expires_at=time.monotonic() + self.ttl
-            )
+            self._sessions[new_token] = _Session(token=new_token, expires_at=now + self.ttl)
             return new_token
 
     def revoke(self, token: str | None) -> None:
@@ -192,6 +203,14 @@ class SessionStore:
         """Число активных сессий (диагностика)."""
         with self._lock:
             return len(self._sessions)
+
+    def _maybe_prune_locked(self, now: float | None = None) -> None:
+        """Периодически убирает просроченные сессии, чтобы словарь не рос."""
+        moment = time.monotonic() if now is None else now
+        if moment - self._last_prune < 60.0:
+            return
+        self._last_prune = moment
+        self._prune_locked()
 
     def _prune_locked(self) -> None:
         now = time.monotonic()
@@ -216,11 +235,13 @@ class LoginLimiter:
         self._lock = threading.Lock()
         self._failures: dict[str, list[float]] = {}
         self._blocked_until: dict[str, float] = {}
+        self._last_prune = 0.0
 
     def retry_after(self, address: str) -> float:
         """Сколько секунд ждать (0 — попытки разрешены)."""
         now = time.monotonic()
         with self._lock:
+            self._maybe_prune_locked(now)
             blocked = self._blocked_until.get(address, 0.0)
             return max(0.0, blocked - now)
 
@@ -228,6 +249,7 @@ class LoginLimiter:
         """Учитывает неудачу и возвращает retry_after для ответа клиенту."""
         now = time.monotonic()
         with self._lock:
+            self._maybe_prune_locked(now)
             attempts = [
                 moment for moment in self._failures.get(address, []) if now - moment <= self.window
             ]
@@ -243,6 +265,21 @@ class LoginLimiter:
         with self._lock:
             self._failures.pop(address, None)
             self._blocked_until.pop(address, None)
+
+    def _maybe_prune_locked(self, now: float) -> None:
+        """Периодически убирает старые записи, чтобы словари не росли."""
+        if now - self._last_prune < 60.0:
+            return
+        self._last_prune = now
+        for address, until in list(self._blocked_until.items()):
+            if until <= now:
+                self._blocked_until.pop(address, None)
+        for address, attempts in list(self._failures.items()):
+            recent = [moment for moment in attempts if now - moment <= self.window]
+            if recent:
+                self._failures[address] = recent
+            else:
+                self._failures.pop(address, None)
 
 
 @dataclass

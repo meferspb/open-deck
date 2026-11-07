@@ -81,6 +81,9 @@ class Hub:
         self._override_identity: tuple[str | None, str | None] = (None, None)
         self._custom_error_logged = False
         self._read_error_logged = False
+        #: Лимит команд для REST (ключ — адрес клиента), чтобы не обходить
+        #: защиту WebSocket обычными HTTP-запросами.
+        self._address_windows: dict[str, deque[float]] = {}
         self.refresh_profile_index()
 
     # ------------------------------------------------------------------
@@ -239,7 +242,9 @@ class Hub:
         thread = self._thread
         self._thread = None
         if thread is not None:
-            thread.join(timeout=2.0)
+            thread.join(timeout=5.0)
+            if thread.is_alive():
+                self.logger.warning("Поток телеметрии не завершился за 5 с")
 
     def _loop(self) -> None:
         period = 1.0 / self.hz
@@ -293,8 +298,11 @@ class Hub:
         # проверять наличие. Пользовательские (LVAR/RPN) добавляются ниже.
         clean: dict[str, Any] = {}
         for key in telemetry.VARIABLES:
-            value = values.get(key, telemetry.default_value(key))
-            if isinstance(value, float):
+            # Отсутствие ключа — тоже «данных нет»: не подставляем ноль.
+            value = values.get(key)
+            if value is None:
+                clean[key] = None
+            elif isinstance(value, float):
                 clean[key] = round(value, 3)
             elif isinstance(value, (int, str, bool)):
                 clean[key] = value
@@ -418,6 +426,7 @@ class Hub:
         value: Any,
         request_id: Any = None,
         client: ClientInfo | None = None,
+        rate_key: str | None = None,
     ) -> dict[str, Any]:
         """Единая точка входа для команд из WebSocket и REST."""
         if not isinstance(key, str) or not key:
@@ -427,7 +436,13 @@ class Hub:
                 request_id, key, "not_writable", f"Переменная {key!r} не принимает команды"
             )
 
-        if client is not None and not self._allow_command(client):
+        if client is not None:
+            allowed = self._allow_command(client)
+        elif rate_key is not None:
+            allowed = self._allow_address(rate_key)
+        else:
+            allowed = True
+        if not allowed:
             return self._nack(
                 request_id, key, "rate_limited", "Слишком много команд, попробуйте позже"
             )
@@ -481,6 +496,31 @@ class Hub:
             return False
         window.append(now)
         return True
+
+    def _allow_address(self, address: str) -> bool:
+        """Тот же лимит, но для REST-клиентов, сгруппированных по адресу."""
+        now = time.monotonic()
+        with self._lock:
+            # Не даём словарю расти бесконечно при сканировании из многих адресов.
+            if len(self._address_windows) > 512:
+                stale = [
+                    key
+                    for key, window in self._address_windows.items()
+                    if not window or now - window[-1] > 1.0
+                ]
+                for key in stale:
+                    self._address_windows.pop(key, None)
+            window = self._address_windows.get(address)
+            if window is None:
+                window = deque(maxlen=COMMANDS_PER_SECOND * 2)
+                self._address_windows[address] = window
+            while window and now - window[0] > 1.0:
+                window.popleft()
+            if len(window) >= COMMANDS_PER_SECOND:
+                self.logger.warning("Адрес %s превысил лимит REST-команд", address)
+                return False
+            window.append(now)
+            return True
 
     @staticmethod
     def _nack(request_id: Any, key: Any, code: str, message: str) -> dict[str, Any]:

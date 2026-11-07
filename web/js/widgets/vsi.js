@@ -3,6 +3,7 @@
  * Помощник `vsiAngle` вынесен отдельно — по нему есть тест.
  */
 
+import { toFiniteNumber } from '../core/format.js';
 import { CanvasSurface, Smoother, Widget, createCard, degToRad } from './base.js';
 
 const MONO = '"Cascadia Mono", "Consolas", monospace';
@@ -29,8 +30,8 @@ export class VsiWidget extends Widget {
   }
 
   update(state, now = performance.now()) {
-    const value = Number(this.bindingValue(state, 'value'));
-    this.hasData = Number.isFinite(value);
+    const value = toFiniteNumber(this.bindingValue(state, 'value'));
+    this.hasData = value !== null;
     if (this.hasData) this.value.update(value, now);
     this.surface.resize();
     this.draw();

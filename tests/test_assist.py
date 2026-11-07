@@ -74,10 +74,10 @@ class TaxiTest(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("тормоз", message)
 
-    def test_engage_sets_heading(self):
-        ok, _ = self.taxi.engage(base_values(**{"heading.magneticDeg": "bad"}))
-        self.assertTrue(ok)
-        self.assertEqual(self.taxi.status.target_heading_deg, 0.0)
+    def test_engage_refuses_bad_heading(self):
+        ok, message = self.taxi.engage(base_values(**{"heading.magneticDeg": "bad"}))
+        self.assertFalse(ok)
+        self.assertIn("Нет данных о курсе", message)
 
     def test_speed_limits(self):
         self.taxi.set_speed(1)
@@ -126,11 +126,29 @@ class TaxiTest(unittest.TestCase):
         self.assertEqual(self.sink.last("controls.throttlePct"), 0)
         self.assertTrue(self.sink.last("brakes.parking"))
 
+    def test_disengages_without_speed_data(self):
+        self.taxi.engage(base_values())
+        values = base_values()
+        values.pop("groundSpeed.kt")
+        self.taxi.update(0.1, values)
+        self.assertFalse(self.taxi.status.engaged)
+        self.assertIn("Нет данных", self.taxi.status.message)
+
+    def test_engage_refuses_unknown_ground_state(self):
+        ok, message = self.taxi.engage(base_values(**{"aircraft.onGround": None}))
+        self.assertFalse(ok)
+        self.assertIn("Нет данных", message)
+
 
 class LandingTest(unittest.TestCase):
     def setUp(self):
         self.sink = Sink()
         self.landing = LandingAssist(self.sink)
+
+    def test_arm_refuses_unknown_ground_state(self):
+        ok, message = self.landing.arm(base_values(**{"aircraft.onGround": None}))
+        self.assertFalse(ok)
+        self.assertIn("Нет данных", message)
 
     def test_arm_refuses_on_ground(self):
         ok, message = self.landing.arm(base_values(**{"aircraft.onGround": True}))
@@ -192,6 +210,41 @@ class LandingTest(unittest.TestCase):
         self.assertEqual(self.landing.status.phase, "rollout")
         self.assertFalse(self.sink.last("autopilot.master"))
         self.assertEqual(self.sink.last("controls.throttlePct"), 0)
+
+    def test_missing_radio_altitude_holds_throttle_in_flare(self):
+        values = base_values(
+            **{
+                "aircraft.onGround": False,
+                "speed.iasKt": 120.0,
+                "aircraft.radioAltitudeFt": 400.0,
+            }
+        )
+        self.landing.arm(values)
+        self.landing.update(0.1, {**values, "autopilot.approach": True})
+        self.landing.update(0.1, {**values, "aircraft.radioAltitudeFt": 30.0})
+        self.assertEqual(self.landing.status.phase, "flare")
+        throttle_before = self.landing.status.throttle_pct
+
+        missing = dict(values)
+        missing.pop("aircraft.radioAltitudeFt")
+        self.landing.update(0.1, missing)
+
+        self.assertEqual(self.landing.status.phase, "flare")
+        self.assertEqual(self.landing.status.throttle_pct, throttle_before)
+        self.assertIn("Нет данных о высоте", self.landing.status.message)
+
+    def test_arm_rolls_back_ap_when_apr_fails(self):
+        class AprFailingSink(Sink):
+            def __call__(self, key, value):
+                self.commands.append((key, value))
+                return key != "autopilot.approachHold"
+
+        sink = AprFailingSink()
+        landing = LandingAssist(sink)
+        ok, _ = landing.arm(base_values(**{"aircraft.onGround": False, "speed.iasKt": 120.0}))
+        self.assertFalse(ok)
+        self.assertEqual(landing.status.phase, "off")
+        self.assertFalse(sink.last("autopilot.master"))
 
     def test_rollout_finishes(self):
         values = base_values(**{"aircraft.onGround": True, "speed.iasKt": 0})

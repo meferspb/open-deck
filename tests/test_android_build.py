@@ -44,9 +44,31 @@ class SettingsTest(unittest.TestCase):
         settings = ab.AndroidBuildSettings(output_dir="C:/temp")
         self.assertTrue(any("outputDir" in error for error in settings.validate()))
 
+    def test_rejects_drive_relative_output_dir(self):
+        settings = ab.AndroidBuildSettings(output_dir="C:temp")
+        self.assertTrue(any("outputDir" in error for error in settings.validate()))
+
+    def test_bad_types_return_errors_instead_of_crashing(self):
+        for settings in (
+            ab.AndroidBuildSettings(app_name=123),  # type: ignore[arg-type]
+            ab.AndroidBuildSettings(version_code="abc"),  # type: ignore[arg-type]
+            ab.AndroidBuildSettings(output_dir=123),  # type: ignore[arg-type]
+        ):
+            self.assertTrue(settings.validate())
+
+    def test_rejects_quotes_in_app_name(self):
+        settings = ab.AndroidBuildSettings(app_name='Panel "X"')
+        self.assertTrue(any("appName" in error for error in settings.validate()))
+
     def test_rejects_extra_args_not_list(self):
         settings = ab.AndroidBuildSettings(extra_gradle_args="--foo")  # type: ignore[arg-type]
         self.assertTrue(any("extraGradleArgs" in error for error in settings.validate()))
+
+    def test_rejects_unsafe_extra_args(self):
+        settings = ab.AndroidBuildSettings(extra_gradle_args=["--init-script=evil.gradle"])
+        self.assertTrue(any("недопустимый" in error for error in settings.validate()))
+        safe = ab.AndroidBuildSettings(extra_gradle_args=["--offline", "-Pfoo=bar"])
+        self.assertEqual(safe.validate(), [])
 
     def test_save_and_load_roundtrip(self):
         with tempfile.TemporaryDirectory() as tmp:

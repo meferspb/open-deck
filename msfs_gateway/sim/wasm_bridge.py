@@ -41,8 +41,10 @@ RESPONSE_AREA: Final = "MobiFlight.Response"
 
 COMMAND_BYTES: Final = 1024
 RESPONSE_BYTES: Final = 1024
-#: Сколько LVAR тянуть за один запрос (ограничение размера области).
-MAX_LVARS_PER_BLOCK: Final = 64
+#: Сколько LVAR тянуть за один запрос. 56 × 136 = 7616 байт: вместе с
+#: заголовком пакета это меньше MaxRecvData/MaxSendData = 8192 из
+#: генерируемого SimConnect.cfg (64 элемента уже не помещались).
+MAX_LVARS_PER_BLOCK: Final = 56
 
 _SET_LVAR_PATTERN: Final = re.compile(
     r"^\s*(-?\d+(?:\.\d+)?)\s*\(\s*>\s*L\s*:\s*([^,]+?)\s*,\s*[A-Za-z]+\s*\)\s*$"
@@ -279,6 +281,11 @@ class WasmBridge:
         Поддерживаются источники `lvar` (одним блоком) и `rpn` (по одному
         запросу). Ошибки отдельных записей не роняют остальные.
         """
+        if not self.available:
+            # Мост отключён или предохранитель Client Data открыт: не тратим
+            # время на таймауты, приборы просто покажут «--».
+            return {}
+
         values: dict[str, Any] = {}
 
         lvar_specs = [spec for spec in specs if spec.get("source") == "lvar"]
@@ -298,6 +305,8 @@ class WasmBridge:
         for spec in specs:
             if spec.get("source") != "rpn":
                 continue
+            if not self.available:
+                break
             try:
                 response = self.execute_rpn(str(spec.get("expression", "")))
             except Exception as exc:

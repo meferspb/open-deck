@@ -27,6 +27,7 @@ from collections.abc import Callable, Iterable
 from dataclasses import asdict, dataclass, field
 from glob import glob as _glob
 from pathlib import Path
+from typing import Any
 
 from .settings import APP_ROOT
 
@@ -37,6 +38,12 @@ DEFAULT_SETTINGS_PATH = APP_ROOT / "config" / "android-build.json"
 APP_ID_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$")
 VERSION_RE = re.compile(r"^[0-9]+(\.[0-9]+){0,3}([-+][0-9A-Za-z.-]+)?$")
 HOST_RE = re.compile(r"^[A-Za-z0-9._-]*$")
+#: Дополнительные аргументы Gradle ограничены безопасным allowlist:
+#: произвольный `--init-script` или `-I` — это выполнение кода.
+GRADLE_ARG_RE = re.compile(
+    r"^(-P[A-Za-z0-9_.-]+=[^\r\n]{0,200}"
+    r"|--(?:offline|stacktrace|info|debug|warning-mode=(?:all|fail|summary)))$"
+)
 
 #: Ключи JSON (camelCase) → поля dataclass.
 _FIELDS = {
@@ -93,30 +100,59 @@ class AndroidBuildSettings:
     def validate(self) -> list[str]:
         """Проверяет настройки и возвращает список ошибок."""
         errors: list[str] = []
-        name = (self.app_name or "").strip()
+        name = self.app_name.strip() if isinstance(self.app_name, str) else ""
         if not 1 <= len(name) <= 48:
             errors.append("appName: 1–48 символов")
         elif any(ord(char) < 32 or ord(char) == 127 for char in name):
             errors.append("appName: управляющие символы недопустимы")
-        if not APP_ID_RE.match(self.application_id or ""):
+        elif any(char in name for char in '&<>"'):
+            errors.append('appName: символы & < > " недопустимы в manifest')
+        application_id = self.application_id if isinstance(self.application_id, str) else ""
+        if not APP_ID_RE.match(application_id):
             errors.append("applicationId: ожидается вида com.example.panel")
-        if not VERSION_RE.match(self.version_name or ""):
+        version_name = self.version_name if isinstance(self.version_name, str) else ""
+        if not VERSION_RE.match(version_name):
             errors.append("versionName: ожидается 1.2.3")
-        if not 1 <= int(self.version_code or 0) <= 2_100_000_000:
+
+        def as_int(value: Any) -> int | None:
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                return None
+
+        version_code = as_int(self.version_code)
+        if version_code is None or not 1 <= version_code <= 2_100_000_000:
             errors.append("versionCode: целое 1..2100000000")
-        if not 1 <= int(self.default_port or 0) <= 65535:
+        default_port = as_int(self.default_port)
+        if default_port is None or not 1 <= default_port <= 65535:
             errors.append("defaultPort: 1..65535")
-        if self.default_host and not HOST_RE.match(self.default_host):
+        default_host = self.default_host if isinstance(self.default_host, str) else None
+        if default_host is None:
+            errors.append("defaultHost: строка")
+        elif default_host and not HOST_RE.match(default_host):
             errors.append("defaultHost: только буквы, цифры, точка, дефис, подчёркивание")
-        if not 1 <= int(self.timeout_sec or 0) <= 3600:
+        timeout_sec = as_int(self.timeout_sec)
+        if timeout_sec is None or not 1 <= timeout_sec <= 3600:
             errors.append("timeoutSec: 60..3600")
         if not isinstance(self.extra_gradle_args, list) or any(
             not isinstance(item, str) for item in self.extra_gradle_args
         ):
             errors.append("extraGradleArgs: список строк")
-        output = Path(self.output_dir or "dist")
-        if output.is_absolute() or ".." in output.parts:
-            errors.append("outputDir: относительный путь внутри дистрибутива")
+        else:
+            for item in self.extra_gradle_args:
+                if not GRADLE_ARG_RE.match(item):
+                    errors.append(
+                        f"extraGradleArgs: недопустимый аргумент {item!r} "
+                        "(разрешены -P… и --offline/--stacktrace/--info/--debug)"
+                    )
+        if not isinstance(self.output_dir, str):
+            errors.append("outputDir: строка")
+        else:
+            output = Path(self.output_dir or "dist")
+            # На Windows Path("C:foo") не абсолютный, но drive-relative:
+            # (APP_ROOT / output) ушёл бы на другой диск.
+            if output.is_absolute() or output.drive or output.anchor or ".." in output.parts:
+                errors.append("outputDir: относительный путь внутри дистрибутива")
         return errors
 
 

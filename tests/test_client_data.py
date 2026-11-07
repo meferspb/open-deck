@@ -93,6 +93,25 @@ class TimeoutTest(unittest.TestCase):
         channel.deliver(request_id, b"late")
         self.assertEqual(channel.pending_count, 0)
 
+    def test_circuit_opens_after_timeouts(self):
+        backend = SilentBackend()
+        channel = ClientDataChannel(backend, timeout=0.01, failure_threshold=2, cooldown=60.0)
+
+        self.assertIsNone(channel.read_area("MobiFlight.LVars", 136))
+        self.assertIsNone(channel.read_area("MobiFlight.LVars", 136))
+        self.assertFalse(channel.available)
+
+        # Пока предохранитель открыт, запросы не уходят в транспорт.
+        self.assertIsNone(channel.read_area("MobiFlight.LVars", 136))
+        self.assertEqual(len(backend.requests), 2)
+
+    def test_success_resets_circuit(self):
+        backend = LoopbackClientDataBackend()
+        backend.areas["Area"] = b"ok"
+        channel = ClientDataChannel(backend, timeout=0.01, failure_threshold=2)
+        self.assertEqual(channel.read_area("Area", 2), b"ok")
+        self.assertTrue(channel.available)
+
     def test_fail_all_releases_waiter(self):
         backend = SilentBackend()
         channel = ClientDataChannel(backend, timeout=2.0)

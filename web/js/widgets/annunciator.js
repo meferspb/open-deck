@@ -28,7 +28,8 @@ export class AnnunciatorWidget extends Widget {
 
   update(state) {
     const raw = this.bindingValue(state, 'active');
-    const lit = this.invert ? !raw : Boolean(raw);
+    // null — данных нет: не зажигаем лампу, даже если задан invert.
+    const lit = raw == null ? false : this.invert ? !raw : Boolean(raw);
     if (lit === this.lit) return;
     this.lit = lit;
     this.card.classList.toggle('is-lit', lit);

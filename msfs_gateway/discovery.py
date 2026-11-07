@@ -121,7 +121,13 @@ class DiscoveryBeacon:
         return payload
 
     def _broadcast_once(self) -> None:
-        data = json.dumps(self.payload(), ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        payload = self.payload()
+        data = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        if len(data) > MAX_BEACON_BYTES:
+            # Список профилей — необязательная деталь: без него хост всё ещё
+            # можно найти и подключить. Пропускать бикон целиком нельзя.
+            payload["profiles"] = []
+            data = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         if len(data) > MAX_BEACON_BYTES:
             logger.warning("Бикон автообнаружения слишком большой (%d байт)", len(data))
             return

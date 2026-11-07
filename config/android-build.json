@@ -5,7 +5,7 @@
   "versionCode": 1,
   "defaultHost": "",
   "defaultPort": 8760,
-  "outputDir": "dist",
+  "outputDir": "android/dist",
   "jdkPath": "",
   "sdkPath": "",
   "gradlePath": "",

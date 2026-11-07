@@ -5,6 +5,8 @@
  * сервисов: сборка идёт на этом же компьютере.
  */
 
+import { hydrateDonationLinks } from './core/donation-links.js';
+
 const FIELDS = [
   'appName',
   'applicationId',
@@ -182,4 +184,5 @@ $('android-download').addEventListener('click', (event) => {
   }
 });
 
+hydrateDonationLinks();
 loadSettings().then(() => pollBuild());

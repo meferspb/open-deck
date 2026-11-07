@@ -5,7 +5,7 @@
   "chipLabel": "Поддержать",
   "message": "Проект бесплатный и работает без интернета. Если панель экономит ваше время в полёте — поддержите автора.",
   "updatedAt": "2026-11-07",
-  "license": "CC-BY-NC-ND-MODIFIED (Open Free-to-Use with Mandatory Unmodified Attribution)",
+  "license": "GNU Affero General Public License v3.0 (AGPL-3.0) with additional Section 7 terms",
   "links": [
     {
       "label": "Donat",

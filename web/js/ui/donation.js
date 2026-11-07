@@ -7,6 +7,7 @@
  */
 
 import { api } from '../core/api.js';
+import { applyDonationLinksFromConfig } from '../core/donation-links.js';
 
 /**
  * @param {{chip: HTMLElement, dialog: HTMLDialogElement, body: HTMLElement, closeButton: HTMLElement}} refs
@@ -21,6 +22,7 @@ export function createDonation({ chip, dialog, body, closeButton }) {
       config = null;
     }
 
+    applyDonationLinksFromConfig(config);
     const label = chip.querySelector('span');
     if (label && typeof config?.chipLabel === 'string' && config.chipLabel.trim()) {
       label.textContent = config.chipLabel;

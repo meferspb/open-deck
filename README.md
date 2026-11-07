@@ -21,7 +21,7 @@ Android-приложению по HTTP + WebSocket. Панели описыва�
 | Клиенты | браузер (любой современный), Android 8+ |
 | Автор | Viktor Krasnikov — [github.com/meferspb/open-deck](https://github.com/meferspb/open-deck) |
 | Donat | [https://taps.uz/open_deck_fs](https://taps.uz/open_deck_fs) |
-| Лицензия | [CC-BY-NC-ND-MODIFIED](LICENSE) — бесплатно, с обязательным блоком поддержки автора |
+| Лицензия | [GNU AGPL-3.0](LICENSE) — свободное ПО с обязательным блоком поддержки автора (Section 7) |
 
 ## Скриншоты
 

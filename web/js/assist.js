@@ -6,6 +6,8 @@
  * работой: 1–2 запроса в секунду по локальной сети.
  */
 
+import { hydrateDonationLinks } from './core/donation-links.js';
+
 const $ = (id) => document.getElementById(id);
 
 const PHASES = {
@@ -200,5 +202,6 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden) refresh();
 });
 
+hydrateDonationLinks();
 refresh();
 schedulePoll();

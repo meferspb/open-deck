@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "RudPanelGateway"
+rootProject.name = "OpenDeck"
 include(":app")

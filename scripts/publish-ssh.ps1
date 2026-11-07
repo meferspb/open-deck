@@ -1,6 +1,6 @@
 # Публикация репозитория по SSH.
 #
-#   pwsh -File scripts/publish-ssh.ps1 -Remote git@github.com:owner/rud-panel-gateway.git
+#   pwsh -File scripts/publish-ssh.ps1 -Remote git@github.com:meferspb/open-deck.git
 #
 # Скрипт проверяет чистоту дерева и доступ по ключу, затем делает push в main.
 # Ключ по умолчанию — ~/.ssh/id_ed25519_github (ssh-keygen -t ed25519).
@@ -20,7 +20,7 @@ $repo = Resolve-Path (Join-Path $PSScriptRoot "..")
 Set-Location $repo
 
 if (-not (Test-Path $Key)) {
-    throw "Не найден SSH-ключ: $Key. Создайте: ssh-keygen -t ed25519 -C rud-panel-gateway -f `"$Key`""
+    throw "Не найден SSH-ключ: $Key. Создайте: ssh-keygen -t ed25519 -C open-deck -f `"$Key`""
 }
 
 $status = git status --porcelain

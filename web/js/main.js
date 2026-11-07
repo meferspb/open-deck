@@ -18,8 +18,8 @@ import { createConnect } from './ui/connect.js';
 import { createComfort } from './ui/comfort.js';
 import { verifyUiIntegrity, watchIntegrity } from './ui/integrity.js';
 
-const DEVICE_KEY = 'rud-gateway:device';
-const PROFILE_KEY = 'rud-gateway:profile';
+const DEVICE_KEY = 'open-deck:device';
+const PROFILE_KEY = 'open-deck:profile';
 
 const params = new URLSearchParams(window.location.search);
 const store = createStore({

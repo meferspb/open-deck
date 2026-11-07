@@ -1,4 +1,4 @@
-; RUD Panel Gateway — установщик (NSIS 3, Unicode).
+; Open Deck for MSFS — установщик (NSIS 3, Unicode).
 ;
 ; Ставится в профиль пользователя (%LOCALAPPDATA%), права администратора
 ; не нужны. Внутри — самодостаточный .exe (Python + шлюз), статика клиента,
@@ -15,20 +15,20 @@ Unicode true
   !define PRODUCT_VERSION "0.1.0"
 !endif
 
-!define PRODUCT_NAME "RUD Panel Gateway"
-!define PRODUCT_PUBLISHER "RUD Panel Gateway contributors"
-!define PRODUCT_EXE "RudPanelGateway.exe"
-!define UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\RudPanelGateway"
-!define APP_SRC "..\..\build\pyinstaller\dist\RudPanelGateway"
+!define PRODUCT_NAME "Open Deck for MSFS"
+!define PRODUCT_PUBLISHER "Viktor Krasnikov"
+!define PRODUCT_EXE "OpenDeck.exe"
+!define UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenDeck"
+!define APP_SRC "..\..\build\pyinstaller\dist\OpenDeck"
 !define ROOT_SRC "..\.."
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 !ifndef OUTFILE
-  !define OUTFILE "..\..\dist\RudPanelGateway-Setup-${PRODUCT_VERSION}.exe"
+  !define OUTFILE "..\..\dist\OpenDeck-Setup-${PRODUCT_VERSION}.exe"
 !endif
 OutFile "${OUTFILE}"
-InstallDir "$LOCALAPPDATA\RudPanelGateway"
-InstallDirRegKey HKCU "Software\RudPanelGateway" "InstallDir"
+InstallDir "$LOCALAPPDATA\OpenDeck"
+InstallDirRegKey HKCU "Software\OpenDeck" "InstallDir"
 RequestExecutionLevel user
 SetCompressor /SOLID lzma
 SetCompressorDictSize 32
@@ -41,6 +41,10 @@ VIAddVersionKey "FileDescription" "Локальный шлюз приборны�
 VIAddVersionKey "FileVersion" "${PRODUCT_VERSION}"
 VIAddVersionKey "LegalCopyright" "${PRODUCT_PUBLISHER}"
 
+!define MUI_ICON "open-deck.ico"
+!define MUI_UNICON "open-deck.ico"
+Icon "open-deck.ico"
+UninstallIcon "open-deck.ico"
 !define MUI_ABORTWARNING
 !define MUI_FINISHPAGE_RUN "$INSTDIR\${PRODUCT_EXE}"
 !define MUI_FINISHPAGE_RUN_TEXT "Запустить ${PRODUCT_NAME}"
@@ -98,7 +102,7 @@ Section "Приложение" SecMain
   WriteINIStr "$SMPROGRAMS\${PRODUCT_NAME}\Собрать Android APK.url" "InternetShortcut" "URL" "http://127.0.0.1:8760/android.html"
   CreateShortcut "$SMPROGRAMS\${PRODUCT_NAME}\Удалить ${PRODUCT_NAME}.lnk" "$INSTDIR\Uninstall.exe"
 
-  WriteRegStr HKCU "Software\RudPanelGateway" "InstallDir" "$INSTDIR"
+  WriteRegStr HKCU "Software\OpenDeck" "InstallDir" "$INSTDIR"
   WriteRegStr HKCU "${UNINST_KEY}" "DisplayName" "${PRODUCT_NAME}"
   WriteRegStr HKCU "${UNINST_KEY}" "DisplayVersion" "${PRODUCT_VERSION}"
   WriteRegStr HKCU "${UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
@@ -130,7 +134,7 @@ Section "Uninstall"
   RMDir "$SMPROGRAMS\${PRODUCT_NAME}"
 
   DeleteRegKey HKCU "${UNINST_KEY}"
-  DeleteRegKey HKCU "Software\RudPanelGateway"
+  DeleteRegKey HKCU "Software\OpenDeck"
 
   RMDir /r "$INSTDIR"
 SectionEnd

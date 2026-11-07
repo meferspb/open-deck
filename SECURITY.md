@@ -2,7 +2,7 @@
 
 ## Модель угроз
 
-RUD Panel Gateway рассчитан на **доверенную локальную сеть** (домашний Wi-Fi,
+Open Deck for MSFS рассчитан на **доверенную локальную сеть** (домашний Wi-Fi,
 изолированный сегмент в кокпите, air-gapped машина). По умолчанию:
 
 - HTTP и WebSocket работают **без TLS** (пароль защищает вход, но не
@@ -54,3 +54,8 @@ RUD Panel Gateway рассчитан на **доверенную локальн�
 | Версия | Поддержка |
 | --- | --- |
 | 0.1.x | да |
+
+## Поддержка проекта
+
+- Автор: Viktor Krasnikov — [github.com/meferspb/open-deck](https://github.com/meferspb/open-deck)
+- Donat: [https://taps.uz/open_deck_fs](https://taps.uz/open_deck_fs)

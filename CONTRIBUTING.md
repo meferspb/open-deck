@@ -7,8 +7,8 @@
 
 ```powershell
 # 1. Клонировать репозиторий
-git clone <URL> rud-panel-gateway
-cd rud-panel-gateway
+git clone https://github.com/meferspb/open-deck.git
+cd open-deck
 
 # 2. Запустить шлюз в демо-режиме (MSFS не нужен)
 python -m msfs_gateway --sim mock

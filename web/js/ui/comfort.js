@@ -13,7 +13,7 @@ export const BRIGHTNESS_LEVELS = Object.freeze([
   { id: 'night', value: 0.45, label: '45%' },
 ]);
 
-const STORAGE_KEY = 'rud-gateway:brightness';
+const STORAGE_KEY = 'open-deck:brightness';
 
 /** @param {string} id */
 export function nextBrightness(id) {

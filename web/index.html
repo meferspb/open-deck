@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="dark" />
     <meta name="description" content="Локальный клиент приборной панели MSFS: профили самолётов с шлюза, телеметрия по WebSocket." />
-    <title>RUD Panel Gateway — приборная панель</title>
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>Open Deck for MSFS — приборная панель</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
     <link rel="stylesheet" href="/css/tokens.css" />
     <link rel="stylesheet" href="/css/a11y.css" />
     <link rel="stylesheet" href="/css/base.css" />
@@ -17,14 +17,10 @@
     <header class="app-bar">
       <div class="app-bar__identity">
         <span class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
-            <circle cx="12" cy="12" r="8.2" />
-            <path d="M4.6 14.4h14.8" />
-            <path d="M9 3.9 7.4 9.1h9.2L15 3.9" />
-          </svg>
+          <img src="/img/open-deck-logo.jpg" alt="" />
         </span>
         <span class="brand-text">
-          <span class="brand-title">RUD Panel Gateway</span>
+          <span class="brand-title">Open Deck for MSFS</span>
           <span class="brand-sub">локальный шлюз · air-gapped</span>
         </span>
       </div>
@@ -115,6 +111,13 @@
           </svg>
           <span>Поддержать</span>
         </button>
+        <a
+          class="donation-chip"
+          href="https://taps.uz/open_deck_fs"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Donat — поддержать проект"
+        >Donat</a>
 
         <span class="conn" id="connection" data-state="connecting" title="Состояние потока телеметрии">
           <i class="conn__dot" aria-hidden="true"></i>

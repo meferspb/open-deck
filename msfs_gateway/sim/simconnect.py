@@ -397,7 +397,7 @@ class SimConnectSim(SimProvider):
             "MaxRecvData=8192\n"
             "MaxSendData=8192\n"
         )
-        with tempfile.TemporaryDirectory(prefix="rud-simconnect-") as tmp:
+        with tempfile.TemporaryDirectory(prefix="open-deck-simconnect-") as tmp:
             Path(tmp, "SimConnect.cfg").write_text(config, encoding="ascii")
             with _CWD_LOCK:
                 previous = os.getcwd()
@@ -415,7 +415,7 @@ class SimConnectSim(SimProvider):
     def _open(self) -> None:
         handle = ctypes.c_void_p()
         result = self._dll.SimConnect_Open(
-            ctypes.byref(handle), b"RUD Panel Gateway", None, 0, None, 0
+            ctypes.byref(handle), b"Open Deck for MSFS", None, 0, None, 0
         )
         if result != S_OK or not handle.value:
             raise SimConnectError(f"SimConnect_Open завершился с кодом 0x{result & 0xFFFFFFFF:08X}")

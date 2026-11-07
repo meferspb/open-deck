@@ -3,7 +3,7 @@
 Зачем: на хосте с MSFS удобно тут же собрать APK под свой шлюз — с именем
 приложения, package id, версией и адресом хоста по умолчанию. Настройки
 лежат в `config/android-build.json`, сборка запускается из веб-страницы
-`/android.html` или командой `RudPanelGateway.exe --build-apk`.
+`/android.html` или командой `OpenDeck.exe --build-apk`.
 
 Нужны только инструменты сборки (JDK 17, Android SDK, Gradle) — исходники
 Android уже входят в дистрибутив. Если инструментов нет, страница честно
@@ -70,8 +70,8 @@ class AndroidBuildError(RuntimeError):
 class AndroidBuildSettings:
     """Настройки сборки APK (имя, id, версия, пути)."""
 
-    app_name: str = "RUD Panel"
-    application_id: str = "com.rudpanel.gateway"
+    app_name: str = "Open Deck for MSFS"
+    application_id: str = "com.opendeck.msfs"
     version_name: str = "0.1.0"
     version_code: int = 1
     default_host: str = ""
@@ -252,7 +252,7 @@ def resolve_toolchain(settings: AndroidBuildSettings) -> Toolchain:
     gradle_candidates: list[Path] = []
     if settings.gradle_path:
         gradle_candidates.append(Path(settings.gradle_path))
-    env_gradle = os.environ.get("RUD_GRADLE") or os.environ.get("GRADLE_HOME")
+    env_gradle = os.environ.get("OPEN_DECK_GRADLE") or os.environ.get("GRADLE_HOME")
     if env_gradle:
         pointer = Path(env_gradle)
         gradle_candidates.append(pointer / "bin" / "gradle.bat" if pointer.is_dir() else pointer)
@@ -417,7 +417,7 @@ def build_apk(
             sink(f"Кэш Gradle: {fallback} (профиль недоступен для записи)")
 
     temp_root = Path(env.get("TEMP") or env.get("TMP") or "")
-    if not env.get("RUD_ANDROID_KEEP_TMP") and not _writable_dir(temp_root):
+    if not env.get("OPEN_DECK_ANDROID_KEEP_TMP") and not _writable_dir(temp_root):
         tmp_dir = root / ".tmp"
         if _writable_dir(tmp_dir):
             env["TMP"] = str(tmp_dir)
@@ -451,7 +451,7 @@ def build_apk(
 
     output_dir = (output_root or APP_ROOT) / settings.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
-    target = output_dir / f"RudPanel-Android-{settings.version_name}.apk"
+    target = output_dir / f"OpenDeck-Android-{settings.version_name}.apk"
     shutil.copy2(apk, target)
     sink(f"APK: {target}")
 

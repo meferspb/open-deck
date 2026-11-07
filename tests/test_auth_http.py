@@ -12,7 +12,7 @@ from msfs_gateway.app import GatewayApplication
 from msfs_gateway.settings import DEFAULT_WEB_DIR, Settings
 
 WS_KEY = "dGhlIHNhbXBsZSBub25jZQ=="
-COOKIE_RE = re.compile(r"rud_session=([^;]+)")
+COOKIE_RE = re.compile(r"open_deck_session=([^;]+)")
 
 
 class AuthHttpTest(unittest.TestCase):
@@ -43,7 +43,7 @@ class AuthHttpTest(unittest.TestCase):
         conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=10)
         hdrs = dict(headers or {})
         if cookie:
-            hdrs["Cookie"] = f"rud_session={cookie}"
+            hdrs["Cookie"] = f"open_deck_session={cookie}"
         payload = None
         if body is not None:
             payload = json.dumps(body).encode("utf-8")
@@ -75,7 +75,7 @@ class AuthHttpTest(unittest.TestCase):
             "Sec-WebSocket-Version: 13\r\n"
         )
         if cookie:
-            request += f"Cookie: rud_session={cookie}\r\n"
+            request += f"Cookie: open_deck_session={cookie}\r\n"
         if origin:
             request += f"Origin: {origin}\r\n"
         request += "\r\n"

@@ -1,4 +1,4 @@
-package com.rudpanel.gateway
+package com.opendeck.msfs
 
 import android.content.Context
 
@@ -35,7 +35,7 @@ class HostStore(context: Context) {
     }
 
     companion object {
-        private const val PREFS_NAME = "rud_gateway"
+        private const val PREFS_NAME = "open_deck_gateway"
         private const val KEY_ADDRESS = "last_address"
         private const val KEY_PORT = "last_port"
         private const val KEY_NAME = "last_name"

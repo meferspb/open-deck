@@ -1,4 +1,4 @@
-package com.rudpanel.gateway
+package com.opendeck.msfs
 
 import org.json.JSONArray
 import org.json.JSONObject

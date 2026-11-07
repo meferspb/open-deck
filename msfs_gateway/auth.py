@@ -27,7 +27,7 @@ from typing import Any
 #: Минимальная длина пароля (требование ТЗ).
 MIN_PASSWORD_LENGTH = 6
 #: httponly-кука с токеном сессии.
-SESSION_COOKIE = "rud_session"
+SESSION_COOKIE = "open_deck_session"
 DEFAULT_ITERATIONS = 210_000
 DEFAULT_SESSION_TTL = 12 * 3600.0
 #: Сколько живёт QR-код для быстрого входа с телефона.

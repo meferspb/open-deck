@@ -200,7 +200,7 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
     class GatewayRequestHandler(BaseHTTPRequestHandler):
         """Обработчик: маршрутизация, статика, API, WS."""
 
-        server_version = f"RUDPanelGateway/{__version__}"
+        server_version = f"OpenDeckForMSFS/{__version__}"
         protocol_version = "HTTP/1.1"
         timeout = 120  # keep-alive не должен висеть вечно
         #: Тело запроса читается один раз; None означает «ещё не читали».
@@ -381,7 +381,7 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
                 HTTPStatus.UNAUTHORIZED,
                 "Требуется вход по паролю",
                 "unauthorized",
-                extra={"WWW-Authenticate": 'Bearer realm="rud-panel"'},
+                extra={"WWW-Authenticate": 'Bearer realm="open-deck"'},
             )
 
         def _redirect(self, location: str, *, cookie: str | None = None) -> None:

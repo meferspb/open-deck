@@ -48,7 +48,7 @@ body:
     attributes:
       label: Шаги воспроизведения
       placeholder: |
-        1. Запустить `RudPanelGateway.exe --sim auto`
+        1. Запустить `OpenDeck.exe --sim auto`
         2. Открыть панель на телефоне
         3. ...
     validations:

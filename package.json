@@ -1,9 +1,13 @@
 {
-  "name": "rud-panel-gateway",
+  "name": "open-deck-msfs",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Web client for RUD Panel Gateway (vanilla ES modules, no build step)",
+  "description": "Web client for Open Deck for MSFS (vanilla ES modules, no build step)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/meferspb/open-deck.git"
+  },
   "scripts": {
     "test": "node --test \"tests/web/*.test.mjs\"",
     "check": "node --check web/js/main.js"

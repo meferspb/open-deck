@@ -5,6 +5,22 @@
 
 ## [Unreleased]
 
+### Изменено
+
+- Полный ребрендинг на **Open Deck for MSFS**: название продукта, веб-интерфейсы,
+  Android-приложение (`com.opendeck.msfs`), исполняемые файлы, установщик,
+  документация и профили самолётов.
+- Логотип и иконки приложения сгенерированы из `docs/pic1.jpg`; файлы
+  `web/img/open-deck-logo.jpg`, `web/favicon.ico`, Android drawable и
+  `packaging/windows/open-deck.ico`.
+
+### Добавлено
+
+- Ссылка **Donat** — [https://taps.uz/open_deck_fs](https://taps.uz/open_deck_fs) — в веб-панели,
+  редакторе, экране входа, ассистенте, Android-интерфейсе, README и документации.
+- Указаны автор **Viktor Krasnikov** и репозиторий
+  [github.com/meferspb/open-deck](https://github.com/meferspb/open-deck).
+
 ### Исправлено
 
 - SimConnect: порядок полей `SIMCONNECT_RECV_SIMOBJECT_DATA` приведён к

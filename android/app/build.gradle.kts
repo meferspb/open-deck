@@ -8,15 +8,15 @@ plugins {
 fun buildProp(name: String, fallback: String): String =
     (project.findProperty(name) as String?)?.takeIf { it.isNotBlank() } ?: fallback
 
-val appName = buildProp("appName", "RUD Panel")
-val appId = buildProp("appId", "com.rudpanel.gateway")
+val appName = buildProp("appName", "Open Deck for MSFS")
+val appId = buildProp("appId", "com.opendeck.msfs")
 val appVersionName = buildProp("appVersionName", "0.1.0")
 val appVersionCode = buildProp("appVersionCode", "1").toIntOrNull() ?: 1
 val defaultHost = buildProp("defaultHost", "")
 val defaultPort = buildProp("defaultPort", "8760").toIntOrNull() ?: 8760
 
 android {
-    namespace = "com.rudpanel.gateway"
+    namespace = "com.opendeck.msfs"
     compileSdk = 35
 
     defaultConfig {

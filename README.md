@@ -1,4 +1,6 @@
-# ✈️ RUD Panel Gateway
+# ✈️ Open Deck for MSFS
+
+<img src="docs/pic1.jpg" alt="Open Deck for MSFS" width="220" />
 
 **Приборные панели MSFS 2020/2024 на телефоне и планшете — по локальной сети,
 без интернета.**
@@ -17,6 +19,8 @@ Android-приложению по HTTP + WebSocket. Панели описыва�
 | Тесты | 246 Python + 31 Node.js |
 | Платформа хоста | Windows 10/11 (Python 3.11+ или установщик) |
 | Клиенты | браузер (любой современный), Android 8+ |
+| Автор | Viktor Krasnikov — [github.com/meferspb/open-deck](https://github.com/meferspb/open-deck) |
+| Donat | [https://taps.uz/open_deck_fs](https://taps.uz/open_deck_fs) |
 | Лицензия | [CC-BY-NC-ND-MODIFIED](LICENSE) — бесплатно, с обязательным блоком поддержки автора |
 
 ## Скриншоты
@@ -114,12 +118,12 @@ Android-приложению по HTTP + WebSocket. Панели описыва�
 
 ## Установка (Windows, без Python)
 
-Скачайте `RudPanelGateway-Setup-<версия>.exe` из релизов, запустите и нажимайте
+Скачайте `OpenDeck-Setup-<версия>.exe` из релизов, запустите и нажимайте
 «Далее» — права администратора не нужны, Python и интернет не требуются.
-Установка идёт в `%LOCALAPPDATA%\RudPanelGateway`, создаются ярлыки и запись
+Установка идёт в `%LOCALAPPDATA%\OpenDeck`, создаются ярлыки и запись
 в «Программах и компонентах».
 
-1. Запустите **RUD Panel Gateway** — откроется консоль с адресами панели.
+1. Запустите **Open Deck for MSFS** — откроется консоль с адресами панели.
 2. Разрешите приложению доступ к частной сети в запросе брандмауэра.
 3. Откройте панель на этом ПК или введите напечатанный адрес на телефоне,
    либо отсканируйте QR из панели (кнопка с телефоном).
@@ -132,11 +136,11 @@ Android-приложению по HTTP + WebSocket. Панели описыва�
 
 ```powershell
 # сохранить пароль (PBKDF2-хеш) в config/auth.json
-RudPanelGateway.exe --set-password            # спросит пароль в консоли
-RudPanelGateway.exe --set-password "мой-пароль"
+OpenDeck.exe --set-password            # спросит пароль в консоли
+OpenDeck.exe --set-password "мой-пароль"
 
 # или только на этот запуск
-RudPanelGateway.exe --password "мой-пароль"
+OpenDeck.exe --password "мой-пароль"
 ```
 
 Минимум **6 символов**. Файл `config/auth.json` хранит только хеш; удалите его,
@@ -155,6 +159,9 @@ RudPanelGateway.exe --password "мой-пароль"
 Нужен **Python 3.11+**; Node.js — только для тестов клиента.
 
 ```powershell
+git clone https://github.com/meferspb/open-deck.git
+cd open-deck
+
 # демо-режим без симулятора: http://127.0.0.1:8760/
 python -m msfs_gateway --sim mock
 
@@ -184,19 +191,19 @@ python -m msfs_gateway --sim simconnect --simconnect-dll C:\SDK\SimConnect.dll -
 
 ## Android APK из дистрибутива
 
-В установленном приложении есть исходники Android (`android/`) и готовый APK
-(`android/dist`), а в меню «Пуск» — «Собрать Android APK»
-(`http://127.0.0.1:8760/android.html`).
+В установленном приложении есть исходники Android (`android/`); готовый APK
+собирается в `android/dist/OpenDeck-Android-<версия>.apk`, а в меню «Пуск» есть
+«Собрать Android APK» (`http://127.0.0.1:8760/android.html`).
 
 На странице задаются имя приложения, package id, версия и адрес шлюза по
 умолчанию; кнопка «Собрать APK» запускает `gradle assembleDebug` на этом же
 компьютере. Нужны **JDK 17**, **Android SDK** и **Gradle 8.x** (пути можно
 указать на странице или задать через `JAVA_HOME` / `ANDROID_HOME` / `gradle` в
-`PATH`). Без инструментов доступен готовый APK из дистрибутива.
+`PATH`). В релизном дистрибутиве готовый APK уже лежит в `android/dist`.
 
 ```powershell
-RudPanelGateway.exe --build-apk                        # настройки из config/android-build.json
-RudPanelGateway.exe --build-apk C:\path\settings.json
+OpenDeck.exe --build-apk                        # настройки из config/android-build.json
+OpenDeck.exe --build-apk C:\path\settings.json
 ```
 
 ## Документация
@@ -273,11 +280,17 @@ mock-провайдер, WASM/Client Data, QR (структура + эталон
 аутентификации, UDP-бикон не подписан. Не выставляйте шлюз в интернет.
 Подробнее — [`SECURITY.md`](SECURITY.md).
 
+## Поддержка / Donat
+
+- **Donat:** [https://taps.uz/open_deck_fs](https://taps.uz/open_deck_fs)
+- **Автор:** Viktor Krasnikov
+- **Репозиторий:** [https://github.com/meferspb/open-deck](https://github.com/meferspb/open-deck)
+
 ## Лицензия / License
 
 Проект распространяется под лицензией **GNU Affero General Public License v3.0 (AGPL-3.0)** с дополнительными условиями в соответствии с **Разделом 7 (Section 7)**.
 
 * Вы имеете право свободно использовать, изучать, модифицировать и распространять данный код при условии сохранения той же лицензии (AGPL-3.0) и открытия исходного кода любых модификаций (включая использование на сервере / по сети согласно Разделу 13).
-* **Обязательное условие (Section 7(b) & Section 5(d)):** Во всех форках, сборках и модифицированных версиях **строго запрещено** удалять, скрывать или изменять упоминание оригинального автора (**[Ваше Имя / Никнейм]**) и активные ссылки на страницу поддержки (доната) разработчика в пользовательском интерфейсе программы и документации.
+* **Обязательное условие (Section 7(b) & Section 5(d)):** Во всех форках, сборках и модифицированных версиях **строго запрещено** удалять, скрывать или изменять упоминание оригинального автора (**Viktor Krasnikov**, [https://github.com/meferspb/open-deck](https://github.com/meferspb/open-deck)) и активные ссылки на страницу поддержки (доната) разработчика в пользовательском интерфейсе программы и документации: [Donat — https://taps.uz/open_deck_fs](https://taps.uz/open_deck_fs).
 
 Подробный юридический текст дополнительных условий приведен в файле [COPYING.ADDITIONAL](./COPYING.ADDITIONAL). Полный текст базовой лицензии находится в файле [LICENSE](./LICENSE).

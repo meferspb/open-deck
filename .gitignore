@@ -22,7 +22,7 @@ android/.idea/
 
 # APK: сборки игнорируются, но готовый APK для установщика — в репозитории
 *.apk
-!android/dist/RudPanel-Android-*.apk
+!android/dist/OpenDeck-Android-*.apk
 
 # Локальные артефакты сборки
 .gradle-home/

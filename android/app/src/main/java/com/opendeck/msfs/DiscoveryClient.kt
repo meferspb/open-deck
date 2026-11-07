@@ -1,4 +1,4 @@
-package com.rudpanel.gateway
+package com.opendeck.msfs
 
 import android.util.Log
 import org.json.JSONObject
@@ -32,7 +32,7 @@ data class HostInfo(
  * Приёмник UDP-биконов шлюза (порт 8761).
  *
  * Хост рассылает JSON вида:
- * `{"type":"rud-panel-gateway","name":"PC","version":"0.1.0","httpPort":8760,"profiles":[...]}`
+ * `{"type":"open-deck-msfs","name":"PC","version":"0.1.0","httpPort":8760,"profiles":[...]}`
  *
  * Работает в фоновом потоке; список хостов отдаётся через [onHosts],
  * ошибка привязки/приёма — через [onError]. После остановки или сбоя
@@ -66,7 +66,7 @@ class DiscoveryClient(
     fun start() {
         if (!running.compareAndSet(false, true)) return
         val gen = generation.incrementAndGet()
-        thread = Thread({ loop(gen) }, "rud-discovery").apply {
+        thread = Thread({ loop(gen) }, "open-deck-discovery").apply {
             isDaemon = true
             start()
         }
@@ -194,8 +194,8 @@ class DiscoveryClient(
     private fun emit() = onHosts(snapshot())
 
     companion object {
-        private const val TAG = "RudDiscovery"
-        private const val BEACON_TYPE = "rud-panel-gateway"
+        private const val TAG = "OpenDeckDiscovery"
+        private const val BEACON_TYPE = "open-deck-msfs"
         private const val DEFAULT_PORT = 8761
         private const val MAX_PACKET_BYTES = 8192
         private const val RECEIVE_TIMEOUT_MS = 1500

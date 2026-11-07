@@ -16,7 +16,7 @@
   "revision": 3,
   "description": "…",
   "sim": { "match": { "title": "Cessna Skyhawk*", "atcModel": "C172" } },
-  "panel": { "background": "#0b1117", "gridSize": 8, "footer": "C172S · RUD PANEL" },
+  "panel": { "background": "#0b1117", "gridSize": 8, "footer": "C172S · OPEN DECK" },
   "widgets": [ … ]
 }
 ```

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">RUD Panel Gateway</string>
+    <string name="app_name">Open Deck for MSFS</string>
 
     <!-- Экран подключения -->
-    <string name="setup_title">RUD Panel Gateway</string>
+    <string name="setup_title">Open Deck for MSFS</string>
     <string name="setup_subtitle">Локальная панель MSFS · air-gapped</string>
     <string name="setup_status_searching">Ищем хост в локальной сети…</string>
     <string name="setup_status_found">Найдено хостов: %1$d</string>
@@ -29,8 +29,8 @@
     <string name="link_blocked">Переходы за пределы хоста заблокированы</string>
 
     <!-- Поддержка автора -->
-    <string name="donation_bar">Проект бесплатный · поддержать автора</string>
-    <string name="donation_title">Поддержать автора</string>
+    <string name="donation_bar">Donat · поддержать автора</string>
+    <string name="donation_title">Donat — поддержать автора</string>
     <string name="donation_offline">Реквизиты приходят с хоста. Сначала подключитесь к шлюзу.</string>
     <string name="donation_unavailable">Не удалось получить реквизиты с %1$s. Убедитесь, что хост доступен.</string>
     <string name="donation_default_message">Проект бесплатный и работает без интернета. Если панель экономит ваше время в полёте — поддержите автора.</string>

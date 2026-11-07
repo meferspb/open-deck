@@ -213,7 +213,7 @@ class GatewayApplication:
         if not self.auth.required:
             warning = (
                 "  ВНИМАНИЕ: вход выключен — панель и команды доступны всем в локальной сети.\n"
-                "            Задайте пароль: RudPanelGateway.exe --set-password\n"
+                "            Задайте пароль: OpenDeck.exe --set-password\n"
             )
         return (
             f"\n{APP_NAME} v{__version__}\n"
@@ -238,11 +238,11 @@ def _build_auth(settings: Settings) -> AuthService:
         from .auth import hash_password
 
         return AuthService(record=hash_password(settings.password))
-    env_password = os.environ.get("RUD_PASSWORD")
+    env_password = os.environ.get("OPEN_DECK_PASSWORD")
     if env_password:
         error = validate_password(env_password)
         if error:
-            raise SystemExit(f"RUD_PASSWORD: {error}")
+            raise SystemExit(f"OPEN_DECK_PASSWORD: {error}")
         from .auth import hash_password
 
         return AuthService(record=hash_password(env_password))

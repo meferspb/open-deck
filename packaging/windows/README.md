@@ -1,17 +1,17 @@
 # Установщик для Windows
 
-Один файл `RudPanelGateway-Setup-<версия>.exe`: двойной клик → «Далее» →
+Один файл `OpenDeck-Setup-<версия>.exe`: двойной клик → «Далее» →
 готово. Права администратора не нужны, Python и интернет не требуются.
 
 ## Что происходит при установке
 
 | | |
 |---|---|
-| Каталог | `%LOCALAPPDATA%\RudPanelGateway` (в профиле пользователя, без UAC) |
-| Внутри | `RudPanelGateway.exe` — шлюз со встроенным Python 3.13 и стандартной библиотекой |
+| Каталог | `%LOCALAPPDATA%\OpenDeck` (в профиле пользователя, без UAC) |
+| Внутри | `OpenDeck.exe` — шлюз со встроенным Python 3.13 и стандартной библиотекой |
 | | `web/` — веб-клиент (панель и редактор), `profiles/` — профили ВС |
 | | `config/donation.json` — реквизиты автора, `integrity/` — манифест целостности |
-| | `android/` — исходники Android и готовый APK (`android/dist/RudPanel-Android-<версия>.apk`), `config/android-build.json` — настройки сборки APK |
+| | `android/` — исходники Android и, после сборки, готовый APK (`android/dist/OpenDeck-Android-<версия>.apk`), `config/android-build.json` — настройки сборки APK |
 | | `docs/` — полная документация (сервис, протокол, переменные, приборы, схема профиля) |
 | Ярлыки | рабочий стол, меню «Пуск» (запуск, панель в браузере, сборка Android APK, «Задать пароль», удаление) |
 | Удаление | «Программы и компоненты» или ярлык «Удалить» |
@@ -33,10 +33,10 @@ pwsh -File scripts/build-installer.ps1 -Version 0.1.0 -NsisPath "C:\Program File
 ```
 
 Скрипт по шагам: пересобирает манифест целостности → прогоняет тесты →
-собирает `build/pyinstaller/dist/RudPanelGateway` (PyInstaller, onedir) →
+собирает `build/pyinstaller/dist/OpenDeck` (PyInstaller, onedir) →
 кладёт рядом `web/`, `profiles/`, `config/`, `integrity/` → проверяет, что
 `.exe` запускается (`--help`) → компилирует установщик в
-`dist/RudPanelGateway-Setup-<версия>.exe`.
+`dist/OpenDeck-Setup-<версия>.exe`.
 
 Флаги: `-SkipTests`, `-NsisPath <папка>`, `-Version 0.2.0`.
 
@@ -44,14 +44,14 @@ pwsh -File scripts/build-installer.ps1 -Version 0.1.0 -NsisPath "C:\Program File
 размер. Полный список шагов — в начале файла `scripts/build-installer.ps1`.
 
 Вход по паролю: ярлык «Задать пароль» запускает
-`RudPanelGateway.exe --set-password` и спрашивает пароль в консоли;
+`OpenDeck.exe --set-password` и спрашивает пароль в консоли;
 хеш сохраняется в `config/auth.json` рядом с `.exe`. Удаление файла
 снова открывает доступ без входа.
 
 ## Перед публикацией
 
-1. Заполнить `config/donation.json` реальными реквизитами (сейчас там
-   `example.invalid` — заглушки).
+1. Проверить `config/donation.json`: автор Viktor Krasnikov, ссылка
+   Donat — `https://taps.uz/open_deck_fs`.
 2. Пересобрать манифест: `python -m msfs_gateway.integrity --write`
    (скрипт сборки делает это сам, но проверить не лишне).
 3. Прогнать установщик на чистой машине: установка без админа, запуск,
@@ -60,7 +60,7 @@ pwsh -File scripts/build-installer.ps1 -Version 0.1.0 -NsisPath "C:\Program File
 ## Тихая установка / развёртывание
 
 ```bat
-RudPanelGateway-Setup-0.1.0.exe /S /D=C:\Tools\RudPanelGateway
+OpenDeck-Setup-0.1.0.exe /S /D=C:\Tools\OpenDeck
 Uninstall.exe /S
 ```
 
@@ -78,4 +78,4 @@ Uninstall.exe /S
 - Реестр/ярлыки создаются в `HKCU` — на машинах с жёсткими политиками
   (AppLocker, запрет записи в профиль) установка может быть заблокирована;
   тогда используйте портативный вариант: распакуйте каталог
-  `build/pyinstaller/dist/RudPanelGateway` и запускайте `.exe` оттуда.
+  `build/pyinstaller/dist/OpenDeck` и запускайте `.exe` оттуда.

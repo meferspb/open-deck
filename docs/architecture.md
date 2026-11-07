@@ -1,4 +1,4 @@
-# 🏗️ Архитектура RUD Panel Gateway
+# 🏗️ Архитектура Open Deck for MSFS
 
 Документ описывает компоненты, потоки данных и ключевые проектные решения.
 Формат профиля — в [profile-schema.md](profile-schema.md), сетевой протокол —
@@ -122,7 +122,7 @@ Variable("power.batteryMaster", "bool", "Master battery",
 - Пароль хранится только как PBKDF2-хеш (`config/auth.json`), проверка —
   `hmac.compare_digest`, 5 неудач в минуту с адреса → блокировка.
 - Сессии — в памяти процесса (32 байта, TTL 12 часов, продление по
-  активности); браузер получает cookie `rud_session` (`HttpOnly`,
+  активности); браузер получает cookie `open_deck_session` (`HttpOnly`,
   `SameSite=Lax`), нативные клиенты — Bearer или `?token=` для WebSocket.
 - Одноразовые QR-токены (`POST /api/pair`, 10 минут) позволяют телефону
   войти без ввода пароля. Такой токен принимается только через `/?pair=`:
@@ -154,6 +154,8 @@ Variable("power.batteryMaster", "bool", "Master battery",
 `web/css/donation.css`, `config/donation.json`) с манифестом
 `integrity/manifest.json`. Хост блокирует запуск при расхождении; клиент
 (`web/js/ui/integrity.js`) дополнительно следит за видимостью блока в DOM.
+Автор — Viktor Krasnikov ([github.com/meferspb/open-deck](https://github.com/meferspb/open-deck)),
+Donat — [https://taps.uz/open_deck_fs](https://taps.uz/open_deck_fs).
 
 ### 2.7. `discovery.py` — автообнаружение хоста (UDP broadcast)
 
@@ -251,8 +253,9 @@ MobiFlight через in-memory транспорт), сборка и запус�
 
 ### 2.10. `android_build.py` — сборка Android APK из дистрибутива
 
-В установленном приложении лежат исходники Android (`android/`) и готовый APK
-(`android/dist`). Страница `/android.html` и API `/api/android/*` позволяют
+В установленном приложении лежат исходники Android (`android/`), а после
+сборки — готовый APK в `android/dist`. Страница `/android.html` и API
+`/api/android/*` позволяют
 поменять имя приложения, package id, версию и адрес шлюза по умолчанию,
 запустить `gradle assembleDebug` и скачать свежий APK. Настройки —
 `config/android-build.json`; те же значения передаются в сборку как `-P…`
@@ -262,7 +265,7 @@ MobiFlight через in-memory транспорт), сборка и запус�
 Если профиль пользователя недоступен для записи (жёсткие политики, песочницы),
 кэш Gradle, `TMP` и debug-keystore автоматически уводятся в каталог
 дистрибутива (`.gradle-home`, `.tmp`, `.android-home`) — сборка продолжает
-работать. CLI без браузера: `RudPanelGateway.exe --build-apk [config.json]`.
+работать. CLI без браузера: `OpenDeck.exe --build-apk [config.json]`.
 
 ---
 

@@ -29,6 +29,14 @@ body.assist-page {
   border-color: var(--accent);
 }
 
+.assist-logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  border: 1px solid var(--line-strong);
+  object-fit: cover;
+}
+
 .assist-heading {
   flex: 1;
 }

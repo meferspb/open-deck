@@ -1,6 +1,6 @@
 {
-  "appName": "RUD Panel",
-  "applicationId": "com.rudpanel.gateway",
+  "appName": "Open Deck for MSFS",
+  "applicationId": "com.opendeck.msfs",
   "versionName": "0.1.0",
   "versionCode": 1,
   "defaultHost": "",

@@ -1,4 +1,4 @@
-package com.rudpanel.gateway
+package com.opendeck.msfs
 
 import android.annotation.SuppressLint
 import android.app.Activity

@@ -1,4 +1,4 @@
-# RUD Panel Gateway — описание сервиса
+# Open Deck for MSFS — описание сервиса
 
 Документ описывает, что делает шлюз, из чего он состоит, как с ним
 взаимодействуют клиенты и как включить вход по паролю. Рассчитан на пилотов,
@@ -12,7 +12,7 @@
 
 ## 1. Назначение
 
-RUD Panel Gateway превращает телефон или планшет в приборную панель Microsoft
+Open Deck for MSFS превращает телефон или планшет в приборную панель Microsoft
 Flight Simulator 2020/2024. Шлюз запускается на том же компьютере, что и
 симулятор, читает телеметрию через SimConnect, отдаёт её по локальной сети и
 принимает команды (тумблеры, галетники, кнопки). Панели описываются
@@ -33,7 +33,7 @@ JSON-профилями самолётов и редактируются пря�
 
 ```
 ┌──────────────────┐   SimConnect / WASM    ┌─────────────────────────────┐
-│  MSFS 2020/2024  │◄──────────────────────►│  RUD Panel Gateway (Windows) │
+│  MSFS 2020/2024  │◄──────────────────────►│  Open Deck for MSFS (Windows) │
 │  самолёт, LVAR   │   SimVar, TITLE, ATC   │                             │
 └──────────────────┘   Client Data Area      │  ┌───────────────────────┐  │
                                              │  │ SimProvider           │  │
@@ -244,15 +244,15 @@ WebView-оболочка: находит хост по UDP-бикону или �
 
 ```powershell
 # 1. Сохранить пароль в config/auth.json (постоянно)
-RudPanelGateway.exe --set-password
+OpenDeck.exe --set-password
 #    или без диалога:
-RudPanelGateway.exe --set-password "мой-пароль"
+OpenDeck.exe --set-password "мой-пароль"
 
 # 2. Передать пароль только на этот запуск (на диск не пишется)
-RudPanelGateway.exe --password "мой-пароль"
+OpenDeck.exe --password "мой-пароль"
 
 # 3. Переменная окружения
-$env:RUD_PASSWORD = "мой-пароль"
+$env:OPEN_DECK_PASSWORD = "мой-пароль"
 ```
 
 В установленном приложении для этого есть ярлык «Задать пароль» в меню
@@ -272,7 +272,7 @@ $env:RUD_PASSWORD = "мой-пароль"
 1. Клиент открывает `/login.html`, вводит пароль.
 2. `POST /api/auth/login` проверяет PBKDF2-хеш; при успехе создаётся сессия
    (32 случайных байта, TTL 12 часов, продлевается при активности).
-3. Сервер ставит cookie `rud_session` с `HttpOnly`, `SameSite=Lax` — JavaScript
+3. Сервер ставит cookie `open_deck_session` с `HttpOnly`, `SameSite=Lax` — JavaScript
    её не видит, браузер присылает её автоматически.
 4. Для нативных клиентов в JSON возвращается `token`; его можно передавать как
    `Authorization: Bearer <token>` или `?token=` для WebSocket.
@@ -394,7 +394,7 @@ curl -b cookies.txt http://127.0.0.1:8760/api/profiles
 
 ### 11.1. Установщик Windows
 
-`RudPanelGateway-Setup-<версия>.exe` — установка per-user без прав
+`OpenDeck-Setup-<версия>.exe` — установка per-user без прав
 администратора, Python не нужен. Создаются ярлыки: запуск шлюза, панель в
 браузере, страница сборки APK, «Задать пароль», удаление.
 
@@ -430,10 +430,11 @@ python -m msfs_gateway --password "secret123"
 
 ### 11.3. Android APK
 
-В установке есть исходники Android и готовый APK. Страница `/android.html`
-(нужен вход) позволяет поменять имя, package id, версию и адрес шлюза по
-умолчанию и собрать APK на месте. Нужны JDK 17, Android SDK и Gradle 8.x;
-без них доступен готовый APK.
+В установке есть исходники Android; готовый APK собирается в
+`android/dist/OpenDeck-Android-<версия>.apk`. Страница `/android.html` (нужен
+вход) позволяет поменять имя, package id, версию и адрес шлюза по умолчанию и
+собрать APK на месте. Нужны JDK 17, Android SDK и Gradle 8.x; в релизном
+дистрибутиве APK уже приложен.
 
 ## 12. Диагностика
 
@@ -449,7 +450,7 @@ python -m msfs_gateway --password "secret123"
 | `SimConnect_Open … 0x80004005` | шлюз сам пробует TCP `127.0.0.1:19999`; если не помогло — проверьте `%APPDATA%\Microsoft Flight Simulator\SimConnect.cfg` (он перекрывает настройки) и что полёт загружен; для удалённого симулятора задайте `--simconnect-host/--simconnect-port` |
 
 Логи: консоль шлюза (уровень `--log-level DEBUG`), вкладка «Сеть» браузера,
-`adb logcat` для Android (тег `RudDiscovery`).
+`adb logcat` для Android (тег `OpenDeckDiscovery`).
 
 ## 13. Безопасность
 
@@ -506,6 +507,8 @@ python -m msfs_gateway --password "secret123"
 
 ## 16. Обратная связь и поддержка
 
+- **Автор:** Viktor Krasnikov — [github.com/meferspb/open-deck](https://github.com/meferspb/open-deck).
+- **Donat:** [https://taps.uz/open_deck_fs](https://taps.uz/open_deck_fs).
 - Ошибки и предложения — через issue-шаблоны GitHub (см. `.github/`).
 - Уязвимости — приватно, по правилам [SECURITY.md](../SECURITY.md).
 - Вопросы по настройке — Discussions (если включены) или issue с шаблоном

@@ -193,7 +193,7 @@ class Hub:
             "type": "hello",
             "clientId": client.client_id,
             "server": {
-                "name": "RUD Panel Gateway",
+                "name": "Open Deck for MSFS",
                 "version": __version__,
                 "telemetryHz": self.hz,
                 "uptimeSec": round(time.monotonic() - self._started_at, 1),

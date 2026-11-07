@@ -148,7 +148,7 @@ class BuildTest(unittest.TestCase):
             runner=runner,
         )
         self.assertTrue(result.ok)
-        self.assertEqual(result.apk.name, "RudPanel-Android-0.3.1.apk")
+        self.assertEqual(result.apk.name, "OpenDeck-Android-0.3.1.apk")
         self.assertEqual(result.apk.read_bytes(), b"fake apk")
         self.assertEqual(seen["cwd"], self.project)
         self.assertIn("-PappName=Тестовая панель", seen["args"])

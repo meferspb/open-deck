@@ -12,12 +12,12 @@
         android:allowBackup="false"
         android:fullBackupContent="false"
         android:hardwareAccelerated="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/open_deck_logo"
         android:label="${appName}"
         android:networkSecurityConfig="@xml/network_security_config"
-        android:roundIcon="@mipmap/ic_launcher"
+        android:roundIcon="@drawable/open_deck_logo"
         android:supportsRtl="true"
-        android:theme="@style/Theme.RudPanel"
+        android:theme="@style/Theme.OpenDeck"
         android:usesCleartextTraffic="true">
 
         <activity
@@ -26,7 +26,7 @@
             android:exported="true"
             android:launchMode="singleTask"
             android:resizeableActivity="true"
-            android:theme="@style/Theme.RudPanel">
+            android:theme="@style/Theme.OpenDeck">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

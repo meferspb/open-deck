@@ -10,7 +10,7 @@ UDP-бикон предназначен для Android-приложения и �
 Формат бикона (JSON, UTF-8, один пакет):
 
     {
-      "type": "rud-panel-gateway",
+      "type": "open-deck-msfs",
       "protocol": 1,
       "name": "FLIGHTSIM-PC",
       "version": "0.1.0",
@@ -40,7 +40,7 @@ from . import __version__
 #: Отдельный UDP-порт, чтобы не конфликтовать с HTTP/WebSocket.
 DEFAULT_DISCOVERY_PORT: Final = 8761
 DEFAULT_DISCOVERY_INTERVAL: Final = 3.0
-BEACON_TYPE: Final = "rud-panel-gateway"
+BEACON_TYPE: Final = "open-deck-msfs"
 PROTOCOL_VERSION: Final = 1
 MAX_BEACON_BYTES: Final = 1400  # меньше MTU — без фрагментации
 

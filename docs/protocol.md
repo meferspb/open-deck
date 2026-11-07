@@ -1,4 +1,4 @@
-# 🔌 Сетевой протокол RUD Panel Gateway
+# 🔌 Сетевой протокол Open Deck for MSFS
 
 Всё общение идёт по одному TCP-порту (по умолчанию `8760`):
 
@@ -43,7 +43,7 @@
 Без сессии:
 
 - API отвечает `401` с `{"error","code":"unauthorized"}` и
-  `WWW-Authenticate: Bearer realm="rud-panel"`;
+  `WWW-Authenticate: Bearer realm="open-deck"`;
 - HTML-страницы отвечают `302` на `/login.html?next=<путь>`;
 - WebSocket handshake отклоняется с `401` (браузер покажет ошибку соединения).
 
@@ -59,7 +59,7 @@
 
 | Способ | Где | Кому |
 | --- | --- | --- |
-| Cookie `rud_session` | `HttpOnly; SameSite=Lax` | браузер и Android WebView |
+| Cookie `open_deck_session` | `HttpOnly; SameSite=Lax` | браузер и Android WebView |
 | `Authorization: Bearer <token>` | заголовок | нативные клиенты |
 | `?token=<token>` | только `/ws` | WebSocket без cookie |
 
@@ -178,7 +178,8 @@
 ### `GET /api/donation`
 
 Реквизиты поддержки автора из `config/donation.json` (единственный источник —
-конфигурация на хосте).
+конфигурация на хосте). Автор — Viktor Krasnikov, Donat —
+[`https://taps.uz/open_deck_fs`](https://taps.uz/open_deck_fs).
 
 ### `GET /api/connect`
 
@@ -308,7 +309,7 @@ pairing-токен здесь недействителен: он принима�
 {
   "type": "hello",
   "clientId": "a1b2c3d4",
-  "server": { "name": "RUD Panel Gateway", "version": "0.1.0",
+  "server": { "name": "Open Deck for MSFS", "version": "0.1.0",
               "telemetryHz": 30.0, "uptimeSec": 1.2 },
   "profiles": [ … ],
   "state": { /* полный кадр telemetry */ }
@@ -401,7 +402,7 @@ pairing-токен здесь недействителен: он принима�
         │  GET /?pair=<одноразовый токен> │
         ├────────────────────────────────►│
         │                                 │ проверка токена (10 мин, один раз)
-        │  302 / + Set-Cookie rud_session  │
+        │  302 / + Set-Cookie open_deck_session  │
         │◄────────────────────────────────┤
         │  GET / (с cookie)               │
         └────────────────────────────────►│ панель
@@ -421,7 +422,7 @@ QR-код рисует сам шлюз (`/api/qr.svg`); токен создаё�
 
 ```json
 {
-  "type": "rud-panel-gateway",
+  "type": "open-deck-msfs",
   "protocol": 1,
   "name": "FLIGHTSIM-PC",
   "version": "0.1.0",
@@ -435,7 +436,7 @@ QR-код рисует сам шлюз (`/api/qr.svg`); токен создаё�
 
 | Поле | Описание |
 | --- | --- |
-| `type` | всегда `rud-panel-gateway` |
+| `type` | всегда `open-deck-msfs` |
 | `protocol` | версия схемы бикона |
 | `name` | имя хоста |
 | `httpPort` | порт HTTP/WebSocket |
@@ -508,7 +509,7 @@ sock.sendall((
     "GET /ws HTTP/1.1\r\nHost: 127.0.0.1\r\nUpgrade: websocket\r\n"
     f"Connection: Upgrade\r\nSec-WebSocket-Key: {key}\r\n"
     "Sec-WebSocket-Version: 13\r\n"
-    "Cookie: rud_session=<токен>\r\n\r\n"
+    "Cookie: open_deck_session=<токен>\r\n\r\n"
 ).encode())
 # далее — чтение кадров RFC 6455 (см. msfs_gateway/websocket.py)
 ```

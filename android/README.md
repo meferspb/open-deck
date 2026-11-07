@@ -1,4 +1,4 @@
-# 📱 RUD Panel Gateway — Android-клиент
+# 📱 Open Deck for MSFS — Android-клиент
 
 Нативное Android-приложение (Kotlin, без сторонних библиотек), которое
 превращает телефон или планшет в приборную панель MSFS:
@@ -16,7 +16,8 @@
   приложения; хосты с паролем помечены замком 🔒;
 - **киоск-режим**: полноэкранный immersive, экран не гаснет, поворот без
   перезагрузки панели;
-- **блок поддержки автора** на экране подключения (реквизиты приходят с хоста).
+- **блок поддержки автора** на экране подключения (реквизиты приходят с хоста);
+- **Donat:** [https://taps.uz/open_deck_fs](https://taps.uz/open_deck_fs).
 
 ## Требования для сборки
 
@@ -54,16 +55,16 @@ gradle wrapper --gradle-version 8.10.2   # один раз, создаст gradl
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Готовый debug-APK лежит в `android/dist/RudPanel-Android-0.1.0.apk`
-(≈0,86 МБ, debug-подпись — для установки на своё устройство; для публикации
-нужен release-ключ).
+После сборки debug-APK появляется в `android/dist/OpenDeck-Android-<версия>.apk`
+(debug-подпись — для установки на своё устройство; для публикации нужен
+release-ключ).
 
 > **Про air-gapped сборку.** Приложение не использует сторонних библиотек:
 > только Android SDK и Kotlin stdlib. Но Gradle всё равно скачивает AGP и
 > Kotlin-плагин из Maven. Если сборочная машина изолирована, перенесите
 > Gradle-кэш (`~/.gradle/caches`) с машины, где сборка уже выполнялась, или
 > соберите APK заранее и распространяйте файлом. В дистрибутиве шлюза
-> (`android/` + готовый APK) сборка доступна со страницы `/android.html`.
+> (`android/` + собранный APK) сборка доступна со страницы `/android.html`.
 
 ## Как это работает
 
@@ -102,7 +103,7 @@ android/
     ├── proguard-rules.pro
     └── src/main/
         ├── AndroidManifest.xml
-        ├── java/com/rudpanel/gateway/
+        ├── java/com/opendeck/msfs/
         │   ├── MainActivity.kt     # экраны, WebView, блокировка целостности,
         │   │                       # cookie входа, открытие ассистента
         │   ├── DiscoveryClient.kt  # UDP-приёмник биконов (поколения потоков)
@@ -111,8 +112,7 @@ android/
         └── res/
             ├── layout/activity_main.xml, view_setup.xml
             ├── values/strings.xml, colors.xml, themes.xml
-            ├── drawable/…          # иконка, карточки, плашка доната
-            ├── mipmap-anydpi-v26/ic_launcher.xml
+            ├── drawable/…          # open_deck_logo.png, карточки, плашка доната
             └── xml/network_security_config.xml
 ```
 
@@ -125,7 +125,7 @@ android/
   входа; QR-код с панели входит без пароля (10 минут).
 - **Проверка целостности не проходит**: файлы интерфейса на хосте изменены —
   пересоберите манифест (`python -m msfs_gateway.integrity --write`).
-- **Логи**: `adb logcat -s RudDiscovery RudPanel`, логи WebView — через Chrome
+- **Логи**: `adb logcat -s OpenDeckDiscovery OpenDeck`, логи WebView — через Chrome
   DevTools (`chrome://inspect`).
 - **Установка APK**: разрешите установку из неизвестных источников; для
   release-сборки нужна своя подпись.

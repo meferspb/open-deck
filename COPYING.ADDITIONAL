@@ -1,0 +1,28 @@
+ADDITIONAL TERMS PURSUANT TO SECTION 7 OF THE GNU AFFERO GENERAL PUBLIC LICENSE v3.0
+====================================================================================
+
+Copyright (C) 2026 [Ваше Имя / Никнейм]
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, version 3 of the License, subject to the following additional terms permitted under Section 7:
+
+1. Preservation of Author Attribution and Donation Links (Section 7(b) & Section 5(d)):
+   As a supplemental restriction under Section 7(b), the "Appropriate Legal Notices" required to be displayed by Interactive Interfaces under Section 5(d) and during remote network interaction under Section 13 are hereby defined to explicitly include:
+   a) Prominent attribution of the original author: "[Ваше Имя / Никнейм]" with a link to the original repository ([Ссылка на ваш GitHub-репозиторий]);
+   b) An active, visible, and unmodified hyperlink (or QR code / payment address) to the original author's donation/support page: [Ссылка на страницу доната].
+
+2. Prohibition of Removal or Obscuration:
+   You may not remove, hide, disable, or alter the visibility of the author attribution or the donation/support links in any interactive user interface (including, without limitation, Web UI footers, headers, "About" dialogs, settings pages, or CLI startup/help outputs) in any verbatim or modified version of the Program, whether distributed as source/object code or offered as a network service under Section 13.
+
+------------------------------------------------------------------------------------
+ДОПОЛНИТЕЛЬНЫЕ УСЛОВИЯ В СООТВЕТСТВИИ С РАЗДЕЛОМ 7 ЛИЦЕНЗИИ GNU AGPLv3
+------------------------------------------------------------------------------------
+
+В соответствии с Разделом 7(b), Разделом 5(d) и Разделом 13 лицензии GNU Affero General Public License v3.0 устанавливаются следующие обязательные дополнительные условия:
+
+1. Сохранение указания авторства и ссылок на поддержку проекта:
+   В состав обязательных юридических уведомлений («Appropriate Legal Notices»), отображаемых во всех интерактивных пользовательских интерфейсах (Раздел 5(d)), в том числе при предоставлении доступа к программе по сети (Раздел 13), в обязательном порядке входят:
+   а) Указание оригинального автора: «[Ваше Имя / Никнейм]» и ссылка на оригинальный репозиторий ([Ссылка на ваш GitHub-репозиторий]);
+   б) Активная и видимая пользователю ссылка (или реквизиты) на страницу финансовой поддержки (доната) оригинального разработчика: [Ссылка на страницу доната].
+
+2. Запрет на удаление или скрытие:
+   Строго запрещается удалять, скрывать, комментировать в коде или заменять указание оригинального автора и ссылки на страницу доната в любых элементах интерфейса (включая футеры, меню, окна «О программе», веб-страницы и вывод CLI) как при распространении программы, так и при запуске модифицированных версий на сервере.

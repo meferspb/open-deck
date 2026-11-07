@@ -20,14 +20,15 @@ android/.kotlin/
 android/local.properties
 android/.idea/
 
-# APK: сборки игнорируются, но готовый APK для установщика — в репозитории
+# Собранные APK — артефакты релиза, не исходники
+android/dist/
 *.apk
-!android/dist/OpenDeck-Android-*.apk
 
-# Локальные артефакты сборки
+# Локальные артефакты сборки и состояние агентов
 .gradle-home/
 .android-home/
 .tmp/
+.kilo/
 *.log
 .DS_Store
 Thumbs.db

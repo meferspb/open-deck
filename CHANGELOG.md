@@ -11,7 +11,7 @@
   Android-приложение (`com.opendeck.msfs`), исполняемые файлы, установщик,
   документация и профили самолётов.
 - Логотип и иконки приложения сгенерированы из `docs/pic1.jpg`; файлы
-  `web/img/open-deck-logo.jpg`, `web/favicon.ico`, Android drawable и
+  `web/img/open-deck-mark.jpg`, `web/favicon.ico`, Android drawable и
   `packaging/windows/open-deck.ico`.
 
 ### Добавлено

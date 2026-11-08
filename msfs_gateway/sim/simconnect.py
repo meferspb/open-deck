@@ -767,6 +767,9 @@ class SimConnectSim(SimProvider):
             data_keys = set(self._data_keys)
             stale = self._last_numeric_at <= 0.0 or not self.connected
             for key, variable in telemetry.VARIABLES.items():
+                # totalGal — вычисляемая переменная, её нет в SimConnect-определении.
+                if key == "fuel.totalGal":
+                    continue
                 if variable.kind in {"number", "bool"}:
                     if key not in data_keys or stale:
                         values[key] = None
@@ -774,8 +777,12 @@ class SimConnectSim(SimProvider):
                     values[key] = None
             if stale:
                 values["aircraft.atcModel"] = None
-            if values.get("fuel.leftGal") is None or values.get("fuel.rightGal") is None:
+            left = values.get("fuel.leftGal")
+            right = values.get("fuel.rightGal")
+            if stale or left is None or right is None:
                 values["fuel.totalGal"] = None
+            elif values.get("fuel.totalGal") is None:
+                values["fuel.totalGal"] = round(float(left) + float(right), 3)
             return values
 
     @property

@@ -363,7 +363,7 @@ tipos de instrumento, 3 factores de forma, perfiles con validación y guardado
 atómico, un editor con deshacer/rehacer y copia de diseños, autodescubrimiento
 UDP, un cliente Android, un compilador de APK en la distribución, un instalador
 de Windows, inicio de sesión por contraseña con QR, asistente de aterrizaje y
-rodaje, comprobación de integridad, 248 pruebas de Python y 35 de JS.
+rodaje, comprobación de integridad, 249 pruebas de Python y 35 de JS.
 
 Siguientes pasos (véase «Hoja de ruta» en el README):
 

@@ -108,6 +108,19 @@ class NumericDatumStillWorksTest(unittest.TestCase):
         stale = sim.read()
         self.assertIsNone(stale["speed.iasKt"])
 
+    def test_total_fuel_is_computed_from_live_tanks(self):
+        sim = _make_sim(telemetry.empty_snapshot())
+        sim._handle = object()
+        sim._opened_at = time.monotonic()
+        sim._last_data_at = time.monotonic()
+        sim._last_numeric_at = sim._last_data_at
+        sim._data_keys = ["fuel.leftGal", "fuel.rightGal"]
+        sim._values["fuel.leftGal"] = 74.3
+        sim._values["fuel.rightGal"] = 0.0
+        sim._values["fuel.totalGal"] = None
+        values = sim.read()
+        self.assertAlmostEqual(values["fuel.totalGal"], 74.3, places=3)
+
     def test_packet_is_parsed_by_real_sdk_field_order(self):
         """Независимый от `_RecvSimObjectData` тест: байты как в SimConnect.h."""
         sim = _make_sim()

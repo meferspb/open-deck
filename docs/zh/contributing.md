@@ -26,7 +26,7 @@ pwsh -File scripts/check.ps1
 脚本会运行：
 
 - 针对 Python 的 `ruff check` 和 `ruff format --check`；
-- `python -m unittest discover -s tests`（248 个测试）；
+- `python -m unittest discover -s tests`（249 个测试）；
 - 如果安装了 Node.js，则运行 `node --test "tests/web/*.test.mjs"`（29 个测试）。
 
 安装 lint 工具：`python -m pip install ruff`。

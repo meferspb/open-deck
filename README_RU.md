@@ -19,7 +19,7 @@ Android-приложению по HTTP + WebSocket. Панели описыва�
 | | |
 | --- | --- |
 | Версия | 0.1.0 |
-| Тесты | 248 Python + 35 Node.js |
+| Тесты | 249 Python + 35 Node.js |
 | Платформа хоста | Windows 10/11 (Python 3.11+ или установщик) |
 | Клиенты | браузер (любой современный), Android 8+ |
 | Автор | Viktor Krasnikov — [github.com/meferspb/open-deck](https://github.com/meferspb/open-deck) |
@@ -247,7 +247,7 @@ integrity/               # SHA-256 манифест критичных файл�
 ## Тесты
 
 ```powershell
-python -m unittest discover -s tests        # 248 тестов
+python -m unittest discover -s tests        # 249 тестов
 node --test "tests/web/*.test.mjs"          # 29 тестов
 python -m ruff check msfs_gateway tests scripts
 ```

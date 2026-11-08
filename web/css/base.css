@@ -700,10 +700,46 @@ html[data-brightness="night"] #stage {
   filter: brightness(0.45);
 }
 
-/* --- Режим киоска: только приборы, без интерфейса -------------------- */
-body.kiosk .app-bar,
+/* --- Режим киоска: только приборы, но блок поддержки остаётся видимым --- */
 body.kiosk .status-bar {
   display: none;
+}
+
+body.kiosk .app-bar {
+  display: block;
+  height: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  /* backdrop-filter создаёт containing block для position:fixed,
+     из-за чего плашка поддержки уезжала за пределы экрана. */
+  backdrop-filter: none;
+  overflow: visible;
+}
+
+body.kiosk .app-bar__identity,
+body.kiosk .app-bar__controls,
+body.kiosk .app-bar__status > :not([data-donation-badge]) {
+  display: none;
+}
+
+body.kiosk .app-bar__status {
+  display: block;
+  height: 0;
+  padding: 0;
+  overflow: visible;
+}
+
+/* Лицензионный блок нельзя скрывать даже в киоске: оставляем компактную
+   плашку поддержки, иначе integrity-проверка справедливо блокирует UI. */
+body.kiosk [data-donation-badge] {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 90;
+  opacity: 0.82;
 }
 
 body.kiosk .stage {

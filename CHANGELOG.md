@@ -23,6 +23,8 @@ versions — [SemVer](https://semver.org/lang/ru/).
 
 ### Fixed
 
+- Kiosk mode no longer triggers `badge_tampered`: the author-support badge is
+  kept visible as a compact fixed chip instead of being hidden with the app bar.
 - Phone/tablet full-screen mode now preserves the logical profile aspect ratio
   and scales the whole panel to fit the stage. Previously a short viewport
   squashed widgets and clipped instrument readings at the edges.

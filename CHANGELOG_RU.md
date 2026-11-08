@@ -23,6 +23,10 @@
 
 ### Исправлено
 
+- Windows-установщик больше не копирует `web/profiles/config/integrity` и
+  `LICENSE`/`README.md` дважды; перед обновлением он закрывает запущенный
+  `OpenDeck.exe` и снимает read-only с `LICENSE`/`README.md`, устраняя ошибку
+  `Невозможно открыть файл для записи: ...\OpenDeck\LICENSE`.
 - SimConnect: порядок полей `SIMCONNECT_RECV_SIMOBJECT_DATA` приведён к
   `SimConnect.h` (`dwFlags`/`dwEntryNumber`/`dwOutOf`/`dwDefineCount`) — без
   этого живая числовая телеметрия не обновлялась.

@@ -66,20 +66,20 @@ UninstallIcon "open-deck.ico"
 ; ---------------------------------------------------------------- установка
 Section "Приложение" SecMain
   SetShellVarContext current
+
+  ; Закрываем запущенный OpenDeck: иначе exe/DLL/статику нельзя перезаписать.
+  ExecWait '"$SYSDIR\taskkill.exe" /IM ${PRODUCT_EXE} /F'
+
   SetOutPath "$INSTDIR"
+  SetOverwrite on
+  ; Снимаем read-only с файлов прошлой установки: иначе NSIS выдаёт
+  ; «Невозможно открыть файл для записи» на LICENSE/README.
+  SetFileAttributes "$INSTDIR\LICENSE" NORMAL
+  SetFileAttributes "$INSTDIR\README.md" NORMAL
 
-  ; Сам exe и встроенный Python (_internal).
+  ; Сам exe, _internal и данные рядом с ним (web/profiles/config/integrity)
+  ; уже лежат в APP_SRC после сборки.
   File /r "${APP_SRC}\*.*"
-
-  ; Данные рядом с exe: статика клиента, профили, реквизиты, манифест.
-  SetOutPath "$INSTDIR\web"
-  File /r "${ROOT_SRC}\web\*.*"
-  SetOutPath "$INSTDIR\profiles"
-  File /r "${ROOT_SRC}\profiles\*.*"
-  SetOutPath "$INSTDIR\config"
-  File /r "${ROOT_SRC}\config\*.*"
-  SetOutPath "$INSTDIR\integrity"
-  File /r "${ROOT_SRC}\integrity\*.*"
 
   ; Android-проект и готовый APK: можно собрать свой APK из дистрибутива
   ; (нужны JDK 17, Android SDK и Gradle) или установить готовый.
@@ -88,8 +88,6 @@ Section "Приложение" SecMain
 
   SetOutPath "$INSTDIR"
   File /r "${ROOT_SRC}\docs"
-  File "${ROOT_SRC}\LICENSE"
-  File "${ROOT_SRC}\README.md"
 
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 

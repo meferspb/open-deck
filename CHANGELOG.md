@@ -23,6 +23,10 @@ versions — [SemVer](https://semver.org/lang/ru/).
 
 ### Fixed
 
+- Windows installer no longer copies `web/profiles/config/integrity` and
+  `LICENSE`/`README.md` twice; it closes a running `OpenDeck.exe` and clears
+  read-only attributes before an upgrade, fixing
+  `Cannot open file for writing: ...\OpenDeck\LICENSE`.
 - SimConnect: the field order of `SIMCONNECT_RECV_SIMOBJECT_DATA` now matches
   `SimConnect.h` (`dwFlags`/`dwEntryNumber`/`dwOutOf`/`dwDefineCount`) — without
   this, live numeric telemetry did not update.

@@ -87,7 +87,9 @@ export class AttitudeWidget extends Widget {
 
     ctx.save();
     ctx.translate(cx, cy);
-    ctx.rotate(-degToRad(bank));
+    // MSFS/FSX: PLANE BANK DEGREES is positive for a LEFT bank. The horizon
+    // moves opposite to the aircraft, so positive bank rotates it clockwise.
+    ctx.rotate(degToRad(bank));
     ctx.translate(0, pitch * pxPerDeg);
 
     const span = radius * 3;
@@ -155,8 +157,8 @@ export class AttitudeWidget extends Widget {
       ctx.stroke();
     }
 
-    // Указатель крена, привязанный к горизонту.
-    ctx.rotate(degToRad(bank));
+    // Указатель крена, привязанный к горизонту (положительный bank = левый).
+    ctx.rotate(-degToRad(bank));
     ctx.beginPath();
     ctx.moveTo(0, -radius * 0.79);
     ctx.lineTo(-radius * 0.05, -radius * 0.9);

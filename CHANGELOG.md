@@ -23,6 +23,9 @@ versions — [SemVer](https://semver.org/lang/ru/).
 
 ### Fixed
 
+- Attitude indicator bank direction: MSFS `PLANE BANK DEGREES` is positive
+  for a left bank; the horizon and bank pointer are now rotated in the correct
+  direction.
 - Windows installer no longer copies `web/profiles/config/integrity` and
   `LICENSE`/`README.md` twice; it closes a running `OpenDeck.exe` and clears
   read-only attributes before an upgrade, fixing

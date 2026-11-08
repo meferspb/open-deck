@@ -110,10 +110,10 @@
 
 | Ключ | Тип | Ед. | Чтение (SimVar) | Команда | Описание |
 | --- | --- | --- | --- | --- | --- |
-| `nav.localizer` | number | ° | NAV LOCALIZER | — | Отклонение от курсового маяка |
-| `nav.glideSlope` | number | ° | NAV GLIDE SLOPE | — | Отклонение от глиссады |
-| `nav.locFlag` | bool | — | NAV LOC FLAG | — | Курсовой маяк захвачен |
-| `nav.gsFlag` | bool | — | NAV GS FLAG | — | Глиссада захвачена |
+| `nav.localizer` | number | dots | NAV CDI:1 | — | Отклонение от курсового маяка |
+| `nav.glideSlope` | number | ° | NAV GLIDE SLOPE ERROR | — | Отклонение от глиссады |
+| `nav.locFlag` | bool | — | HSI CDI NEEDLE VALID | — | Курсовой маяк захвачен |
+| `nav.gsFlag` | bool | — | HSI GSI NEEDLE VALID | — | Глиссада захвачена |
 
 ### Органы управления
 

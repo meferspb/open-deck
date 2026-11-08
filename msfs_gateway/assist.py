@@ -80,6 +80,12 @@ def _rounded(values: dict[str, Any], key: str, digits: int) -> float | None:
     return None if value is None else round(value, digits)
 
 
+def _localizer_deg(values: dict[str, Any]) -> float | None:
+    """CDI needle deflection (±127) to approximate localizer degrees."""
+    value = _optional_number(values, "nav.localizer")
+    return None if value is None else round(value * 2.5 / 127.0, 3)
+
+
 def _flag(values: dict[str, Any], key: str) -> bool:
     return bool(values.get(key))
 
@@ -496,7 +502,7 @@ class AssistManager:
                     "iasKt": _rounded(values, "speed.iasKt", 1),
                     "verticalSpeedFpm": _rounded(values, "verticalSpeed.fpm", 0),
                     "headingDeg": _rounded(values, "heading.magneticDeg", 1),
-                    "localizerDeg": _rounded(values, "nav.localizer", 3),
+                    "localizerDeg": _localizer_deg(values),
                     "glideSlopeDeg": _rounded(values, "nav.glideSlope", 3),
                     "locValid": _optional_flag(values, "nav.locFlag"),
                     "gsValid": _optional_flag(values, "nav.gsFlag"),

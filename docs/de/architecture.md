@@ -360,7 +360,7 @@ Instrumententypen, 3 Formfaktoren, Profile mit Validierung und atomarem
 Speichern, ein Editor mit Rückgängig/Wiederholen und Layout-Kopieren,
 UDP-Autoerkennung, ein Android-Client, ein APK-Builder in der Distribution, ein
 Windows-Installer, Passwortanmeldung mit QR, Lande- und Roll-Assistent,
-Integritätsprüfung, 249 Python- und 35 JS-Tests.
+Integritätsprüfung, 250 Python- und 35 JS-Tests.
 
 Nächste Schritte (siehe README „Roadmap"):
 

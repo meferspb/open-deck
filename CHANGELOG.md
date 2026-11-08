@@ -23,6 +23,11 @@ versions — [SemVer](https://semver.org/lang/ru/).
 
 ### Fixed
 
+- Landing assistant NAV readouts now use the correct MSFS SimVars:
+  localizer deviation from `NAV CDI:1`, glide-slope deviation from
+  `NAV GLIDE SLOPE ERROR`, and `HSI CDI/GSI NEEDLE VALID` for validity.
+  Previously `NAV LOCALIZER` (course heading) and `NAV GLIDE SLOPE` (gradient)
+  were shown as if they were deviations.
 - Attitude indicator bank and pitch direction: MSFS `PLANE BANK DEGREES` is
   positive for a left bank and `PLANE PITCH DEGREES` is positive for pitch
   down; the horizon, pitch ladder, and bank pointer now move in the correct

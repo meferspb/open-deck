@@ -106,10 +106,10 @@
 
 | 键 | 类型 | 单位 | 读取（SimVar） | 命令 | 描述 |
 | --- | --- | --- | --- | --- | --- |
-| `nav.localizer` | number | ° | NAV LOCALIZER | — | 航向道偏差 |
-| `nav.glideSlope` | number | ° | NAV GLIDE SLOPE | — | 下滑道偏差 |
-| `nav.locFlag` | bool | — | NAV LOC FLAG | — | 航向道已捕获 |
-| `nav.gsFlag` | bool | — | NAV GS FLAG | — | 下滑道已捕获 |
+| `nav.localizer` | number | dots | NAV CDI:1 | — | 航向道偏差 |
+| `nav.glideSlope` | number | ° | NAV GLIDE SLOPE ERROR | — | 下滑道偏差 |
+| `nav.locFlag` | bool | — | HSI CDI NEEDLE VALID | — | 航向道已捕获 |
+| `nav.gsFlag` | bool | — | HSI GSI NEEDLE VALID | — | 下滑道已捕获 |
 
 ### 操纵
 

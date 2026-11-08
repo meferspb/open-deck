@@ -20,7 +20,7 @@ internet.
 | | |
 | --- | --- |
 | Versión | 0.1.0 |
-| Pruebas | 249 Python + 35 Node.js |
+| Pruebas | 250 Python + 35 Node.js |
 | Plataforma del host | Windows 10/11 (Python 3.11+ o instalador) |
 | Clientes | navegador (cualquiera moderno), Android 8+ |
 | Autor | Viktor Krasnikov — [github.com/meferspb/open-deck](https://github.com/meferspb/open-deck) |
@@ -264,7 +264,7 @@ integrity/               # manifiesto SHA-256 de archivos críticos
 ## Pruebas
 
 ```powershell
-python -m unittest discover -s tests        # 249 pruebas
+python -m unittest discover -s tests        # 250 pruebas
 node --test "tests/web/*.test.mjs"          # 29 pruebas
 python -m ruff check msfs_gateway tests scripts
 ```

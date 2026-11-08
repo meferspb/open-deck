@@ -3,7 +3,7 @@
   "id": "airbus-a320",
   "name": "Airbus A320",
   "icao": "A20N",
-  "revision": 1,
+  "revision": 2,
   "description": "A320 (Asobo/iniBuilds/FlyByWire): авиагоризонт, скорость, высота, курс, вариометр, N1 обоих двигателей, топливо, закрылки и табло автопилота. Значения — стандартные SimVar; для специфичных систем FBW добавьте LVAR/RPN в блок variables.",
   "sim": {
     "match": {
@@ -21,19 +21,41 @@
       "id": "attitude",
       "type": "attitude",
       "label": "Авиагоризонт",
-      "bindings": { "pitch": "attitude.pitchDeg", "bank": "attitude.bankDeg" },
-      "options": { "caption": "PFD" },
+      "bindings": {
+        "pitch": "attitude.pitchDeg",
+        "bank": "attitude.bankDeg"
+      },
+      "options": {
+        "caption": "PFD"
+      },
       "layout": {
-        "base": { "x": 0.02, "y": 0.04, "w": 0.34, "h": 0.4 },
-        "phone": { "x": 0.02, "y": 0.02, "w": 0.55, "h": 0.2 },
-        "tablet-sm": { "x": 0.02, "y": 0.03, "w": 0.34, "h": 0.42 }
+        "base": {
+          "x": 0.02,
+          "y": 0.04,
+          "w": 0.34,
+          "h": 0.4
+        },
+        "phone": {
+          "x": 0.02,
+          "y": 0.02,
+          "w": 0.55,
+          "h": 0.2
+        },
+        "tablet-sm": {
+          "x": 0.02,
+          "y": 0.03,
+          "w": 0.34,
+          "h": 0.42
+        }
       }
     },
     {
       "id": "airspeed",
       "type": "gauge.radial",
       "label": "Скорость",
-      "bindings": { "value": "speed.iasKt" },
+      "bindings": {
+        "value": "speed.iasKt"
+      },
       "options": {
         "caption": "IAS",
         "min": 0,
@@ -44,56 +66,139 @@
         "minorTicks": 4,
         "redline": 340,
         "zones": [
-          { "from": 110, "to": 190, "tone": "ok" },
-          { "from": 190, "to": 280, "tone": "ok" },
-          { "from": 280, "to": 340, "tone": "warn" }
+          {
+            "from": 110,
+            "to": 190,
+            "tone": "ok"
+          },
+          {
+            "from": 190,
+            "to": 280,
+            "tone": "ok"
+          },
+          {
+            "from": 280,
+            "to": 340,
+            "tone": "warn"
+          }
         ]
       },
       "layout": {
-        "base": { "x": 0.38, "y": 0.04, "w": 0.2, "h": 0.28 },
-        "phone": { "x": 0.59, "y": 0.02, "w": 0.39, "h": 0.1 },
-        "tablet-sm": { "x": 0.38, "y": 0.03, "w": 0.19, "h": 0.26 }
+        "base": {
+          "x": 0.38,
+          "y": 0.04,
+          "w": 0.2,
+          "h": 0.28
+        },
+        "phone": {
+          "x": 0.59,
+          "y": 0.02,
+          "w": 0.39,
+          "h": 0.1
+        },
+        "tablet-sm": {
+          "x": 0.38,
+          "y": 0.03,
+          "w": 0.19,
+          "h": 0.26
+        }
       }
     },
     {
       "id": "altimeter",
       "type": "altimeter",
       "label": "Высотомер",
-      "bindings": { "value": "altitude.indicatedFt" },
+      "bindings": {
+        "value": "altitude.indicatedFt"
+      },
       "layout": {
-        "base": { "x": 0.6, "y": 0.04, "w": 0.2, "h": 0.28 },
-        "phone": { "x": 0.59, "y": 0.13, "w": 0.39, "h": 0.09 },
-        "tablet-sm": { "x": 0.59, "y": 0.03, "w": 0.19, "h": 0.26 }
+        "base": {
+          "x": 0.6,
+          "y": 0.04,
+          "w": 0.2,
+          "h": 0.28
+        },
+        "phone": {
+          "x": 0.59,
+          "y": 0.13,
+          "w": 0.39,
+          "h": 0.09
+        },
+        "tablet-sm": {
+          "x": 0.59,
+          "y": 0.03,
+          "w": 0.19,
+          "h": 0.26
+        }
       }
     },
     {
       "id": "vsi",
       "type": "vsi",
       "label": "Вариометр",
-      "bindings": { "value": "verticalSpeed.fpm" },
-      "options": { "limit": 6000 },
+      "bindings": {
+        "value": "verticalSpeed.fpm"
+      },
+      "options": {
+        "limit": 6000
+      },
       "layout": {
-        "base": { "x": 0.82, "y": 0.04, "w": 0.16, "h": 0.28 },
-        "phone": { "x": 0.02, "y": 0.23, "w": 0.48, "h": 0.16 },
-        "tablet-sm": { "x": 0.8, "y": 0.03, "w": 0.18, "h": 0.26 }
+        "base": {
+          "x": 0.82,
+          "y": 0.04,
+          "w": 0.16,
+          "h": 0.28
+        },
+        "phone": {
+          "x": 0.02,
+          "y": 0.23,
+          "w": 0.48,
+          "h": 0.16
+        },
+        "tablet-sm": {
+          "x": 0.8,
+          "y": 0.03,
+          "w": 0.18,
+          "h": 0.26
+        }
       }
     },
     {
       "id": "heading",
       "type": "heading",
       "label": "Курсоуказатель",
-      "bindings": { "heading": "heading.magneticDeg", "bug": "autopilot.headingBugDeg" },
+      "bindings": {
+        "heading": "heading.magneticDeg",
+        "bug": "autopilot.headingBugDeg"
+      },
       "layout": {
-        "base": { "x": 0.38, "y": 0.34, "w": 0.2, "h": 0.28 },
-        "phone": { "x": 0.52, "y": 0.23, "w": 0.46, "h": 0.16 },
-        "tablet-sm": { "x": 0.38, "y": 0.31, "w": 0.19, "h": 0.26 }
+        "base": {
+          "x": 0.38,
+          "y": 0.34,
+          "w": 0.2,
+          "h": 0.28
+        },
+        "phone": {
+          "x": 0.52,
+          "y": 0.23,
+          "w": 0.46,
+          "h": 0.16
+        },
+        "tablet-sm": {
+          "x": 0.38,
+          "y": 0.31,
+          "w": 0.19,
+          "h": 0.26
+        }
       }
     },
     {
       "id": "n1-engine-1",
       "type": "gauge.radial",
       "label": "N1 двигатель 1",
-      "bindings": { "value": "engine.n1Pct" },
+      "bindings": {
+        "value": "engine.n1Pct"
+      },
       "options": {
         "caption": "N1 ENG 1",
         "min": 0,
@@ -105,16 +210,33 @@
         "redline": 100
       },
       "layout": {
-        "base": { "x": 0.6, "y": 0.34, "w": 0.2, "h": 0.28 },
-        "phone": { "x": 0.02, "y": 0.41, "w": 0.3, "h": 0.14 },
-        "tablet-sm": { "x": 0.59, "y": 0.31, "w": 0.19, "h": 0.26 }
+        "base": {
+          "x": 0.6,
+          "y": 0.34,
+          "w": 0.2,
+          "h": 0.28
+        },
+        "phone": {
+          "x": 0.02,
+          "y": 0.41,
+          "w": 0.3,
+          "h": 0.14
+        },
+        "tablet-sm": {
+          "x": 0.59,
+          "y": 0.31,
+          "w": 0.19,
+          "h": 0.26
+        }
       }
     },
     {
       "id": "n1-engine-2",
       "type": "gauge.radial",
       "label": "N1 двигатель 2",
-      "bindings": { "value": "engine.n1Pct2" },
+      "bindings": {
+        "value": "engine.n1Pct2"
+      },
       "options": {
         "caption": "N1 ENG 2",
         "min": 0,
@@ -126,45 +248,122 @@
         "redline": 100
       },
       "layout": {
-        "base": { "x": 0.82, "y": 0.34, "w": 0.16, "h": 0.28 },
-        "phone": { "x": 0.34, "y": 0.41, "w": 0.3, "h": 0.14 },
-        "tablet-sm": { "x": 0.8, "y": 0.31, "w": 0.18, "h": 0.26 }
+        "base": {
+          "x": 0.82,
+          "y": 0.34,
+          "w": 0.16,
+          "h": 0.28
+        },
+        "phone": {
+          "x": 0.34,
+          "y": 0.41,
+          "w": 0.3,
+          "h": 0.14
+        },
+        "tablet-sm": {
+          "x": 0.8,
+          "y": 0.31,
+          "w": 0.18,
+          "h": 0.26
+        }
       }
     },
     {
       "id": "fuel",
       "type": "readout",
       "label": "Топливо",
-      "bindings": { "value": "fuel.totalGal" },
-      "options": { "caption": "FUEL", "unit": "GAL", "decimals": 0 },
+      "bindings": {
+        "value": "fuel.totalGal"
+      },
+      "options": {
+        "caption": "FUEL",
+        "unit": "GAL",
+        "decimals": 0
+      },
       "layout": {
-        "base": { "x": 0.02, "y": 0.48, "w": 0.2, "h": 0.12 },
-        "phone": { "x": 0.66, "y": 0.41, "w": 0.32, "h": 0.14 },
-        "tablet-sm": { "x": 0.02, "y": 0.48, "w": 0.18, "h": 0.11 }
+        "base": {
+          "x": 0.02,
+          "y": 0.48,
+          "w": 0.2,
+          "h": 0.12
+        },
+        "phone": {
+          "x": 0.66,
+          "y": 0.41,
+          "w": 0.32,
+          "h": 0.14
+        },
+        "tablet-sm": {
+          "x": 0.02,
+          "y": 0.48,
+          "w": 0.18,
+          "h": 0.11
+        }
       }
     },
     {
       "id": "flaps",
       "type": "readout",
       "label": "Закрылки",
-      "bindings": { "value": "flaps.percent" },
-      "options": { "caption": "FLAPS", "unit": "%", "decimals": 0 },
+      "bindings": {
+        "value": "flaps.percent"
+      },
+      "options": {
+        "caption": "FLAPS",
+        "unit": "%",
+        "decimals": 0
+      },
       "layout": {
-        "base": { "x": 0.02, "y": 0.62, "w": 0.2, "h": 0.12 },
-        "phone": { "x": 0.02, "y": 0.57, "w": 0.3, "h": 0.1 },
-        "tablet-sm": { "x": 0.02, "y": 0.61, "w": 0.18, "h": 0.11 }
+        "base": {
+          "x": 0.02,
+          "y": 0.62,
+          "w": 0.2,
+          "h": 0.12
+        },
+        "phone": {
+          "x": 0.02,
+          "y": 0.57,
+          "w": 0.3,
+          "h": 0.1
+        },
+        "tablet-sm": {
+          "x": 0.02,
+          "y": 0.61,
+          "w": 0.18,
+          "h": 0.11
+        }
       }
     },
     {
       "id": "ap-status",
       "type": "annunciator",
       "label": "Автопилот",
-      "bindings": { "active": "autopilot.master" },
-      "options": { "caption": "AP", "tone": "ok" },
+      "bindings": {
+        "active": "autopilot.master"
+      },
+      "options": {
+        "caption": "AP",
+        "tone": "ok"
+      },
       "layout": {
-        "base": { "x": 0.02, "y": 0.78, "w": 0.26, "h": 0.09 },
-        "phone": { "x": 0.34, "y": 0.57, "w": 0.3, "h": 0.06 },
-        "tablet-sm": { "x": 0.02, "y": 0.74, "w": 0.22, "h": 0.08 }
+        "base": {
+          "x": 0.2357,
+          "y": 0.4818,
+          "w": 0.1218,
+          "h": 0.114
+        },
+        "phone": {
+          "x": 0.34,
+          "y": 0.57,
+          "w": 0.3,
+          "h": 0.06
+        },
+        "tablet-sm": {
+          "x": 0.02,
+          "y": 0.74,
+          "w": 0.22,
+          "h": 0.08
+        }
       }
     }
   ]

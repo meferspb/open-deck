@@ -222,7 +222,7 @@ DiscoveryBeacon._loop()                      # daemon thread
 
 ## 5. MVP 边界与后续步骤
 
-**已经存在**：标准库网关、带每客户端队列的 WebSocket、mock/SimConnect（+ TCP 回退）、LVAR/RPN WASM 桥、9 种仪表类型、3 种形态因素、带校验和原子保存的配置文件、带撤销/重做和布局复制的编辑器、UDP 自动发现、Android 客户端、发行版中的 APK 构建器、Windows 安装程序、带 QR 的密码登录、着陆和滑行辅助、完整性检查、249 个 Python 和 35 个 JS 测试。
+**已经存在**：标准库网关、带每客户端队列的 WebSocket、mock/SimConnect（+ TCP 回退）、LVAR/RPN WASM 桥、9 种仪表类型、3 种形态因素、带校验和原子保存的配置文件、带撤销/重做和布局复制的编辑器、UDP 自动发现、Android 客户端、发行版中的 APK 构建器、Windows 安装程序、带 QR 的密码登录、着陆和滑行辅助、完整性检查、250 个 Python 和 35 个 JS 测试。
 
 后续步骤（参见 README 的“路线图”）：
 

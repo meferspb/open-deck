@@ -112,10 +112,10 @@ instrumentos a estas claves, y el gateway lee las SimVar y envía comandos.
 
 | Clave | Tipo | Unidad | Lectura (SimVar) | Comando | Descripción |
 | --- | --- | --- | --- | --- | --- |
-| `nav.localizer` | number | ° | NAV LOCALIZER | — | Desviación del localizador |
-| `nav.glideSlope` | number | ° | NAV GLIDE SLOPE | — | Desviación de la senda de planeo |
-| `nav.locFlag` | bool | — | NAV LOC FLAG | — | Localizador capturado |
-| `nav.gsFlag` | bool | — | NAV GS FLAG | — | Senda de planeo capturada |
+| `nav.localizer` | number | dots | NAV CDI:1 | — | Desviación del localizador |
+| `nav.glideSlope` | number | ° | NAV GLIDE SLOPE ERROR | — | Desviación de la senda de planeo |
+| `nav.locFlag` | bool | — | HSI CDI NEEDLE VALID | — | Localizador capturado |
+| `nav.gsFlag` | bool | — | HSI GSI NEEDLE VALID | — | Senda de planeo capturada |
 
 ### Controles
 

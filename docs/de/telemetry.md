@@ -113,10 +113,10 @@ Befehle.
 
 | Schlüssel | Typ | Einheit | Lesen (SimVar) | Befehl | Beschreibung |
 | --- | --- | --- | --- | --- | --- |
-| `nav.localizer` | number | ° | NAV LOCALIZER | — | Localizer-Abweichung |
-| `nav.glideSlope` | number | ° | NAV GLIDE SLOPE | — | Glideslope-Abweichung |
-| `nav.locFlag` | bool | — | NAV LOC FLAG | — | Localizer erfasst |
-| `nav.gsFlag` | bool | — | NAV GS FLAG | — | Glideslope erfasst |
+| `nav.localizer` | number | dots | NAV CDI:1 | — | Localizer-Abweichung |
+| `nav.glideSlope` | number | ° | NAV GLIDE SLOPE ERROR | — | Glideslope-Abweichung |
+| `nav.locFlag` | bool | — | HSI CDI NEEDLE VALID | — | Localizer erfasst |
+| `nav.gsFlag` | bool | — | HSI GSI NEEDLE VALID | — | Glideslope erfasst |
 
 ### Steuerung
 

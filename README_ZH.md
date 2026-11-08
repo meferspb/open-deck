@@ -14,7 +14,7 @@ Windows 网关通过 SimConnect（包括通过 WASM 模块读取 LVAR/RPN）从 
 | | |
 | --- | --- |
 | 版本 | 0.1.0 |
-| 测试 | 249 个 Python + 35 个 Node.js |
+| 测试 | 250 个 Python + 35 个 Node.js |
 | 主机平台 | Windows 10/11（Python 3.11+ 或安装程序） |
 | 客户端 | 浏览器（任何现代浏览器）、Android 8+ |
 | 作者 | Viktor Krasnikov — [github.com/meferspb/open-deck](https://github.com/meferspb/open-deck) |
@@ -199,7 +199,7 @@ integrity/               # 关键文件的 SHA-256 清单
 ## 测试
 
 ```powershell
-python -m unittest discover -s tests        # 249 个测试
+python -m unittest discover -s tests        # 250 个测试
 node --test "tests/web/*.test.mjs"          # 29 个测试
 python -m ruff check msfs_gateway tests scripts
 ```

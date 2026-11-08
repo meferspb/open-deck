@@ -342,7 +342,7 @@ mock/SimConnect (+ TCP fallback), LVAR/RPN WASM bridge, 9 instrument types,
 3 form factors, profiles with validation and atomic saving, an editor with
 undo/redo and layout copying, UDP autodiscovery, an Android client, an APK
 builder in the distribution, a Windows installer, password login with QR,
-landing and taxi assist, integrity checking, 249 Python and 35 JS tests.
+landing and taxi assist, integrity checking, 250 Python and 35 JS tests.
 
 Next steps (see the README "Roadmap"):
 

@@ -257,7 +257,7 @@ integrity/               # 重要ファイルの SHA-256 マニフェスト
 ## テスト
 
 ```powershell
-python -m unittest discover -s tests        # 249 テスト
+python -m unittest discover -s tests        # 250 テスト
 node --test "tests/web/*.test.mjs"          # 29 テスト
 python -m ruff check msfs_gateway tests scripts
 ```

@@ -39,6 +39,15 @@ class VariableRegistryTest(unittest.TestCase):
             "RADIO HEIGHT",
         )
 
+    def test_localizer_and_glide_slope_use_deviation_simvars(self):
+        self.assertEqual(telemetry.get("nav.localizer").sim_var, "NAV CDI:1")
+        self.assertEqual(
+            telemetry.get("nav.glideSlope").sim_var,
+            "NAV GLIDE SLOPE ERROR",
+        )
+        self.assertEqual(telemetry.get("nav.locFlag").sim_var, "HSI CDI NEEDLE VALID")
+        self.assertEqual(telemetry.get("nav.gsFlag").sim_var, "HSI GSI NEEDLE VALID")
+
 
 class CoerceTest(unittest.TestCase):
     def test_bool_from_many_forms(self):

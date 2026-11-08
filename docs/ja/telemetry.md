@@ -110,10 +110,10 @@
 
 | Key | Type | Unit | Read (SimVar) | Command | 説明 |
 | --- | --- | --- | --- | --- | --- |
-| `nav.localizer` | number | ° | NAV LOCALIZER | — | ローカライザー偏差 |
-| `nav.glideSlope` | number | ° | NAV GLIDE SLOPE | — | グライドスロープ偏差 |
-| `nav.locFlag` | bool | — | NAV LOC FLAG | — | ローカライザー捕捉 |
-| `nav.gsFlag` | bool | — | NAV GS FLAG | — | グライドスロープ捕捉 |
+| `nav.localizer` | number | dots | NAV CDI:1 | — | ローカライザー偏差 |
+| `nav.glideSlope` | number | ° | NAV GLIDE SLOPE ERROR | — | グライドスロープ偏差 |
+| `nav.locFlag` | bool | — | HSI CDI NEEDLE VALID | — | ローカライザー捕捉 |
+| `nav.gsFlag` | bool | — | HSI GSI NEEDLE VALID | — | グライドスロープ捕捉 |
 
 ### 操作
 

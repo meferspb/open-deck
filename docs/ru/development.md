@@ -111,7 +111,7 @@ docs/               эта и остальная документация
 ## 9. Тесты и проверки
 
 ```powershell
-pwsh -File scripts/check.ps1       # ruff + format + 249 Python + 35 JS
+pwsh -File scripts/check.ps1       # ruff + format + 250 Python + 35 JS
 python -m unittest discover -s tests
 node --test "tests/web/*.test.mjs"
 python -m msfs_gateway.docsgen --check

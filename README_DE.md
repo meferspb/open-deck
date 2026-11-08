@@ -20,7 +20,7 @@ Netzwerk und auf einem Rechner ohne Internetzugang.
 | | |
 | --- | --- |
 | Version | 0.1.0 |
-| Tests | 249 Python + 35 Node.js |
+| Tests | 250 Python + 35 Node.js |
 | Host-Plattform | Windows 10/11 (Python 3.11+ oder Installer) |
 | Clients | Browser (jeder moderne), Android 8+ |
 | Autor | Viktor Krasnikov — [github.com/meferspb/open-deck](https://github.com/meferspb/open-deck) |
@@ -260,7 +260,7 @@ integrity/               # SHA-256-Manifest kritischer Dateien
 ## Tests
 
 ```powershell
-python -m unittest discover -s tests        # 249 Tests
+python -m unittest discover -s tests        # 250 Tests
 node --test "tests/web/*.test.mjs"          # 29 Tests
 python -m ruff check msfs_gateway tests scripts
 ```

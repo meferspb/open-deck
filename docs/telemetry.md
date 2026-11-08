@@ -112,10 +112,10 @@ these keys, and the gateway reads SimVars and sends commands.
 
 | Key | Type | Unit | Read (SimVar) | Command | Description |
 | --- | --- | --- | --- | --- | --- |
-| `nav.localizer` | number | ° | NAV LOCALIZER | — | Localizer deviation |
-| `nav.glideSlope` | number | ° | NAV GLIDE SLOPE | — | Glideslope deviation |
-| `nav.locFlag` | bool | — | NAV LOC FLAG | — | Localizer captured |
-| `nav.gsFlag` | bool | — | NAV GS FLAG | — | Glideslope captured |
+| `nav.localizer` | number | dots | NAV CDI:1 | — | Localizer deviation |
+| `nav.glideSlope` | number | ° | NAV GLIDE SLOPE ERROR | — | Glideslope deviation |
+| `nav.locFlag` | bool | — | HSI CDI NEEDLE VALID | — | Localizer captured |
+| `nav.gsFlag` | bool | — | HSI GSI NEEDLE VALID | — | Glideslope captured |
 
 ### Controls
 

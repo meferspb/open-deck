@@ -1,81 +1,81 @@
-# Установщик для Windows
+# Windows Installer
 
-Один файл `OpenDeck-Setup-<версия>.exe`: двойной клик → «Далее» →
-готово. Права администратора не нужны, Python и интернет не требуются.
+A single file `OpenDeck-Setup-<version>.exe`: double-click → "Next" →
+done. Administrator rights are not required, and Python and the internet are not needed.
 
-## Что происходит при установке
+## What happens during installation
 
 | | |
 |---|---|
-| Каталог | `%LOCALAPPDATA%\OpenDeck` (в профиле пользователя, без UAC) |
-| Внутри | `OpenDeck.exe` — шлюз со встроенным Python 3.13 и стандартной библиотекой |
-| | `web/` — веб-клиент (панель и редактор), `profiles/` — профили ВС |
-| | `config/donation.json` — реквизиты автора, `integrity/` — манифест целостности |
-| | `android/` — исходники Android и, после сборки, готовый APK (`android/dist/OpenDeck-Android-<версия>.apk`), `config/android-build.json` — настройки сборки APK |
-| | `docs/` — полная документация (сервис, протокол, переменные, приборы, схема профиля) |
-| Ярлыки | рабочий стол, меню «Пуск» (запуск, панель в браузере, сборка Android APK, «Задать пароль», удаление) |
-| Удаление | «Программы и компоненты» или ярлык «Удалить» |
+| Directory | `%LOCALAPPDATA%\OpenDeck` (in the user profile, no UAC) |
+| Inside | `OpenDeck.exe` — the gateway with embedded Python 3.13 and the standard library |
+| | `web/` — the web client (panel and editor), `profiles/` — aircraft profiles |
+| | `config/donation.json` — the author's details, `integrity/` — the integrity manifest |
+| | `android/` — the Android sources and, after a build, the ready APK (`android/dist/OpenDeck-Android-<version>.apk`), `config/android-build.json` — APK build settings |
+| | `docs/` — full documentation (service, protocol, variables, instruments, profile schema) |
+| Shortcuts | desktop, Start menu (launch, panel in the browser, build Android APK, "Set password", uninstall) |
+| Uninstall | "Programs and Features" or the "Uninstall" shortcut |
 
-Данные лежат рядом с `.exe`, поэтому профили и реквизиты можно править
-без переустановки (после правки защищённых файлов нужно пересобрать манифест,
-см. корневой README).
+Data lives next to the `.exe`, so profiles and details can be edited
+without reinstalling (after editing protected files, the manifest must be rebuilt,
+see the root README).
 
-## Сборка (на машине разработчика, интернет нужен один раз)
+## Building (on the developer machine, internet needed once)
 
-Требования:
+Requirements:
 
-- Python 3.11+ и PyInstaller: `python -m pip install pyinstaller`
-- NSIS 3.x: `makensis.exe` в `PATH`, либо `NSIS_HOME`, либо `-NsisPath`
+- Python 3.11+ and PyInstaller: `python -m pip install pyinstaller`
+- NSIS 3.x: `makensis.exe` in `PATH`, or `NSIS_HOME`, or `-NsisPath`
 
 ```powershell
-# из корня репозитория
+# from the repository root
 pwsh -File scripts/build-installer.ps1 -Version 0.1.0 -NsisPath "C:\Program Files (x86)\NSIS"
 ```
 
-Скрипт по шагам: пересобирает манифест целостности → прогоняет тесты →
-собирает `build/pyinstaller/dist/OpenDeck` (PyInstaller, onedir) →
-кладёт рядом `web/`, `profiles/`, `config/`, `integrity/` → проверяет, что
-`.exe` запускается (`--help`) → компилирует установщик в
-`dist/OpenDeck-Setup-<версия>.exe`.
+The script step by step: rebuilds the integrity manifest → runs the tests →
+builds `build/pyinstaller/dist/OpenDeck` (PyInstaller, onedir) →
+copies `web/`, `profiles/`, `config/`, `integrity/` next to it → verifies that the
+`.exe` starts (`--help`) → compiles the installer into
+`dist/OpenDeck-Setup-<version>.exe`.
 
-Флаги: `-SkipTests`, `-NsisPath <папка>`, `-Version 0.2.0`.
+Flags: `-SkipTests`, `-NsisPath <directory>`, `-Version 0.2.0`.
 
-Скрипт также проверяет, что установщик собрался, и печатает итоговый путь и
-размер. Полный список шагов — в начале файла `scripts/build-installer.ps1`.
+The script also verifies that the installer was built and prints the final path and
+size. A full list of steps is at the top of `scripts/build-installer.ps1`.
 
-Вход по паролю: ярлык «Задать пароль» запускает
-`OpenDeck.exe --set-password` и спрашивает пароль в консоли;
-хеш сохраняется в `config/auth.json` рядом с `.exe`. Удаление файла
-снова открывает доступ без входа.
+Password login: the "Set password" shortcut runs
+`OpenDeck.exe --set-password` and prompts for the password in the console;
+the hash is saved to `config/auth.json` next to the `.exe`. Deleting the file
+reopens access without login.
 
-## Перед публикацией
+## Before publishing
 
-1. Проверить `config/donation.json`: автор Viktor Krasnikov, ссылка
-   Donat — `https://taps.uz/open_deck_fs`.
-2. Пересобрать манифест: `python -m msfs_gateway.integrity --write`
-   (скрипт сборки делает это сам, но проверить не лишне).
-3. Прогнать установщик на чистой машине: установка без админа, запуск,
-   доступ к панели с телефона в той же сети, удаление.
+1. Check `config/donation.json`: author Viktor Krasnikov, Donation
+   link — `https://taps.uz/open_deck_fs`.
+2. Rebuild the manifest: `python -m msfs_gateway.integrity --write`
+   (the build script does this itself, but it does not hurt to check).
+3. Run the installer on a clean machine: installation without admin, launch,
+   access to the panel from a phone on the same network, uninstall.
 
-## Тихая установка / развёртывание
+## Silent installation / deployment
 
 ```bat
 OpenDeck-Setup-0.1.0.exe /S /D=C:\Tools\OpenDeck
 Uninstall.exe /S
 ```
 
-`/D=` должен идти последним и без кавычек (ограничение NSIS).
+`/D=` must come last and without quotes (an NSIS limitation).
 
-## Ограничения
+## Limitations
 
-- Установщик не подписан: SmartScreen может предупредить «неизвестный
-  издатель» — «Подробнее» → «Выполнить в любом случае». Для релиза нужен
-  код-сертификат (EV/OV).
-- Правило брандмауэра не добавляется (нужны права администратора). При первом
-  запуске Windows спросит про доступ к сети — разрешить для частных сетей,
-  иначе клиенты не подключатся.
-- Установка per-user: приложение видно только текущему пользователю.
-- Реестр/ярлыки создаются в `HKCU` — на машинах с жёсткими политиками
-  (AppLocker, запрет записи в профиль) установка может быть заблокирована;
-  тогда используйте портативный вариант: распакуйте каталог
-  `build/pyinstaller/dist/OpenDeck` и запускайте `.exe` оттуда.
+- The installer is unsigned: SmartScreen may warn "unknown
+  publisher" — "More info" → "Run anyway". A release needs a
+  code-signing certificate (EV/OV).
+- No firewall rule is added (administrator rights are required). On first
+  launch Windows will ask about network access — allow it for private networks,
+  otherwise clients will not connect.
+- Per-user installation: the app is visible only to the current user.
+- Registry entries/shortcuts are created in `HKCU` — on machines with strict policies
+  (AppLocker, writes to the profile disallowed), installation may be blocked;
+  in that case, use the portable variant: unpack the
+  `build/pyinstaller/dist/OpenDeck` directory and run the `.exe` from there.

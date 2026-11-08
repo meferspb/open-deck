@@ -1,116 +1,120 @@
-# 💰 Сравнение стоимости сервисов: подключаемые vs локальные
+# 💰 Service Cost Comparison: Connected vs Local
 
-Документ отвечает на вопрос «сколько это будет стоить» для трёх контуров проекта:
+This document answers the question "how much will this cost" for the three
+areas of the project:
 
-1. **LLM/AI-контур** — модели для агента (DeepSeek Harness + `dsh-shift-router`),
-   которые маршрутизируют запросы между дешёвой (Fast) и умной (Smart) цепочкой.
-2. **Контур сопряжения с симулятором** — мосты SimConnect / WASM, навигация, ВС.
-3. **Инфраструктура шлюза** — сервер, рантаймы, инструменты.
+1. **LLM/AI area** — models for the agent (DeepSeek Harness + `dsh-shift-router`)
+   that route requests between a cheap (Fast) and a smart (Smart) chain.
+2. **Simulator integration area** — SimConnect / WASM bridges, navigation,
+   aircraft.
+3. **Gateway infrastructure** — server, runtimes, tools.
 
-Все цены — **реальные, по состоянию на конец октября 2026**. Подключённые
-(облачные) сервисы тарифицируются по подписке/объёму; локальные альтернативы
-бесплатны, но требуют самостоятельной установки и обслуживания. Перед оплатой
-сверяйтесь с актуальной страницей тарифов поставщика.
+All prices are **real, as of the end of October 2026**. Connected (cloud)
+services are billed by subscription/volume; local alternatives are free but
+require self-installation and maintenance. Before paying, check the provider's
+current pricing page.
 
 ---
 
-## 1. LLM / AI-агент (для dsh-shift-router)
+## 1. LLM / AI agent (for dsh-shift-router)
 
-Маршрутизатор делит нагрузку на **Fast** (дёшево, быстро) и **Smart**
-(дороже, сложные задачи). Цены DeepSeek API за **1 млн токенов**.
+The router splits the load into **Fast** (cheap, quick) and **Smart**
+(more expensive, complex tasks). DeepSeek API prices are per **1 million
+tokens**.
 
-| Сервис / модель | Роль в shift-router | Цена входа (cache miss) | Цена входа (cache hit) | Цена выхода | Локальная установка |
+| Service / model | Role in shift-router | Input price (cache miss) | Input price (cache hit) | Output price | Local installation |
 | --- | --- | --- | --- | --- | --- |
-| **DeepSeek `deepseek-flash`** (V4.1-Flash) | Fast-цепочка | $0.15 off-peak / $0.30 peak | $0.003 off-peak / $0.006 peak | $0.60 off-peak / $1.20 peak | ❌ облако |
-| **DeepSeek `deepseek-v4-pro`** (V4-Pro) | Smart-цепочка | $0.66 off-peak / $1.32 peak | $0.022 off-peak / $0.044 peak | $1.98 off-peak / $3.96 peak | ❌ облако |
-| DeepSeek **Search** (веб-поиск) | инструменты агента | $0.75 за 1 000 запросов | — | — | ❌ облако |
-| DeepSeek **Fetch** (чтение URL) | инструменты агента | $0.75 за 1 000 запросов | — | — | ❌ облако |
-| **Ollama** + open-weights (Llama / Qwen / DeepSeek-R1-Distill) | локальный Fast/Smart | бесплатно | бесплатно | бесплатно | ✅ **да, локально** |
-| **vLLM / llama.cpp** (self-hosted inference) | локальный Fast/Smart | бесплатно | бесплатно | бесплатно | ✅ **да, локально** |
+| **DeepSeek `deepseek-flash`** (V4.1-Flash) | Fast chain | $0.15 off-peak / $0.30 peak | $0.003 off-peak / $0.006 peak | $0.60 off-peak / $1.20 peak | ❌ cloud |
+| **DeepSeek `deepseek-v4-pro`** (V4-Pro) | Smart chain | $0.66 off-peak / $1.32 peak | $0.022 off-peak / $0.044 peak | $1.98 off-peak / $3.96 peak | ❌ cloud |
+| DeepSeek **Search** (web search) | agent tools | $0.75 per 1,000 requests | — | — | ❌ cloud |
+| DeepSeek **Fetch** (URL reading) | agent tools | $0.75 per 1,000 requests | — | — | ❌ cloud |
+| **Ollama** + open-weights (Llama / Qwen / DeepSeek-R1-Distill) | local Fast/Smart | free | free | free | ✅ **yes, local** |
+| **vLLM / llama.cpp** (self-hosted inference) | local Fast/Smart | free | free | free | ✅ **yes, local** |
 
-> **Примечания.**
-> - Off-peak = половина пиковой ставки. Пик: пн–пт 01:00–04:00 и 06:00–10:00 UTC.
->   Всё остальное время (включая выходные) — off-peak.
-> - По заявлению DeepSeek, вызовы Search/Fetch через DeepSeek Harness были
->   бесплатны до 00:00 1 ноября 2026 (по Пекину); с этой даты — $0.75/1 000.
-> - Локальные модели бесплатны по деньгам, но «стоят» видеокарту, электричество
->   и время на настройку. Для air-gapped развёртывания это единственный путь.
-> - Источник тарифов DeepSeek: [api-docs.deepseek.com/quick_start/pricing](https://api-docs.deepseek.com/quick_start/pricing)
+> **Notes.**
+> - Off-peak = half the peak rate. Peak: Mon–Fri 01:00–04:00 and 06:00–10:00 UTC.
+>   All other times (including weekends) are off-peak.
+> - According to DeepSeek, Search/Fetch calls through DeepSeek Harness were
+>   free until 00:00 on November 1, 2026 (Beijing time); from that date —
+>   $0.75/1,000.
+> - Local models are free in money terms, but they "cost" a GPU, electricity,
+>   and setup time. For air-gapped deployment this is the only way.
+> - DeepSeek pricing source: [api-docs.deepseek.com/quick_start/pricing](https://api-docs.deepseek.com/quick_start/pricing)
 
 ---
 
-## 2. Мост симулятора (SimConnect / WASM / переменные)
+## 2. Simulator bridge (SimConnect / WASM / variables)
 
-| Сервис / инструмент | Тип | Цена | Локальная установка | Комментарий |
+| Service / tool | Type | Price | Local installation | Comment |
 | --- | --- | --- | --- | --- |
-| **SimConnect SDK** (MSFS 2020/2024) | нативный API | бесплатно (входит в SDK) | ✅ да | Стандартные SimVar; этого достаточно для MVP |
-| **MobiFlight WASM Module** | WASM-мост LVAR/HVAR | бесплатно (open-source, донаты) | ✅ да | Расширяет доступ к кастомным переменным сложных ВС |
-| **SimBridge** (FlyByWire) | WASM-шлюз | бесплатно (open-source) | ✅ да | Работа с FBW/кастомными самолётами |
-| **FSUIPC7** | универсальный мост | ~€30 разово (регистрация) | ✅ да | Платный, но самодостаточный и без подписки |
+| **SimConnect SDK** (MSFS 2020/2024) | native API | free (included in the SDK) | ✅ yes | Standard SimVars; enough for the MVP |
+| **MobiFlight WASM Module** | LVAR/HVAR WASM bridge | free (open-source, donations) | ✅ yes | Extends access to custom variables of complex aircraft |
+| **SimBridge** (FlyByWire) | WASM gateway | free (open-source) | ✅ yes | Works with FBW/custom aircraft |
+| **FSUIPC7** | universal bridge | ~€30 one-time (registration) | ✅ yes | Paid, but self-contained and without a subscription |
 
-> **Итог по контуру:** MVP полностью собирается на бесплатном стеке
-> (SimConnect + MobiFlight/SimBridge). FSUIPC7 — опциональный платный мост.
+> **Area summary:** the MVP is built entirely on a free stack
+> (SimConnect + MobiFlight/SimBridge). FSUIPC7 is an optional paid bridge.
 
 ---
 
-## 3. Навигация, карты, полётное планирование
+## 3. Navigation, charts, flight planning
 
-| Сервис | Тип | Цена | Локальная установка | Комментарий |
+| Service | Type | Price | Local installation | Comment |
 | --- | --- | --- | --- | --- |
-| **Navigraph Unlimited** | подписка | **€10.86/мес** или **€97.97/год** | частично (Hub локально, данные по подписке) | Jeppesen-карты, AIRAC-циклы, Moving Map |
-| **SimBrief** | облачный планировщик | бесплатно | ❌ (облако) | Планы полёта, топливо, брифинг |
-| **Little Navmap** | десктоп-инструмент | бесплатно (open-source) | ✅ да | Планирование + moving map, без Jeppesen-карт |
-| **ChartFox** | каталог карт | бесплатно | частично | Официальные карты по странам, без moving map |
-| **Встроенный EFB MSFS 2024** | в составе симулятора | входит в цену игры | ✅ да (локально) | Карты прямо в игре, покрытие ограничено |
+| **Navigraph Unlimited** | subscription | **€10.86/month** or **€97.97/year** | partially (Hub locally, data by subscription) | Jeppesen charts, AIRAC cycles, Moving Map |
+| **SimBrief** | cloud planner | free | ❌ (cloud) | Flight plans, fuel, briefing |
+| **Little Navmap** | desktop tool | free (open-source) | ✅ yes | Planning + moving map, without Jeppesen charts |
+| **ChartFox** | chart catalog | free | partially | Official charts by country, without a moving map |
+| **Built-in EFB MSFS 2024** | part of the simulator | included in the game price | ✅ yes (locally) | Charts right in the game, limited coverage |
 
-> **Источник:** [aerosimnews.com — Navigraph 2026 (цены, альтернативы)](https://www.aerosimnews.com/de/navigraph-vergleich-2026-preise-alternativen/)
+> **Source:** [aerosimnews.com — Navigraph 2026 (prices, alternatives)](https://www.aerosimnews.com/de/navigraph-vergleich-2026-preise-alternativen/)
 
 ---
 
-## 4. Сам симулятор и study-level воздушные судна
+## 4. The simulator itself and study-level aircraft
 
-| Продукт | Тип | Цена (ориентир) | Локальная установка |
+| Product | Type | Price (approximate) | Local installation |
 | --- | --- | --- | --- |
-| **MSFS 2020 / 2024 — Standard** | игра | ~$69.99 | ✅ да |
-| **MSFS — Deluxe / Premium Deluxe** | игра | ~$89.99 / ~$119.99 | ✅ да |
-| **FlyByWire A32NX** | ВС | бесплатно (open-source) | ✅ да |
-| **PMDG 737 / Fenix A320 / iniBuilds** | ВС | ~$50–$70 за борт | ✅ да (через магазин/установщик) |
+| **MSFS 2020 / 2024 — Standard** | game | ~$69.99 | ✅ yes |
+| **MSFS — Deluxe / Premium Deluxe** | game | ~$89.99 / ~$119.99 | ✅ yes |
+| **FlyByWire A32NX** | aircraft | free (open-source) | ✅ yes |
+| **PMDG 737 / Fenix A320 / iniBuilds** | aircraft | ~$50–$70 per aircraft | ✅ yes (through the store/installer) |
 
-> Цены ВС зависят от издания и распродаж; сверяйтесь в магазине.
+> Aircraft prices depend on the edition and sales; check the store.
 
 ---
 
-## 5. Инфраструктура шлюза и клиента (наш проект)
+## 5. Gateway and client infrastructure (our project)
 
-| Компонент | Цена | Локальная установка |
+| Component | Price | Local installation |
 | --- | --- | --- |
-| Python 3.13 (шлюз, stdlib, без pip-зависимостей) | бесплатно | ✅ да |
-| Node.js 22 (тесты клиента) | бесплатно | ✅ да |
-| Встроенный HTTP + WebSocket сервер (stdlib) | бесплатно | ✅ да |
-| Веб-клиент (vanilla JS, без CDN) | бесплатно | ✅ да |
-| `dsh-shift-router` (npm, MIT) | бесплатно | ✅ да |
+| Python 3.13 (gateway, stdlib, no pip dependencies) | free | ✅ yes |
+| Node.js 22 (client tests) | free | ✅ yes |
+| Built-in HTTP + WebSocket server (stdlib) | free | ✅ yes |
+| Web client (vanilla JS, no CDN) | free | ✅ yes |
+| `dsh-shift-router` (npm, MIT) | free | ✅ yes |
 
 ---
 
-## Сводная таблица «дёшево → дорого»
+## Summary table "cheap → expensive"
 
-| Решение | Формат | Годовая стоимость (1 пользователь) |
+| Solution | Format | Annual cost (1 user) |
 | --- | --- | --- |
-| Наш шлюз + Python/Node + Mobiflight/SimBridge + Little Navmap | локально | **€0** |
-| + FSUIPC7 (разово) | локально | ~€30 (разово) |
-| + MSFS Standard | игра | ~$69.99 (разово) |
-| + Navigraph Unlimited | подписка | €97.97/год |
-| DeepSeek API (Fast+Smart через shift-router) | по объёму | от единиц $/мес при активном использовании |
-| Полностью локальный LLM (Ollama + open weights) | локально | €0 (нужна GPU) |
+| Our gateway + Python/Node + Mobiflight/SimBridge + Little Navmap | local | **€0** |
+| + FSUIPC7 (one-time) | local | ~€30 (one-time) |
+| + MSFS Standard | game | ~$69.99 (one-time) |
+| + Navigraph Unlimited | subscription | €97.97/year |
+| DeepSeek API (Fast+Smart through shift-router) | by volume | from a few $/month with active use |
+| Fully local LLM (Ollama + open weights) | local | €0 (a GPU is required) |
 
 ---
 
-## Выводы для air-gapped развёртывания
+## Conclusions for air-gapped deployment
 
-- **Всё, что нужно для MVP, доступно локально и бесплатно**: шлюз, SimConnect,
-  MobiFlight/SimBridge, веб-клиент, Little Navmap.
-- **Платные элементы — только опциональны**: Navigraph (удобство IFR), FSUIPC7
-  (расширенный мост), study-level ВС, сама игра.
-- **LLM-контур в изолированной сети требует локальной модели** (Ollama/vLLM):
-  облачные API DeepSeek недоступны без интернета. `dsh-shift-router` тогда
-  маршрутизирует между двумя локальными моделями вместо облачных Fast/Smart.
+- **Everything needed for the MVP is available locally and for free**: the
+  gateway, SimConnect, MobiFlight/SimBridge, the web client, Little Navmap.
+- **Paid elements are optional only**: Navigraph (IFR convenience), FSUIPC7
+  (extended bridge), study-level aircraft, the game itself.
+- **The LLM area in an isolated network requires a local model** (Ollama/vLLM):
+  DeepSeek cloud APIs are unavailable without internet. `dsh-shift-router` then
+  routes between two local models instead of cloud Fast/Smart.

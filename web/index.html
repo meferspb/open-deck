@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="dark" />
-    <meta name="description" content="Локальный клиент приборной панели MSFS: профили самолётов с шлюза, телеметрия по WebSocket." />
-    <title>Open Deck for MSFS — приборная панель</title>
+    <meta name="description" content="Local MSFS instrument panel client: aircraft profiles from the gateway, telemetry over WebSocket." data-i18n-content="index.meta" />
+    <title data-i18n="index.title">Open Deck for MSFS — instrument panel</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
     <link rel="stylesheet" href="/css/tokens.css" />
     <link rel="stylesheet" href="/css/a11y.css" />
@@ -21,15 +21,15 @@
         </span>
         <span class="brand-text">
           <span class="brand-title">Open Deck for MSFS</span>
-          <span class="brand-sub">локальный шлюз · air-gapped</span>
+          <span class="brand-sub" data-i18n="index.brandSub">local gateway · air-gapped</span>
         </span>
       </div>
 
       <div class="app-bar__controls">
         <label class="field" for="aircraft-select">
-          <span class="field__label">Самолёт</span>
+          <span class="field__label" data-i18n="field.aircraft">Aircraft</span>
           <span class="select-wrap">
-            <select id="aircraft-select" class="select" aria-label="Профиль самолёта"></select>
+            <select id="aircraft-select" class="select" aria-label="Aircraft profile" data-i18n-aria-label="field.aircraftProfileAria"></select>
             <svg class="select-wrap__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
@@ -37,66 +37,73 @@
         </label>
 
         <div class="field">
-          <span class="field__label" id="device-switch-label">Форм-фактор</span>
+          <span class="field__label" id="device-switch-label" data-i18n="field.formFactor">Form factor</span>
           <div class="segmented" id="device-switch" role="group" aria-labelledby="device-switch-label">
-            <button type="button" class="segmented__item" data-device="phone" aria-pressed="false" title="Телефон · 390×844">Phone</button>
-            <button type="button" class="segmented__item" data-device="tablet-sm" aria-pressed="false" title="Малый планшет · 1024×768">Small Tablet</button>
-            <button type="button" class="segmented__item" data-device="tablet-lg" aria-pressed="false" title="Большой планшет · 1366×1024">Large Tablet</button>
+            <button type="button" class="segmented__item" data-device="phone" aria-pressed="false" title="Phone · 390×844" data-i18n="device.phone" data-i18n-title="device.phoneTitle">Phone</button>
+            <button type="button" class="segmented__item" data-device="tablet-sm" aria-pressed="false" title="Small tablet · 1024×768" data-i18n="device.tablet-sm" data-i18n-title="device.tablet-smTitle">Small tablet</button>
+            <button type="button" class="segmented__item" data-device="tablet-lg" aria-pressed="false" title="Large tablet · 1366×1024" data-i18n="device.tablet-lg" data-i18n-title="device.tablet-lgTitle">Large tablet</button>
           </div>
         </div>
       </div>
 
       <div class="app-bar__status">
+        <select id="language-select" class="lang-select" data-language-select data-i18n-aria-label="lang.label" data-i18n-title="lang.label" title="Language" aria-label="Language"></select>
         <a
           class="icon-btn"
           href="/assist.html"
-          title="Ассистент посадки и руления"
-          aria-label="Ассистент посадки и руления"
+          title="Landing and taxi assistant"
+          aria-label="Landing and taxi assistant"
+          data-i18n-title="nav.assistant"
+          data-i18n-aria-label="nav.assistant"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M3.5 12.5 12 4l8.5 8.5" />
             <path d="M12 4v9" />
             <path d="M8.5 16.5 12 20l3.5-3.5" />
           </svg>
-          <span class="visually-hidden">Ассистент</span>
+          <span class="visually-hidden" data-i18n="nav.assistantShort">Assistant</span>
         </a>
         <button
           type="button"
           class="icon-btn"
           id="brightness-toggle"
-          title="Яркость панели (B)"
-          aria-label="Яркость панели"
+          title="Panel brightness (B)"
+          aria-label="Panel brightness"
+          data-i18n-title="nav.brightnessTitle"
+          data-i18n-aria-label="nav.brightness"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
             <circle cx="12" cy="12" r="4.2" />
             <path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7" />
           </svg>
-          <span class="visually-hidden">Яркость</span>
+          <span class="visually-hidden" data-i18n="nav.brightnessShort">Brightness</span>
         </button>
         <button
           type="button"
           class="icon-btn"
           id="kiosk-toggle"
           aria-pressed="false"
-          title="Режим киоска — скрыть интерфейс (F)"
+          title="Kiosk mode — hide interface (F)"
+          data-i18n-title="nav.kioskTitle"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
           </svg>
-          <span class="visually-hidden">Режим киоска</span>
+          <span class="visually-hidden" data-i18n="nav.kiosk">Kiosk mode</span>
         </button>
         <button
           type="button"
           class="icon-btn"
           id="connect-phone"
           aria-haspopup="dialog"
-          title="Подключить телефон по QR-коду"
+          title="Connect a phone via QR code"
+          data-i18n-title="nav.connectPhoneTitle"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <rect x="7" y="2.5" width="10" height="19" rx="2.2" />
             <path d="M10.5 18.5h3" />
           </svg>
-          <span class="visually-hidden">Подключить телефон</span>
+          <span class="visually-hidden" data-i18n="nav.connectPhone">Connect a phone</span>
         </button>
         <button
           type="button"
@@ -104,43 +111,45 @@
           id="donation-badge"
           data-donation-badge
           aria-haspopup="dialog"
-          title="Поддержать автора проекта"
+          title="Support the project author"
+          data-i18n-title="donation.chipTitle"
         >
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M12 20.3 4.7 13a4.6 4.6 0 0 1 0-6.5 4.5 4.5 0 0 1 6.4 0l.9.9.9-.9a4.5 4.5 0 0 1 6.4 0 4.6 4.6 0 0 1 0 6.5Z" />
           </svg>
-          <span>Поддержать</span>
+          <span data-i18n="donation.support">Support</span>
         </button>
         <a
           class="donation-chip"
           href="#"
           data-donation-link
-          title="Donat — поддержать проект"
+          title="Donat — support the project"
+          data-i18n-title="donation.linkTitle"
         >Donat</a>
 
-        <span class="conn" id="connection" data-state="connecting" title="Состояние потока телеметрии">
+        <span class="conn" id="connection" data-state="connecting" title="Telemetry stream status" data-i18n-title="connection.title">
           <i class="conn__dot" aria-hidden="true"></i>
-          <span id="connection-text">подключение…</span>
+          <span id="connection-text" data-i18n="connection.connecting">connecting…</span>
         </span>
-        <a class="icon-btn" href="/android.html" title="Собрать Android APK">
+        <a class="icon-btn" href="/android.html" title="Build Android APK" data-i18n-title="nav.android">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <rect x="7" y="2.5" width="10" height="19" rx="2.2" />
             <path d="M10.5 18.5h3" />
           </svg>
-          <span class="visually-hidden">Сборка Android APK</span>
+          <span class="visually-hidden" data-i18n="nav.androidShort">Android APK build</span>
         </a>
-        <a class="icon-btn" href="/editor.html" title="Открыть редактор панелей">
+        <a class="icon-btn" href="/editor.html" title="Open the panel editor" data-i18n-title="nav.editor">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M4 4h6l2 2h8v12H4Z" />
             <path d="M8 12h8M12 8l4 4-4 4" />
           </svg>
-          <span class="visually-hidden">Редактор панелей</span>
+          <span class="visually-hidden" data-i18n="nav.editorShort">Panel editor</span>
         </a>
-        <button type="button" class="icon-btn" id="devtools-toggle" aria-pressed="false" aria-controls="devtools" title="Показать телеметрию">
+        <button type="button" class="icon-btn" id="devtools-toggle" aria-pressed="false" aria-controls="devtools" title="Show telemetry" data-i18n-title="nav.telemetryTitle">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M3 13h4l2.4-6.6 3.2 12 2.4-6.6H21" />
           </svg>
-          <span class="visually-hidden">Телеметрия</span>
+          <span class="visually-hidden" data-i18n="nav.telemetry">Telemetry</span>
         </button>
       </div>
     </header>
@@ -148,95 +157,96 @@
     <main class="stage" id="stage" data-mode="frame">
       <div class="device-frame" id="device-frame" data-device="tablet-lg" data-mode="frame">
         <div class="device-screen" id="device-screen">
-          <div class="panel" id="panel" role="group" aria-label="Приборная панель самолёта"></div>
+          <div class="panel" id="panel" role="group" aria-label="Aircraft instrument panel" data-i18n-aria-label="panel.aria"></div>
           <div class="panel-state" id="panel-state" hidden>
-            <p class="panel-state__title" id="panel-state-title">Загрузка профиля…</p>
+            <p class="panel-state__title" id="panel-state-title" data-i18n="panel.loading">Loading profile…</p>
             <p class="panel-state__hint" id="panel-state-hint"></p>
-            <button type="button" class="btn" id="panel-retry" hidden>Повторить</button>
+            <button type="button" class="btn" id="panel-retry" hidden data-i18n="common.retry">Retry</button>
           </div>
         </div>
       </div>
     </main>
 
     <footer class="status-bar">
-      <span class="status-bar__item" id="status-profile">профиль: —</span>
-      <span class="status-bar__item" id="status-layout">раскладка: —</span>
-      <span class="status-bar__item" id="status-rate">поток: —</span>
-      <span class="status-bar__item" id="status-gateway">шлюз: —</span>
+      <span class="status-bar__item" id="status-profile" data-i18n="panel.profileEmpty">profile: —</span>
+      <span class="status-bar__item" id="status-layout" data-i18n="panel.layoutEmpty">layout: —</span>
+      <span class="status-bar__item" id="status-rate" data-i18n="panel.rateEmpty">stream: —</span>
+      <span class="status-bar__item" id="status-gateway" data-i18n="panel.gatewayEmpty">gateway: —</span>
     </footer>
 
-    <aside class="devtools" id="devtools" hidden aria-label="Телеметрия в JSON">
+    <aside class="devtools" id="devtools" hidden aria-label="Telemetry in JSON" data-i18n-aria-label="nav.devtoolsAria">
       <div class="devtools__head">
-        <span>Последний кадр телеметрии</span>
-        <button type="button" class="icon-btn" id="devtools-close" aria-label="Закрыть панель отладки">
+        <span data-i18n="nav.telemetry">Telemetry</span>
+        <button type="button" class="icon-btn" id="devtools-close" aria-label="Close the debug panel" data-i18n-aria-label="nav.devtoolsClose">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
             <path d="M6 6l12 12M18 6 6 18" />
           </svg>
         </button>
       </div>
-      <pre class="devtools__json" id="devtools-json">нет данных</pre>
+      <pre class="devtools__json" id="devtools-json" data-i18n="common.noData">no data</pre>
     </aside>
 
     <dialog class="donation-dialog" id="connect-dialog" aria-labelledby="connect-title">
       <div class="donation-dialog__head">
-        <h2 id="connect-title">Подключить телефон</h2>
-        <button type="button" class="icon-btn" id="connect-close" aria-label="Закрыть">
+        <h2 id="connect-title" data-i18n="connect.title">Connect a phone</h2>
+        <button type="button" class="icon-btn" id="connect-close" aria-label="Close" data-i18n-aria-label="common.close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
             <path d="M6 6l12 12M18 6 6 18" />
           </svg>
         </button>
       </div>
       <div class="donation-dialog__body connect">
-        <p class="connect__hint">
-          Наведите камеру телефона на код — панель откроется в браузере. Устройство и самолёт
-          определятся автоматически.
+        <p class="connect__hint" data-i18n="connect.hint">
+          Point the phone camera at the code — the panel will open in the browser. The device and aircraft
+          are detected automatically.
         </p>
         <div class="connect__qr">
-          <img id="connect-qr" alt="QR-код адреса панели" width="240" height="240" />
+          <img id="connect-qr" alt="QR code for the panel address" data-i18n-alt="connect.qrAlt" width="240" height="240" />
         </div>
         <div class="connect__row">
           <code class="connect__url" id="connect-url">—</code>
-          <button type="button" class="btn" id="connect-copy">Копировать</button>
+          <button type="button" class="btn" id="connect-copy" data-i18n="connect.copy">Copy</button>
         </div>
-        <div class="connect__list" id="connect-list" role="group" aria-label="Другие адреса хоста"></div>
+        <div class="connect__list" id="connect-list" role="group" aria-label="Other host addresses" data-i18n-aria-label="connect.otherHostsAria"></div>
         <p class="connect__alt" id="connect-alt"></p>
       </div>
     </dialog>
 
     <dialog class="donation-dialog" id="donation-dialog" aria-labelledby="donation-title">
       <div class="donation-dialog__head">
-        <h2 id="donation-title">Поддержать проект</h2>
-        <button type="button" class="icon-btn" id="donation-close" aria-label="Закрыть">
+        <h2 id="donation-title" data-i18n="donation.dialogTitle">Support the project</h2>
+        <button type="button" class="icon-btn" id="donation-close" aria-label="Close" data-i18n-aria-label="common.close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
             <path d="M6 6l12 12M18 6 6 18" />
           </svg>
         </button>
       </div>
       <div class="donation-dialog__body" id="donation-body"></div>
-      <p class="donation-dialog__note">
-        Проект бесплатный. Реквизиты задаются конфигурацией автора на хосте — клиент не может их изменить.
+      <p class="donation-dialog__note" data-i18n="donation.note">
+        The project is free. Payment details are set by the author’s configuration on the host — the client
+        cannot change them.
       </p>
     </dialog>
 
     <div class="lock-screen" id="lock-screen" hidden role="alertdialog" aria-modal="true" aria-labelledby="lock-title">
       <div class="lock-screen__card">
-        <p class="lock-screen__eyebrow">Ошибка целостности</p>
-        <h2 class="lock-screen__title" id="lock-title">Работа приложения заблокирована</h2>
+        <p class="lock-screen__eyebrow" data-i18n="lock.eyebrow">Integrity error</p>
+        <h2 class="lock-screen__title" id="lock-title" data-i18n="lock.title">Application is locked</h2>
         <p class="lock-screen__detail" id="lock-detail"></p>
         <code class="lock-screen__code" id="lock-code"></code>
-        <button type="button" class="btn" id="lock-retry">Проверить снова</button>
+        <button type="button" class="btn" id="lock-retry" data-i18n="lock.retry">Check again</button>
       </div>
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-    <button type="button" class="kiosk-exit" id="kiosk-exit" hidden title="Выйти из режима киоска (Esc)">
+    <button type="button" class="kiosk-exit" id="kiosk-exit" hidden title="Exit kiosk mode (Esc)" data-i18n-title="nav.kioskExitTitle">
       <span aria-hidden="true">✕</span>
-      <span class="visually-hidden">Выйти из режима киоска</span>
+      <span class="visually-hidden" data-i18n="nav.kioskExit">Exit kiosk mode</span>
     </button>
 
     <noscript>
-      <p style="padding: 24px; color: #ffb020">Для работы приборной панели нужен JavaScript.</p>
+      <p style="padding: 24px; color: #ffb020">JavaScript is required for the instrument panel.</p>
     </noscript>
 
     <script type="module" src="/js/main.js"></script>

@@ -4,6 +4,7 @@
  */
 
 import { Widget, createCard, h } from './base.js';
+import { t } from '../core/i18n.js';
 
 export class AnnunciatorWidget extends Widget {
   /**
@@ -37,6 +38,9 @@ export class AnnunciatorWidget extends Widget {
   }
 
   updateAria() {
-    this.card.setAttribute('aria-label', `${this.caption}: ${this.lit ? 'горит' : 'не горит'}`);
+    this.card.setAttribute(
+      'aria-label',
+      `${this.caption}: ${this.lit ? t('widget.lampOn') : t('widget.lampOff')}`,
+    );
   }
 }

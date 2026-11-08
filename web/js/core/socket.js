@@ -3,6 +3,8 @@
  * подтверждения команд по id.
  */
 
+import { t } from './i18n.js';
+
 const RECONNECT_BASE_MS = 500;
 const RECONNECT_MAX_MS = 8000;
 const COMMAND_TIMEOUT_MS = 4000;
@@ -84,7 +86,7 @@ export function createTelemetrySocket({ url, onMessage, onStatus }) {
 
   function scheduleReconnect() {
     if (stopped) return;
-    setStatus('offline', 'нет связи со шлюзом');
+    setStatus('offline', t('connection.noGateway'));
     attempt += 1;
     const delay = Math.min(RECONNECT_MAX_MS, RECONNECT_BASE_MS * 2 ** Math.min(attempt - 1, 5));
     const jitter = Math.random() * 250;
@@ -114,7 +116,7 @@ export function createTelemetrySocket({ url, onMessage, onStatus }) {
       if (message.ok) {
         entry.resolve(message);
       } else {
-        const error = new Error(message.error ?? 'Команда отклонена');
+        const error = new Error(message.error ?? t('error.commandRejected'));
         error.code = message.code ?? 'rejected';
         entry.reject(error);
       }
@@ -139,7 +141,7 @@ export function createTelemetrySocket({ url, onMessage, onStatus }) {
     socket.addEventListener('close', () => {
       stopPing();
       socket = null;
-      rejectPending(new Error('Соединение с шлюзом закрыто'));
+      rejectPending(new Error(t('connection.gatewayClosed')));
       scheduleReconnect();
     });
     socket.addEventListener('error', () => {
@@ -159,14 +161,14 @@ export function createTelemetrySocket({ url, onMessage, onStatus }) {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         pending.delete(id);
-        reject(new Error('Шлюз не подтвердил команду'));
+        reject(new Error(t('error.commandNotConfirmed')));
       }, COMMAND_TIMEOUT_MS);
 
       pending.set(id, { resolve, reject, timer });
       if (!sendRaw({ type: 'command', id, key, value })) {
         pending.delete(id);
         clearTimeout(timer);
-        reject(new Error('Нет соединения с шлюзом'));
+        reject(new Error(t('connection.noGateway')));
       }
     });
   }
@@ -176,7 +178,7 @@ export function createTelemetrySocket({ url, onMessage, onStatus }) {
     if (reconnectTimer) clearTimeout(reconnectTimer);
     reconnectTimer = null;
     stopPing();
-    rejectPending(new Error('Клиент остановлен'));
+    rejectPending(new Error(t('error.clientStopped')));
     socket?.close();
     socket = null;
   }

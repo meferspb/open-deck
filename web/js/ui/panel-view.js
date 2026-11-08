@@ -4,6 +4,7 @@
  */
 
 import { rectFor } from '../core/layout.js';
+import { t } from '../core/i18n.js';
 import { createWidgetInstance } from '../widgets/registry.js';
 
 /**
@@ -70,7 +71,7 @@ export function createPanelView({ panel, getState, command, notify }) {
       } catch (error) {
         item.broken = true;
         console.error('widget update failed', item.def?.id, error);
-        notify?.(`Прибор ${item.def?.id ?? ''} не может отрисоваться`);
+        notify?.(t('error.widgetRender', { id: item.def?.id ?? '' }));
       }
     }
   }

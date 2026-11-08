@@ -5,6 +5,7 @@
  */
 
 import { Widget, h } from './base.js';
+import { t } from '../core/i18n.js';
 
 export class ToggleSwitchWidget extends Widget {
   /**
@@ -16,9 +17,9 @@ export class ToggleSwitchWidget extends Widget {
     super(element, ctx, def);
     element.classList.add('widget--switch');
 
-    this.caption = this.options.caption ?? def.label ?? 'SWITCH';
-    this.onLabel = this.options.onLabel ?? 'ON';
-    this.offLabel = this.options.offLabel ?? 'OFF';
+    this.caption = this.options.caption ?? def.label ?? t('editor.widget.switch.toggle');
+    this.onLabel = this.options.onLabel ?? t('widget.on');
+    this.offLabel = this.options.offLabel ?? t('widget.off');
     this.action = this.def.command?.action ?? 'set';
     this.commandKey = this.def.command?.key ?? null;
 
@@ -57,7 +58,7 @@ export class ToggleSwitchWidget extends Widget {
       })
       .catch((error) => {
         this.clearPending();
-        this.ctx.notify?.(`${this.caption}: ${error?.message ?? 'команда не выполнена'}`);
+        this.ctx.notify?.(`${this.caption}: ${error?.message ?? t('widget.commandNotExecuted')}`);
       });
   }
 
@@ -68,7 +69,7 @@ export class ToggleSwitchWidget extends Widget {
     this.button.setAttribute('aria-busy', 'true');
     if (this.pendingTimer) clearTimeout(this.pendingTimer);
     this.pendingTimer = setTimeout(() => {
-      this.ctx.notify?.(`${this.caption}: телеметрия не подтвердила команду`);
+      this.ctx.notify?.(`${this.caption}: ${t('widget.telemetryNotConfirmed')}`);
       this.clearPending();
     }, 2500);
   }

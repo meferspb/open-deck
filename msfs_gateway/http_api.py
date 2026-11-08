@@ -60,7 +60,7 @@ PUBLIC_API_PATHS: Final[frozenset[str]] = frozenset(
 )
 #: Статика, доступная без входа: страница входа и её оформление.
 PUBLIC_STATIC_PATHS: Final[frozenset[str]] = frozenset(
-    {"/login.html", "/js/login.js", "/license", "/favicon.ico"}
+    {"/login.html", "/js/login.js", "/js/core/i18n.js", "/license", "/favicon.ico"}
 )
 PUBLIC_STATIC_PREFIXES: Final[tuple[str, ...]] = ("/css/", "/img/")
 

@@ -7,6 +7,8 @@
  * на панели самолёта; выход по Esc или кнопке в углу.
  */
 
+import { onLocaleChange, t } from '../core/i18n.js';
+
 export const BRIGHTNESS_LEVELS = Object.freeze([
   { id: 'full', value: 1, label: '100%' },
   { id: 'dim', value: 0.72, label: '72%' },
@@ -49,19 +51,19 @@ export function createComfort({ brightnessButton, kioskButton, exitButton, onKio
     return BRIGHTNESS_LEVELS[0].id;
   }
 
-  function applyBrightness(id) {
+  function applyBrightness(id, { announce = true } = {}) {
     root.dataset.brightness = id;
     const label = brightnessLabel(id);
-    brightnessButton.title = `Яркость панели: ${label} (B)`;
-    brightnessButton.setAttribute('aria-label', `Яркость панели: ${label}`);
+    brightnessButton.title = t('comfort.brightnessTitle', { label });
+    brightnessButton.setAttribute('aria-label', t('comfort.brightnessAria', { label }));
     brightnessButton.dataset.level = id;
     try {
       localStorage.setItem(STORAGE_KEY, id);
     } catch {
       /* игнорируем */
     }
-    if (id !== 'full' && notify) {
-      notify(`Яркость панели: ${label}`);
+    if (announce && id !== 'full' && notify) {
+      notify(t('comfort.brightnessNotify', { label }));
     }
   }
 
@@ -74,12 +76,17 @@ export function createComfort({ brightnessButton, kioskButton, exitButton, onKio
     document.body.classList.toggle('kiosk', kiosk);
     exitButton.hidden = !kiosk;
     kioskButton.setAttribute('aria-pressed', String(kiosk));
-    kioskButton.title = kiosk ? 'Выйти из режима киоска (Esc)' : 'Режим киоска — скрыть интерфейс (F)';
+    kioskButton.title = kiosk ? t('comfort.kioskOnTitle') : t('comfort.kioskOffTitle');
     onKioskChange?.(kiosk);
     if (announce && notify) {
-      notify(kiosk ? 'Режим киоска: Esc — вернуть интерфейс' : 'Интерфейс восстановлен');
+      notify(kiosk ? t('comfort.kioskOnNotify') : t('comfort.kioskOffNotify'));
     }
   }
+
+  onLocaleChange(() => {
+    applyBrightness(root.dataset.brightness ?? BRIGHTNESS_LEVELS[0].id, { announce: false });
+    kioskButton.title = kiosk ? t('comfort.kioskOnTitle') : t('comfort.kioskOffTitle');
+  });
 
   brightnessButton.addEventListener('click', cycleBrightness);
   kioskButton.addEventListener('click', () => setKiosk(!kiosk));

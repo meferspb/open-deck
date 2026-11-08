@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="dark" />
-    <title>Open Deck for MSFS — сборка Android APK</title>
+    <title data-i18n="android.title">Open Deck for MSFS — Android APK build</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
     <link rel="stylesheet" href="/css/tokens.css" />
     <link rel="stylesheet" href="/css/a11y.css" />
@@ -19,92 +19,94 @@
         </span>
         <span class="brand-text">
           <span class="brand-title">Open Deck for MSFS</span>
-          <span class="brand-sub">сборка из дистрибутива · настройки</span>
+          <span class="brand-sub" data-i18n="android.brandSub">build from the distribution · settings</span>
         </span>
       </div>
 
       <div class="app-bar__status">
-        <a class="ed-btn ed-btn--ghost" href="/" title="Открыть приборную панель">Панель →</a>
-        <a class="ed-btn ed-btn--ghost" href="/editor.html" title="Открыть редактор панелей">Редактор</a>
+        <select id="language-select" class="lang-select" data-language-select data-i18n-aria-label="lang.label" data-i18n-title="lang.label" title="Language" aria-label="Language"></select>
+        <a class="ed-btn ed-btn--ghost" href="/" title="Open the instrument panel" data-i18n-title="editor.panelTitle" data-i18n="nav.panel">Panel →</a>
+        <a class="ed-btn ed-btn--ghost" href="/editor.html" title="Open the panel editor" data-i18n-title="nav.editor" data-i18n="nav.editorShort">Panel editor</a>
         <a
           class="ed-btn ed-btn--ghost"
           href="#"
           data-donation-link
-          title="Donat — поддержать проект"
+          title="Donat — support the project"
+          data-i18n-title="donation.linkTitle"
         >Donat</a>
       </div>
     </header>
 
     <main class="android-main">
       <section class="android-card" aria-labelledby="android-settings-title">
-        <h2 id="android-settings-title">Настройки приложения</h2>
+        <h2 id="android-settings-title" data-i18n="android.settingsTitle">Application settings</h2>
         <p class="android-hint">
-          Имя, package id, версия и адрес шлюза по умолчанию. Сохраняются в
-          <code>config/android-build.json</code>; сборка применяет их к APK.
+          <span data-i18n="android.hintPrefix">Name, package id, version and default gateway address. They are saved in</span>
+          <code>config/android-build.json</code><span data-i18n="android.hintSuffix">; the build applies them to the APK.</span>
         </p>
 
         <div class="android-grid" id="android-form">
           <label class="android-field">
-            <span>Имя приложения</span>
+            <span data-i18n="android.appName">Application name</span>
             <input class="ed-input" id="appName" maxlength="48" />
           </label>
           <label class="android-field">
-            <span>Package id</span>
+            <span data-i18n="android.applicationId">Package id</span>
             <input class="ed-input" id="applicationId" spellcheck="false" />
           </label>
           <label class="android-field">
-            <span>Версия (versionName)</span>
+            <span data-i18n="android.versionName">Version (versionName)</span>
             <input class="ed-input" id="versionName" spellcheck="false" />
           </label>
           <label class="android-field">
-            <span>versionCode</span>
+            <span data-i18n="android.versionCode">versionCode</span>
             <input class="ed-input" id="versionCode" type="number" min="1" step="1" />
           </label>
           <label class="android-field">
-            <span>Хост по умолчанию (пусто — искать в сети)</span>
-            <input class="ed-input" id="defaultHost" spellcheck="false" placeholder="192.168.31.189" />
+            <span data-i18n="android.defaultHost">Default host (empty — discover on the network)</span>
+            <input class="ed-input" id="defaultHost" spellcheck="false" placeholder="192.168.31.189" data-i18n-placeholder="android.defaultHostPlaceholder" />
           </label>
           <label class="android-field">
-            <span>Порт шлюза</span>
+            <span data-i18n="android.defaultPort">Gateway port</span>
             <input class="ed-input" id="defaultPort" type="number" min="1" max="65535" step="1" />
           </label>
         </div>
 
         <details class="android-advanced">
-          <summary>Инструменты сборки (необязательно)</summary>
+          <summary data-i18n="android.advanced">Build tools (optional)</summary>
           <div class="android-grid">
             <label class="android-field">
-              <span>JDK 17</span>
-              <input class="ed-input" id="jdkPath" spellcheck="false" placeholder="авто: JAVA_HOME" />
+              <span data-i18n="android.jdk">JDK 17</span>
+              <input class="ed-input" id="jdkPath" spellcheck="false" placeholder="auto: JAVA_HOME" data-i18n-placeholder="android.jdkPlaceholder" />
             </label>
             <label class="android-field">
-              <span>Android SDK</span>
-              <input class="ed-input" id="sdkPath" spellcheck="false" placeholder="авто: ANDROID_HOME" />
+              <span data-i18n="android.sdk">Android SDK</span>
+              <input class="ed-input" id="sdkPath" spellcheck="false" placeholder="auto: ANDROID_HOME" data-i18n-placeholder="android.sdkPlaceholder" />
             </label>
             <label class="android-field">
-              <span>Gradle 8.x</span>
-              <input class="ed-input" id="gradlePath" spellcheck="false" placeholder="авто: gradle в PATH" />
+              <span data-i18n="android.gradle">Gradle 8.x</span>
+              <input class="ed-input" id="gradlePath" spellcheck="false" placeholder="auto: gradle in PATH" data-i18n-placeholder="android.gradlePlaceholder" />
             </label>
             <label class="android-field">
-              <span>Таймаут, секунды</span>
+              <span data-i18n="android.timeout">Timeout, seconds</span>
               <input class="ed-input" id="timeoutSec" type="number" min="60" max="3600" step="30" />
             </label>
           </div>
         </details>
 
         <div class="android-actions">
-          <button type="button" class="ed-btn ed-btn--primary" id="android-save">Сохранить</button>
-          <button type="button" class="ed-btn" id="android-build">Собрать APK</button>
-          <a class="ed-btn ed-btn--ghost" id="android-download" href="/api/android/apk" download>Скачать APK</a>
+          <button type="button" class="ed-btn ed-btn--primary" id="android-save" data-i18n="android.save">Save</button>
+          <button type="button" class="ed-btn" id="android-build" data-i18n="android.build">Build APK</button>
+          <a class="ed-btn ed-btn--ghost" id="android-download" href="/api/android/apk" download data-i18n="android.download">Download APK</a>
         </div>
 
-        <p class="android-status" id="android-status">Загрузка настроек…</p>
+        <p class="android-status" id="android-status" data-i18n="android.loading">Loading settings…</p>
         <p class="android-toolchain" id="android-toolchain"></p>
       </section>
 
       <section class="android-card" aria-labelledby="android-log-title">
-        <h2 id="android-log-title">Журнал сборки</h2>
-        <pre class="android-log" id="android-log">Сборка ещё не запускалась.</pre>
+        <h2 id="android-log-title" data-i18n="android.logTitle">Build log</h2>
+        <pre class="android-log" id="android-log" data-i18n="android.logEmpty">The build has not been started yet.</pre>
       </section>
     </main>
 

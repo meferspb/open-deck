@@ -1,19 +1,19 @@
-# 🧩 Каталог приборов
+# 🧩 Instrument Catalog
 
-> Файл сгенерирован из `msfs_gateway/profiles.py` (типы и обязательные
-> привязки) и веб-клиента (опции). Обновить:
+> This file is generated from `msfs_gateway/profiles.py` (types and required
+> bindings) and the web client (options). Update:
 > `python -m msfs_gateway.docsgen --write`.
 
-Каждый прибор — элемент массива `widgets[]` профиля. Полная схема
-профиля — в [profile-schema.md](profile-schema.md).
+Each instrument is an element of the profile's `widgets[]` array. The full
+profile schema is in [profile-schema.md](profile-schema.md).
 
-## Общая структура
+## Common structure
 
 ```json
 {
   "id": "attitude-main",
   "type": "attitude",
-  "label": "Авиагоризонт",
+  "label": "Attitude indicator",
   "bindings": { "pitch": "attitude.pitchDeg", "bank": "attitude.bankDeg" },
   "layout": {
     "base": { "x": 0.02, "y": 0.03, "w": 0.36, "h": 0.62 },
@@ -23,187 +23,186 @@
 }
 ```
 
-- `id` — уникальный slug (`[a-z0-9][a-z0-9-]`), используется в редакторе
-  и для привязки событий.
-- `layout` — координаты в долях панели; обязателен `base`, опциональны
-  `phone`, `tablet-sm`, `tablet-lg`.
-- `options` — необязательный объект, зависит от типа.
-- `command` — обязателен для тумблера и галетника (см. ниже).
+- `id` — a unique slug (`[a-z0-9][a-z0-9-]`), used in the editor
+  and for binding events.
+- `layout` — coordinates in panel fractions; `base` is required,
+  `phone`, `tablet-sm`, `tablet-lg` are optional.
+- `options` — an optional object that depends on the type.
+- `command` — required for a toggle switch and a rotary selector (see below).
 
-## Типы приборов
+## Instrument types
 
-| Тип | Прибор | Обязательные bindings | `command` | Основные options |
+| Type | Instrument | Required bindings | `command` | Main options |
 | --- | --- | --- | --- | --- |
-| `attitude` | Авиагоризонт | `pitch`, `bank` | — | — |
-| `gauge.radial` | Круговая шкала | `value` | — | `min`*, `max`*, `redline`, `zones`, `majorTicks`, `minorTicks`, `decimals`, `unit` |
-| `readout` | Цифровое табло | `value` | — | `unit`, `decimals`, `caption`, `alarm` |
-| `switch.toggle` | Тумблер | `state` | обязателен | `caption`, `onLabel`, `offLabel` |
-| `knob.rotary` | Галетник / энкодер | `value` | обязателен | `min`, `max`, `step`, `wrap`, `unit`, `decimals`, `caption` |
-| `annunciator` | Табло-лампы | `active` | — | `caption`, `tone`, `invert` |
-| `vsi` | Вариометр | `value` | — | `limit` |
-| `altimeter` | Высотомер | `value` | — | — |
-| `heading` | Курсоуказатель | `heading` | — | — |
+| `attitude` | Attitude indicator | `pitch`, `bank` | — | — |
+| `gauge.radial` | Circular gauge | `value` | — | `min`*, `max`*, `redline`, `zones`, `majorTicks`, `minorTicks`, `decimals`, `unit` |
+| `readout` | Digital readout | `value` | — | `unit`, `decimals`, `caption`, `alarm` |
+| `switch.toggle` | Toggle switch | `state` | required | `caption`, `onLabel`, `offLabel` |
+| `knob.rotary` | Rotary selector / encoder | `value` | required | `min`, `max`, `step`, `wrap`, `unit`, `decimals`, `caption` |
+| `annunciator` | Annunciator lights | `active` | — | `caption`, `tone`, `invert` |
+| `vsi` | VSI | `value` | — | `limit` |
+| `altimeter` | Altimeter | `value` | — | — |
+| `heading` | Heading indicator | `heading` | — | — |
 
-`*` у опции — обязательна. Остальные опции имеют разумные значения по
-умолчанию и нужны для настройки внешнего вида.
+`*` next to an option means it is required. The other options have sensible
+defaults and are used to configure the appearance.
 
-## Описание типов
+## Type descriptions
 
-### `attitude` — Авиагоризонт
+### `attitude` — Attitude indicator
 
-Авиагоризонт: тангаж и крен по `pitch`/`bank`, шкала крена, метка нуля. Дополнительных опций нет.
+Attitude indicator: pitch and bank via `pitch`/`bank`, a bank scale, and a zero mark. There are no additional options.
 
-Минимальный пример:
+Minimal example:
 
 ```json
 { "id": "attitude", "type": "attitude", "bindings": { "pitch": "attitude.pitchDeg", "bank": "attitude.bankDeg" }, "layout": { "base": { "x": 0.1, "y": 0.1, "w": 0.2, "h": 0.2 } } }
 ```
 
-### `gauge.radial` — Круговая шкала
+### `gauge.radial` — Circular gauge
 
-Круговая стрелочная шкала: значение `value` в диапазоне `min..max`, деления, красная зона, подпись и единицы.
+Circular needle gauge: the `value` within the `min..max` range, tick marks, a red zone, a caption, and units.
 
-| Опция | Значение | Обязательна |
+| Option | Meaning | Required |
 | --- | --- | --- |
-| `min` | минимум шкалы | да |
-| `max` | максимум шкалы | да |
-| `redline` | красная зона (в диапазоне min..max) | нет |
-| `zones` | дополнительные цветные зоны | нет |
-| `majorTicks` | число больших делений | нет |
-| `minorTicks` | число малых делений | нет |
-| `decimals` | знаков после запятой | нет |
-| `unit` | единицы подписи | нет |
+| `min` | gauge minimum | yes |
+| `max` | gauge maximum | yes |
+| `redline` | red zone (within the min..max range) | no |
+| `zones` | additional colored zones | no |
+| `majorTicks` | number of major tick marks | no |
+| `minorTicks` | number of minor tick marks | no |
+| `decimals` | digits after the decimal point | no |
+| `unit` | unit label | no |
 
-Минимальный пример:
+Minimal example:
 
 ```json
 { "id": "speed", "type": "gauge.radial", "bindings": { "value": "speed.iasKt" }, "options": { "min": 0, "max": 200, "unit": "KT", "redline": 160 }, "layout": { "base": { "x": 0.1, "y": 0.1, "w": 0.2, "h": 0.2 } } }
 ```
 
-### `readout` — Цифровое табло
+### `readout` — Digital readout
 
-Цифровое табло: форматирует `value` с заданным числом знаков, единицами и подписью; умеет подсвечивать аварийный порог.
+Digital readout: formats `value` with the given number of digits, units, and a caption; it can highlight an alarm threshold.
 
-| Опция | Значение | Обязательна |
+| Option | Meaning | Required |
 | --- | --- | --- |
-| `unit` | единицы | нет |
-| `decimals` | знаков после запятой | нет |
-| `caption` | подпись над значением | нет |
-| `alarm` | порог аварийной подсветки | нет |
+| `unit` | units | no |
+| `decimals` | digits after the decimal point | no |
+| `caption` | caption above the value | no |
+| `alarm` | alarm highlight threshold | no |
 
-Минимальный пример:
+Minimal example:
 
 ```json
 { "id": "alt", "type": "readout", "bindings": { "value": "altitude.indicatedFt" }, "options": { "caption": "ALT", "unit": "FT", "decimals": 0 }, "layout": { "base": { "x": 0.1, "y": 0.1, "w": 0.2, "h": 0.2 } } }
 ```
 
-### `switch.toggle` — Тумблер
+### `switch.toggle` — Toggle switch
 
-Тумблер: показывает логическое `state` и отправляет команду `command.key`; действие `set` посылает противоположное значение, `toggle` — событие-переключатель.
+Toggle switch: shows a boolean `state` and sends the `command.key` command; the `set` action sends the opposite value, and `toggle` sends a toggle event.
 
-| Опция | Значение | Обязательна |
+| Option | Meaning | Required |
 | --- | --- | --- |
-| `caption` | подпись тумблера | нет |
-| `onLabel` | текст включённого состояния | нет |
-| `offLabel` | текст выключенного состояния | нет |
+| `caption` | toggle caption | no |
+| `onLabel` | text for the on state | no |
+| `offLabel` | text for the off state | no |
 
-Минимальный пример:
+Minimal example:
 
 ```json
 { "id": "battery", "type": "switch.toggle", "bindings": { "state": "power.batteryMaster" }, "command": { "key": "power.batteryMaster", "action": "set" }, "layout": { "base": { "x": 0.1, "y": 0.1, "w": 0.2, "h": 0.2 } } }
 ```
 
-### `knob.rotary` — Галетник / энкодер
+### `knob.rotary` — Rotary selector / encoder
 
-Галетник/энкодер: вращение и свайпы меняют `value` на `step` в диапазоне `min..max`, отправляя команду с новым значением.
+Rotary selector/encoder: rotation and swipes change `value` by `step` within the `min..max` range, sending a command with the new value.
 
-| Опция | Значение | Обязательна |
+| Option | Meaning | Required |
 | --- | --- | --- |
-| `min` | минимум | нет |
-| `max` | максимум | нет |
-| `step` | шаг изменения | нет |
-| `wrap` | зацикливать значение | нет |
-| `unit` | единицы | нет |
-| `decimals` | знаков после запятой | нет |
-| `caption` | подпись | нет |
+| `min` | minimum | no |
+| `max` | maximum | no |
+| `step` | change step | no |
+| `wrap` | loop the value | no |
+| `unit` | units | no |
+| `decimals` | digits after the decimal point | no |
+| `caption` | caption | no |
 
-Минимальный пример:
+Minimal example:
 
 ```json
 { "id": "hdg", "type": "knob.rotary", "bindings": { "value": "autopilot.headingBugDeg" }, "command": { "key": "autopilot.headingBugDeg", "action": "set" }, "options": { "min": 0, "max": 359, "step": 1, "wrap": true }, "layout": { "base": { "x": 0.1, "y": 0.1, "w": 0.2, "h": 0.2 } } }
 ```
 
-### `annunciator` — Табло-лампы
+### `annunciator` — Annunciator lights
 
-Табло-лампы: горит при истинном `active`; подпись, тон и инверсия настраиваются опциями.
+Annunciator lights: light up when `active` is true; the caption, tone, and inversion are configured through options.
 
-| Опция | Значение | Обязательна |
+| Option | Meaning | Required |
 | --- | --- | --- |
-| `caption` | подпись лампы | нет |
-| `tone` | цвет/тон свечения | нет |
-| `invert` | инвертировать логику | нет |
+| `caption` | lamp caption | no |
+| `tone` | glow color/tone | no |
+| `invert` | invert the logic | no |
 
-Минимальный пример:
+Minimal example:
 
 ```json
 { "id": "bus", "type": "annunciator", "bindings": { "active": "power.busVolts" }, "options": { "caption": "BUS OFF", "invert": true }, "layout": { "base": { "x": 0.1, "y": 0.1, "w": 0.2, "h": 0.2 } } }
 ```
 
-### `vsi` — Вариометр
+### `vsi` — VSI
 
-Вариометр: стрелка вертикальной скорости, шкала ограничена `limit`, подписи в fpm.
+VSI: a vertical speed needle, with the gauge limited by `limit`, and labels in fpm.
 
-| Опция | Значение | Обязательна |
+| Option | Meaning | Required |
 | --- | --- | --- |
-| `limit` | предел шкалы, fpm | нет |
+| `limit` | gauge limit, fpm | no |
 
-Минимальный пример:
+Minimal example:
 
 ```json
 { "id": "vsi", "type": "vsi", "bindings": { "value": "verticalSpeed.fpm" }, "options": { "limit": 2000 }, "layout": { "base": { "x": 0.1, "y": 0.1, "w": 0.2, "h": 0.2 } } }
 ```
 
-### `altimeter` — Высотомер
+### `altimeter` — Altimeter
 
-Высотомер с тремя стрелками (сотни/тысячи/десятки тысяч футов) по значению `value`.
+A three-pointer altimeter (hundreds/thousands/tens of thousands of feet) based on the `value`.
 
-Минимальный пример:
+Minimal example:
 
 ```json
 { "id": "altimeter", "type": "altimeter", "bindings": { "value": "altitude.indicatedFt" }, "layout": { "base": { "x": 0.1, "y": 0.1, "w": 0.2, "h": 0.2 } } }
 ```
 
-### `heading` — Курсоуказатель
+### `heading` — Heading indicator
 
-Курсоуказатель с вращающейся картушкой и «жучком»; значение — магнитный курс в градусах.
+A heading indicator with a rotating compass card and a "bug"; the value is the magnetic heading in degrees.
 
-Минимальный пример:
+Minimal example:
 
 ```json
 { "id": "heading", "type": "heading", "bindings": { "heading": "heading.magneticDeg" }, "layout": { "base": { "x": 0.1, "y": 0.1, "w": 0.2, "h": 0.2 } } }
 ```
 
-## Команды с тумблера и галетника
+## Commands from a toggle switch and a rotary selector
 
-Блок `command` описывает, что отправить на шлюз:
+The `command` block describes what to send to the gateway:
 
-| Поле | Значение |
+| Field | Meaning |
 | --- | --- |
-| `key` | переменная с признаком «принимает команды» (см. каталог телеметрии) |
-| `action` | `set` — отправить новое значение; `toggle` — событие-переключатель |
-| `value` | для `set`: `true/false`/число; по умолчанию противоположное текущему |
+| `key` | a variable with the "commands accepted" flag (see the telemetry catalog) |
+| `action` | `set` — send a new value; `toggle` — a toggle event |
+| `value` | for `set`: `true/false`/number; by default the opposite of the current value |
 
-Пример тумблера:
+Toggle switch example:
 
 ```json
 { "type": "switch.toggle", "bindings": { "state": "power.batteryMaster" },
   "command": { "key": "power.batteryMaster", "action": "set" } }
 ```
 
-## Валидация
+## Validation
 
-- Тип обязан входить в список выше; неизвестный тип редактор не сохранит.
-- Обязательные роли `bindings` должны ссылаться на существующие ключи
-  телеметрии.
-- `layout.base` и переопределения обязаны быть прямоугольниками в
-  пределах `0..1` (см. схему профиля).
+- The type must be in the list above; the editor will not save an unknown type.
+- The required `bindings` roles must reference existing telemetry keys.
+- `layout.base` and the overrides must be rectangles within `0..1`
+  (see the profile schema).

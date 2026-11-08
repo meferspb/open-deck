@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="dark" />
-    <title>Open Deck Designer — редактор панелей</title>
+    <title data-i18n="editor.title">Open Deck Designer — panel editor</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
     <link rel="stylesheet" href="/css/tokens.css" />
     <link rel="stylesheet" href="/css/a11y.css" />
@@ -21,66 +21,69 @@
         </span>
         <span class="brand-text">
           <span class="brand-title">Open Deck Designer</span>
-          <span class="brand-sub">drag-and-drop · локально</span>
+          <span class="brand-sub" data-i18n="editor.brandSub">drag-and-drop · local</span>
         </span>
       </div>
 
       <div class="app-bar__controls">
         <label class="field" for="ed-profile">
-          <span class="field__label">Профиль</span>
+          <span class="field__label" data-i18n="editor.profile">Profile</span>
           <span class="select-wrap">
-            <select id="ed-profile" class="select" aria-label="Профиль"></select>
+            <select id="ed-profile" class="select" aria-label="Profile" data-i18n-aria-label="editor.profile"></select>
             <svg class="select-wrap__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
           </span>
         </label>
 
         <div class="field">
-          <span class="field__label" id="ed-device-label">Форм-фактор</span>
+          <span class="field__label" id="ed-device-label" data-i18n="editor.formFactor">Form factor</span>
           <div class="segmented" id="ed-device" role="group" aria-labelledby="ed-device-label">
-            <button type="button" class="segmented__item" data-device="phone" aria-pressed="false">Phone</button>
-            <button type="button" class="segmented__item" data-device="tablet-sm" aria-pressed="false">Small Tablet</button>
-            <button type="button" class="segmented__item" data-device="tablet-lg" aria-pressed="false">Large Tablet</button>
+            <button type="button" class="segmented__item" data-device="phone" aria-pressed="false" data-i18n="device.phone">Phone</button>
+            <button type="button" class="segmented__item" data-device="tablet-sm" aria-pressed="false" data-i18n="device.tablet-sm">Small tablet</button>
+            <button type="button" class="segmented__item" data-device="tablet-lg" aria-pressed="false" data-i18n="device.tablet-lg">Large tablet</button>
           </div>
         </div>
       </div>
 
       <div class="app-bar__status">
-        <label class="ed-btn ed-btn--ghost ed-snap" title="Привязка к сетке 1% (Shift — без привязки)">
+        <label class="ed-btn ed-btn--ghost ed-snap" title="Snap to a 1% grid (Shift — no snapping)" data-i18n-title="editor.snapTitle">
           <input type="checkbox" id="ed-snap" />
-          <span>Сетка</span>
+          <span data-i18n="editor.snap">Grid</span>
         </label>
-        <button type="button" class="ed-btn ed-btn--ghost" id="ed-undo" title="Отменить (Ctrl+Z)" disabled>↶ Отменить</button>
-        <button type="button" class="ed-btn ed-btn--ghost" id="ed-redo" title="Повторить (Ctrl+Y)" disabled>↷ Повторить</button>
+        <button type="button" class="ed-btn ed-btn--ghost" id="ed-undo" title="Undo (Ctrl+Z)" data-i18n-title="editor.undoTitle" data-i18n="editor.undo" disabled>↶ Undo</button>
+        <button type="button" class="ed-btn ed-btn--ghost" id="ed-redo" title="Redo (Ctrl+Y)" data-i18n-title="editor.redoTitle" data-i18n="editor.redo" disabled>↷ Redo</button>
+        <select id="language-select" class="lang-select" data-language-select data-i18n-aria-label="lang.label" data-i18n-title="lang.label" title="Language" aria-label="Language"></select>
         <button
           type="button"
           class="donation-chip"
           id="donation-badge"
           data-donation-badge
           aria-haspopup="dialog"
-          title="Поддержать автора проекта"
+          title="Support the project author"
+          data-i18n-title="donation.chipTitle"
         >
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M12 20.3 4.7 13a4.6 4.6 0 0 1 0-6.5 4.5 4.5 0 0 1 6.4 0l.9.9.9-.9a4.5 4.5 0 0 1 6.4 0 4.6 4.6 0 0 1 0 6.5Z" />
           </svg>
-          <span>Поддержать</span>
+          <span data-i18n="donation.support">Support</span>
         </button>
         <a
           class="donation-chip"
           href="#"
           data-donation-link
-          title="Donat — поддержать проект"
+          title="Donat — support the project"
+          data-i18n-title="donation.linkTitle"
         >Donat</a>
-        <button type="button" class="ed-btn ed-btn--ghost" id="ed-add" title="Добавить прибор">＋ Прибор</button>
-        <button type="button" class="ed-btn ed-btn--primary" id="ed-save" title="Сохранить профиль">Сохранить</button>
-        <a class="ed-btn ed-btn--ghost" href="/" title="Открыть приборную панель">Панель →</a>
+        <button type="button" class="ed-btn ed-btn--ghost" id="ed-add" title="Add instrument" data-i18n-title="editor.addTitle" data-i18n="editor.add">＋ Instrument</button>
+        <button type="button" class="ed-btn ed-btn--primary" id="ed-save" title="Save profile" data-i18n-title="editor.saveTitle" data-i18n="editor.save">Save</button>
+        <a class="ed-btn ed-btn--ghost" href="/" title="Open the instrument panel" data-i18n-title="editor.panelTitle" data-i18n="editor.panel">Panel →</a>
       </div>
     </header>
 
     <main class="ed-main">
       <aside class="ed-sidebar" id="ed-sidebar">
         <div class="ed-sidebar__head">
-          <span>Свойства</span>
-          <button type="button" class="icon-btn" id="ed-delete" title="Удалить прибор" hidden>
+          <span data-i18n="editor.properties">Properties</span>
+          <button type="button" class="icon-btn" id="ed-delete" title="Delete instrument" data-i18n-title="editor.deleteTitle" hidden>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2m-8 0 1 13h8l1-13" /></svg>
           </button>
         </div>
@@ -95,7 +98,7 @@
             </div>
           </div>
         </div>
-        <div class="ed-hint" id="ed-hint">Кликните по прибору, чтобы выбрать · тяните за угол для размера · Ctrl+Z / Ctrl+Y — отмена и повтор · Shift — без привязки к сетке</div>
+        <div class="ed-hint" id="ed-hint" data-i18n="editor.hint">Click an instrument to select it · drag a corner to resize · Ctrl+Z / Ctrl+Y for undo and redo · Shift — no grid snapping</div>
       </div>
     </main>
 
@@ -103,20 +106,21 @@
 
     <dialog class="donation-dialog" id="donation-dialog" aria-labelledby="donation-title">
       <div class="donation-dialog__head">
-        <h2 id="donation-title">Поддержать проект</h2>
-        <button type="button" class="icon-btn" id="donation-close" aria-label="Закрыть">
+        <h2 id="donation-title" data-i18n="donation.dialogTitle">Support the project</h2>
+        <button type="button" class="icon-btn" id="donation-close" aria-label="Close" data-i18n-aria-label="common.close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
             <path d="M6 6l12 12M18 6 6 18" />
           </svg>
         </button>
       </div>
       <div class="donation-dialog__body" id="donation-body"></div>
-      <p class="donation-dialog__note">
-        Проект бесплатный. Реквизиты задаются конфигурацией автора на хосте — клиент не может их изменить.
+      <p class="donation-dialog__note" data-i18n="donation.note">
+        The project is free. Payment details are set by the author’s configuration on the host — the client
+        cannot change them.
       </p>
     </dialog>
 
-    <noscript><p style="padding:24px;color:#ffb020">Для редактора нужен JavaScript.</p></noscript>
+    <noscript><p style="padding:24px;color:#ffb020">JavaScript is required for the editor.</p></noscript>
     <script type="module" src="/js/editor.js"></script>
   </body>
 </html>

@@ -7,6 +7,7 @@
  */
 
 import { api } from '../core/api.js';
+import { onLocaleChange, t } from '../core/i18n.js';
 
 export function createConnect({
   button,
@@ -46,7 +47,7 @@ export function createConnect({
     return new Promise((resolve, reject) => {
       const probe = new Image();
       probe.onload = resolve;
-      probe.onerror = () => reject(new Error('не удалось построить QR-код'));
+      probe.onerror = () => reject(new Error(t('connect.qrBuildError')));
       probe.src = src;
     });
   }
@@ -64,7 +65,7 @@ export function createConnect({
         chip.setAttribute('aria-pressed', String(entry.url === activeUrl));
         chip.addEventListener('click', () => {
           selectUrl(entry.url).catch((error) => {
-            if (notify) notify(`Не удалось переключить адрес: ${error.message}`);
+            if (notify) notify(t('connect.toggleError', { message: error.message }));
           });
         });
         return chip;
@@ -78,7 +79,7 @@ export function createConnect({
     await preload(src);
 
     image.src = src;
-    image.alt = `QR-код адреса панели: ${phoneUrl}`;
+    image.alt = t('connect.qrAltWith', { url: phoneUrl });
     urlField.textContent = phoneUrl;
     currentUrl = phoneUrl;
 
@@ -90,15 +91,15 @@ export function createConnect({
   async function load() {
     if (loaded || loading) return;
     loading = true;
-    urlField.textContent = 'получаем адрес…';
+    urlField.textContent = t('connect.gettingAddress');
 
     try {
       const response = await fetch('/api/connect', { headers: { Accept: 'application/json' } });
-      if (!response.ok) throw new Error(`шлюз вернул ${response.status}`);
+      if (!response.ok) throw new Error(t('connect.gatewayStatus', { status: response.status }));
       const payload = await response.json();
 
       const urls = Array.isArray(payload.urls) ? payload.urls.filter((entry) => entry.url) : [];
-      if (!urls.length) throw new Error('шлюз не сообщил ни одного адреса');
+      if (!urls.length) throw new Error(t('connect.noAddress'));
 
       scale = payload.qr?.scale ?? 6;
       border = payload.qr?.border ?? 4;
@@ -123,9 +124,9 @@ export function createConnect({
 
       const others = urls.map((entry) => entry.url).filter((url) => url !== primary);
       altField.textContent = pairToken
-        ? 'QR действует 10 минут и входит без пароля. Если телефон в другой сети, выберите адрес выше.'
+        ? t('connect.altPair')
         : others.length
-          ? 'Если телефон в другой сети, выберите адрес выше.'
+          ? t('connect.altOther')
           : '';
 
       loaded = true;
@@ -138,7 +139,7 @@ export function createConnect({
       }
     } catch (error) {
       urlField.textContent = '—';
-      if (notify) notify(`Не удалось подготовить QR: ${error.message}`);
+      if (notify) notify(t('connect.prepareError', { message: error.message }));
     } finally {
       loading = false;
     }
@@ -149,7 +150,7 @@ export function createConnect({
     if (!text || text === '—') return;
     try {
       await navigator.clipboard.writeText(text);
-      if (notify) notify('Адрес скопирован');
+      if (notify) notify(t('connect.copied'));
     } catch {
       // Буфер обмена может быть запрещён — выделяем текст как запасной вариант.
       const range = document.createRange();
@@ -168,6 +169,11 @@ export function createConnect({
     if (loaded) loaded = false;
     load();
   }
+
+  onLocaleChange(() => {
+    loaded = false;
+    if (dialog?.open) load();
+  });
 
   button?.addEventListener('click', open);
   closeButton?.addEventListener('click', () => dialog.close());

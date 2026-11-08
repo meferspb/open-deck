@@ -11,7 +11,7 @@ export const DEVICE_PRESETS = {
   phone: {
     id: 'phone',
     label: 'Phone',
-    title: 'Телефон',
+    title: 'Phone',
     width: 390,
     height: 844,
     bezel: 10,
@@ -20,7 +20,7 @@ export const DEVICE_PRESETS = {
   'tablet-sm': {
     id: 'tablet-sm',
     label: 'Small Tablet',
-    title: 'Малый планшет',
+    title: 'Small tablet',
     width: 1024,
     height: 768,
     bezel: 14,
@@ -29,7 +29,7 @@ export const DEVICE_PRESETS = {
   'tablet-lg': {
     id: 'tablet-lg',
     label: 'Large Tablet',
-    title: 'Большой планшет',
+    title: 'Large tablet',
     width: 1366,
     height: 1024,
     bezel: 16,

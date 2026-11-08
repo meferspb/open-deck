@@ -1,61 +1,65 @@
-# 📚 Документация Open Deck for MSFS
+# 📚 Open Deck for MSFS Documentation
+
+**Languages:** [English](README.md) · [Русский](ru/README.md) · [Deutsch](de/README.md) · [中文](zh/README.md) · [Español](es/README.md) · [日本語](ja/README.md)
+
 
 <img src="pic1.jpg" alt="Open Deck for MSFS" width="180" />
 
-Здесь собраны все документы проекта. Начните с README в корне — он даёт
-общую картину и быстрый старт; этот индекс поможет найти детали.
+This is where all project documents are collected. Start with the README at the
+repository root — it gives the big picture and a quick start; this index helps
+you find the details.
 
-## С чего начать
+## Where to start
 
-| Если вы… | Читайте по порядку |
+| If you are… | Read in order |
 | --- | --- |
-| пилот, ставите панель «для себя» | [README](../README.md) → [service.md](service.md) |
-| хотите понять устройство | [architecture.md](architecture.md) → [protocol.md](protocol.md) |
-| пишете клиент или интеграцию | [protocol.md](protocol.md) → [telemetry.md](telemetry.md) |
-| меняете код | [development.md](development.md) → [architecture.md](architecture.md) |
-| делаете профиль самолёта | [profile-schema.md](profile-schema.md) → [widgets.md](widgets.md) |
-| собираете установщик/APK | [packaging/windows/README.md](../packaging/windows/README.md) → [android/README.md](../android/README.md) |
-| проверяете безопасность | [SECURITY.md](../SECURITY.md) |
+| a pilot setting up the panel "for yourself" | [README](../README.md) → [service.md](service.md) |
+| someone who wants to understand how it works | [architecture.md](architecture.md) → [protocol.md](protocol.md) |
+| writing a client or an integration | [protocol.md](protocol.md) → [telemetry.md](telemetry.md) |
+| changing the code | [development.md](development.md) → [architecture.md](architecture.md) |
+| building an aircraft profile | [profile-schema.md](profile-schema.md) → [widgets.md](widgets.md) |
+| building the installer/APK | [packaging/windows/README.md](../packaging/windows/README.md) → [android/README.md](../android/README.md) |
+| reviewing security | [SECURITY.md](../SECURITY.md) |
 
-## Документы
+## Documents
 
-| Документ | О чём | Аудитория |
+| Document | What it covers | Audience |
 | --- | --- | --- |
-| [service.md](service.md) | Полное описание сервиса: назначение, модель работы, телеметрия, профили, клиенты, сеть, аутентификация, ассистент, API, установка, диагностика, безопасность, лицензия | все |
-| [architecture.md](architecture.md) | Внутреннее устройство: модули, потоки данных, WASM-мост, ключевые решения и границы MVP | разработчики |
-| [protocol.md](protocol.md) | HTTP REST, WebSocket, вход по паролю и QR, автообнаружение, коды ошибок и примеры | интеграторы |
-| [telemetry.md](telemetry.md) | Каталог всех переменных: типы, единицы, SimVar, события, `custom.*` — генерируется из кода | разработчики клиентов, профилей |
-| [widgets.md](widgets.md) | Каталог приборов: обязательные привязки, `command`, опции, примеры JSON — генерируется из кода | авторы профилей |
-| [profile-schema.md](profile-schema.md) | Схема JSON-профиля: поля, раскладки, валидация, совместимость, полный пример | авторы профилей |
-| [development.md](development.md) | Как менять код: карта модулей, добавление переменной/прибора/профиля/провайдера/страницы, тесты, релиз | контрибьюторы |
-| [pricing.md](pricing.md) | Сравнение «подключаемые сервисы vs локальные аналоги» для air-gapped сценария | те, кто выбирает стек |
-| [../android/README.md](../android/README.md) | Android-клиент: сборка, архитектура, вход, отладка | Android-разработчики |
-| [../packaging/windows/README.md](../packaging/windows/README.md) | Установщик: состав, сборка, ярлыки, удаление, тихие флаги | релиз-инженеры |
-| [../CONTRIBUTING.md](../CONTRIBUTING.md) | Как участвовать: стиль, тесты, профили, PR | контрибьюторы |
-| [../SECURITY.md](../SECURITY.md) | Модель угроз, что защищено, как сообщить об уязвимости | все |
-| [../CHANGELOG.md](../CHANGELOG.md) | История версий | все |
+| [service.md](service.md) | Full service description: purpose, operating model, telemetry, profiles, clients, network, authentication, assist, API, installation, diagnostics, security, license | everyone |
+| [architecture.md](architecture.md) | Internal design: modules, data flows, WASM bridge, key decisions, and MVP boundaries | developers |
+| [protocol.md](protocol.md) | HTTP REST, WebSocket, password and QR login, autodiscovery, error codes, and examples | integrators |
+| [telemetry.md](telemetry.md) | Catalog of all variables: types, units, SimVar, events, `custom.*` — generated from code | client and profile developers |
+| [widgets.md](widgets.md) | Instrument catalog: required bindings, `command`, options, JSON examples — generated from code | profile authors |
+| [profile-schema.md](profile-schema.md) | JSON profile schema: fields, layouts, validation, compatibility, complete example | profile authors |
+| [development.md](development.md) | How to change the code: module map, adding a variable/instrument/profile/provider/page, tests, release | contributors |
+| [pricing.md](pricing.md) | Comparison of "connected services vs local equivalents" for an air-gapped scenario | those choosing the stack |
+| [../android/README.md](../android/README.md) | Android client: build, architecture, login, debugging | Android developers |
+| [../packaging/windows/README.md](../packaging/windows/README.md) | Installer: contents, build, shortcuts, uninstall, silent flags | release engineers |
+| [../CONTRIBUTING.md](../CONTRIBUTING.md) | How to participate: style, tests, profiles, PRs | contributors |
+| [../SECURITY.md](../SECURITY.md) | Threat model, what is protected, how to report a vulnerability | everyone |
+| [../CHANGELOG.md](../CHANGELOG.md) | Version history | everyone |
 
-## Скриншоты
+## Screenshots
 
-`docs/screenshots/` — панель на телефоне и планшете, six-pack, редактор,
-страница входа и ассистент. Используются в README и в описании сервиса.
+`docs/screenshots/` — the panel on a phone and tablet, six-pack, editor, login
+page, and assist. Used in the README and in the service description.
 
-## Актуальность
+## Keeping docs current
 
-Два документа **генерируются из кода** и проверяются тестом:
+Two documents are **generated from code** and checked by a test:
 
 ```powershell
-python -m msfs_gateway.docsgen --check   # telemetry.md и widgets.md
-python -m msfs_gateway.docsgen --write   # обновить после правок реестров
+python -m msfs_gateway.docsgen --check   # telemetry.md and widgets.md
+python -m msfs_gateway.docsgen --write   # update after changing registries
 ```
 
-Если меняли `telemetry.py`, `profiles.py` или веб-приборы — обновите
-документацию и прогоните `pwsh -File scripts/check.ps1`.
+If you changed `telemetry.py`, `profiles.py`, or web instruments — update the
+documentation and run `pwsh -File scripts/check.ps1`.
 
-## Как писать документацию
+## How to write documentation
 
-- Пишите по-русски, короткими абзацами, с примерами JSON/команд.
-- Ссылки — относительные, чтобы работали и на GitHub, и локально.
-- Не дублируйте схему: профиль — в `profile-schema.md`, переменные — в
-  `telemetry.md`, приборы — в `widgets.md`, сеть — в `protocol.md`.
-- Меняете поведение — обновите README/сервис и `CHANGELOG.md`.
+- Write in English, in short paragraphs, with JSON/command examples.
+- Links are relative so they work both on GitHub and locally.
+- Do not duplicate the schema: profile — in `profile-schema.md`, variables — in
+  `telemetry.md`, instruments — in `widgets.md`, network — in `protocol.md`.
+- If you change behavior, update the README/service description and `CHANGELOG.md`.

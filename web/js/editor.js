@@ -13,61 +13,64 @@ import { DEVICE_PRESETS, DEVICE_ORDER } from './ui/device.js';
 import { createDonation } from './ui/donation.js';
 import { verifyUiIntegrity, watchIntegrity } from './ui/integrity.js';
 import { createWidgetInstance } from './widgets/registry.js';
+import { initI18n, onLocaleChange, t } from './core/i18n.js';
+
+initI18n();
 
 // ---------------------------------------------------------------------
 // Конфигурация типов приборов: подпись, привязки по умолчанию, команда.
 // ---------------------------------------------------------------------
 const WIDGET_META = {
   attitude: {
-    label: 'Авиагоризонт',
+    label: 'editor.widget.attitude',
     size: { w: 0.34, h: 0.44 },
     bindings: { pitch: 'attitude.pitchDeg', bank: 'attitude.bankDeg' },
   },
   'gauge.radial': {
-    label: 'Круговая шкала',
+    label: 'editor.widget.gauge.radial',
     size: { w: 0.2, h: 0.3 },
     bindings: { value: 'engine.rpm' },
     options: { min: 0, max: 3500, unit: 'RPM', decimals: 0, majorTicks: 7, minorTicks: 4 },
   },
   readout: {
-    label: 'Цифровое табло',
+    label: 'editor.widget.readout',
     size: { w: 0.2, h: 0.14 },
     bindings: { value: 'speed.iasKt' },
     options: { unit: 'KT', decimals: 0 },
   },
   'switch.toggle': {
-    label: 'Тумблер',
+    label: 'editor.widget.switch.toggle',
     size: { w: 0.2, h: 0.16 },
     bindings: { state: 'power.batteryMaster' },
     command: { key: 'power.batteryMaster', action: 'set' },
     options: { onLabel: 'ON', offLabel: 'OFF' },
   },
   'knob.rotary': {
-    label: 'Галетник',
+    label: 'editor.widget.knob.rotary',
     size: { w: 0.16, h: 0.2 },
     bindings: { value: 'autopilot.headingBugDeg' },
     command: { key: 'autopilot.headingBugDeg', action: 'set' },
     options: { min: 0, max: 359, step: 1, wrap: true, unit: '°', decimals: 0 },
   },
   annunciator: {
-    label: 'Табло-лампа',
+    label: 'editor.widget.annunciator',
     size: { w: 0.24, h: 0.1 },
     bindings: { active: 'power.batteryMaster' },
     options: { tone: 'danger' },
   },
   vsi: {
-    label: 'Вариометр',
+    label: 'editor.widget.vsi',
     size: { w: 0.24, h: 0.32 },
     bindings: { value: 'verticalSpeed.fpm' },
     options: { limit: 2000 },
   },
   altimeter: {
-    label: 'Высотомер',
+    label: 'editor.widget.altimeter',
     size: { w: 0.26, h: 0.34 },
     bindings: { value: 'altitude.indicatedFt' },
   },
   heading: {
-    label: 'Курсоуказатель',
+    label: 'editor.widget.heading',
     size: { w: 0.28, h: 0.34 },
     bindings: { heading: 'heading.magneticDeg', bug: 'autopilot.headingBugDeg' },
   },
@@ -205,16 +208,16 @@ function lockEditor(reason, code) {
   card.className = 'lock-screen__card';
   const eyebrow = document.createElement('p');
   eyebrow.className = 'lock-screen__eyebrow';
-  eyebrow.textContent = 'Ошибка целостности';
+  eyebrow.textContent = t('lock.eyebrow');
   const title = document.createElement('h2');
   title.className = 'lock-screen__title';
-  title.textContent = 'Работа приложения заблокирована';
+  title.textContent = t('lock.title');
   const detail = document.createElement('p');
   detail.className = 'lock-screen__detail';
-  detail.textContent = reason || 'Проверка целостности интерфейса не пройдена.';
+  detail.textContent = reason || t('lock.detailEditor');
   const codeEl = document.createElement('code');
   codeEl.className = 'lock-screen__code';
-  codeEl.textContent = code ? `код: ${code}` : '';
+  codeEl.textContent = code ? t('lock.code', { code }) : '';
   card.append(eyebrow, title, detail, codeEl);
   overlay.append(card);
   document.body.append(overlay);
@@ -242,7 +245,7 @@ async function boot() {
     variables = baseVariables;
 
     const profiles = profilesPayload?.profiles ?? [];
-    if (!profiles.length) throw new Error('На хосте нет профилей');
+    if (!profiles.length) throw new Error(t('editor.noProfiles'));
 
     refs.profileSelect.replaceChildren(
       ...profiles.map((p) => {
@@ -254,15 +257,13 @@ async function boot() {
     );
     await loadProfile(profiles[0].id);
   } catch (error) {
-    toast(`Не удалось загрузить: ${error.message}`, 'danger');
+    toast(t('editor.loadFailed', { message: error.message }), 'danger');
   }
 }
 
 async function loadProfile(id) {
   if (profile && dirty && id !== profile.id) {
-    const proceed = window.confirm(
-      'В текущем профиле есть несохранённые изменения. Переключиться и потерять их?',
-    );
+    const proceed = window.confirm(t('editor.unsavedConfirm'));
     if (!proceed) {
       refs.profileSelect.value = profile.id;
       return;
@@ -291,7 +292,7 @@ async function loadProfile(id) {
   ];
   selectedId = null;
   dirty = false;
-  refs.saveBtn.textContent = 'Сохранить';
+  refs.saveBtn.textContent = t('editor.save');
   renderPanel();
   renderProperties();
 }
@@ -331,7 +332,7 @@ function createWidgetElement(def) {
   wrapper.className = 'ed-widget';
   wrapper.dataset.id = def.id;
   wrapper.setAttribute('role', 'button');
-  wrapper.setAttribute('aria-label', `Прибор ${def.label ?? def.id}`);
+  wrapper.setAttribute('aria-label', t('editor.widgetAria', { label: def.label ?? def.id }));
 
   const preview = document.createElement('div');
   preview.className = 'ed-widget__preview';
@@ -342,7 +343,7 @@ function createWidgetElement(def) {
   idLabel.textContent = def.id;
   const handle = document.createElement('div');
   handle.className = 'ed-widget__handle';
-  handle.title = 'Изменить размер';
+  handle.title = t('editor.resizeTitle');
 
   wrapper.append(preview, frame, idLabel, handle);
   refs.panel.append(wrapper);
@@ -580,10 +581,7 @@ function renderProperties() {
     refs.props.append(
       Object.assign(document.createElement('p'), {
         className: 'ed-empty',
-        textContent:
-          'Выберите прибор на панели, чтобы изменить его свойства.\n\n' +
-          'Перетаскивание — сдвинуть, угол — изменить размер. ' +
-          'Переопределения под форм-фактор правятся в активном форм-факторе.',
+        textContent: t('editor.empty'),
       }),
     );
     return;
@@ -615,12 +613,12 @@ function renderProperties() {
         }
       }),
     ),
-    makeField('Подпись (label)', textInput(def.label ?? '', (v) => update({ label: v }))),
+    makeField(t('editor.field.label'), textInput(def.label ?? '', (v) => update({ label: v }))),
   );
 
   // Привязки.
   if (def.bindings) {
-    refs.props.append(section('Привязки'));
+    refs.props.append(section(t('editor.field.bindings')));
     for (const role of Object.keys(def.bindings)) {
       const options = variablesForRole(role).map((v) => ({
         value: v.key,
@@ -642,14 +640,14 @@ function renderProperties() {
 
   // Команда.
   if (def.command) {
-    refs.props.append(section('Команда'));
+    refs.props.append(section(t('editor.field.command')));
     const writable = variables.filter((v) => v.writable).map((v) => ({
       value: v.key,
       label: `${v.label} (${v.key})`,
     }));
     refs.props.append(
       makeField(
-        'Переменная записи',
+        t('editor.field.writeVariable'),
         selectInput(writable, def.command.key, (v) => {
           def.command.key = v;
           dirty = true;
@@ -661,21 +659,21 @@ function renderProperties() {
 
   // Опции (зависит от типа).
   const options = def.options ?? (def.options = {});
-  refs.props.append(section('Опции'));
-  refs.props.append(makeField('Заголовок (caption)', textInput(options.caption ?? '', (v) => updateOptions('caption', v))));
+  refs.props.append(section(t('editor.field.options')));
+  refs.props.append(makeField(t('editor.field.caption'), textInput(options.caption ?? '', (v) => updateOptions('caption', v))));
 
   if (def.type === 'readout' || def.type === 'gauge.radial' || def.type === 'knob.rotary') {
-    refs.props.append(makeField('Единица (unit)', textInput(options.unit ?? '', (v) => updateOptions('unit', v))));
+    refs.props.append(makeField(t('editor.field.unit'), textInput(options.unit ?? '', (v) => updateOptions('unit', v))));
     refs.props.append(
-      makeField('Знаков после запятой', numberInput(options.decimals ?? 0, (v) => updateOptions('decimals', v), 1)),
+      makeField(t('editor.field.decimals'), numberInput(options.decimals ?? 0, (v) => updateOptions('decimals', v), 1)),
     );
   }
   if (def.type === 'gauge.radial' || def.type === 'knob.rotary') {
     const row = document.createElement('div');
     row.className = 'ed-row';
     row.append(
-      makeField('Минимум', numberInput(options.min ?? 0, (v) => updateOptions('min', v), 1)),
-      makeField('Максимум', numberInput(options.max ?? 100, (v) => updateOptions('max', v), 1)),
+      makeField(t('editor.field.min'), numberInput(options.min ?? 0, (v) => updateOptions('min', v), 1)),
+      makeField(t('editor.field.max'), numberInput(options.max ?? 100, (v) => updateOptions('max', v), 1)),
     );
     refs.props.append(row);
   }
@@ -691,12 +689,12 @@ function renderProperties() {
   if (def.type === 'annunciator') {
     refs.props.append(
       makeField(
-        'Тон',
+        t('editor.field.tone'),
         selectInput(
           [
-            { value: 'danger', label: 'danger (красный)' },
-            { value: 'warn', label: 'warn (янтарный)' },
-            { value: 'ok', label: 'ok (зелёный)' },
+            { value: 'danger', label: t('editor.tone.danger') },
+            { value: 'warn', label: t('editor.tone.warn') },
+            { value: 'ok', label: t('editor.tone.ok') },
           ],
           options.tone ?? 'danger',
           (v) => updateOptions('tone', v),
@@ -706,7 +704,7 @@ function renderProperties() {
   }
 
   // Точная геометрия активного форм-фактора.
-  refs.props.append(section(`Геометрия · ${deviceClass}`));
+  refs.props.append(section(t('editor.field.geometry', { device: t(`device.${deviceClass}`) })));
   const rect = editableRect(def);
   const geo = document.createElement('div');
   geo.className = 'ed-row';
@@ -728,17 +726,17 @@ function renderProperties() {
   refs.props.append(geo);
 
   // Копирование геометрии в другие форм-факторы одним нажатием.
-  refs.props.append(section('Раскладка форм-факторов'));
+  refs.props.append(section(t('editor.field.layout')));
   const copyRow = document.createElement('div');
   copyRow.className = 'ed-row';
   for (const factor of DEVICE_ORDER) {
     if (factor === deviceClass) continue;
-    const preset = DEVICE_PRESETS[factor];
+    const label = t(`device.${factor}`);
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'ed-btn ed-btn--ghost';
-    button.textContent = `→ ${preset?.title ?? factor}`;
-    button.title = `Скопировать текущую геометрию в «${preset?.title ?? factor}»`;
+    button.textContent = `→ ${label}`;
+    button.title = t('editor.field.copyLayoutTitle', { device: label });
     button.addEventListener('click', () => {
       if (!profile) return;
       pushHistory();
@@ -746,7 +744,7 @@ function renderProperties() {
       layout[factor] = { ...editableRect(def) };
       dirty = true;
       markDirty();
-      toast(`Геометрия скопирована: ${preset?.title ?? factor}`);
+      toast(t('editor.toast.geometryCopied', { device: label }));
     });
     copyRow.append(button);
   }
@@ -775,7 +773,7 @@ function refreshWidget(def) {
 }
 
 function markDirty() {
-  refs.saveBtn.textContent = dirty ? 'Сохранить ●' : 'Сохранить';
+  refs.saveBtn.textContent = dirty ? t('editor.saveDirty') : t('editor.save');
 }
 
 // ---------------------------------------------------------------------
@@ -818,14 +816,14 @@ function undo() {
   if (!profile || history.undo.length === 0) return;
   history.redo.push(snapshotWidgets());
   restoreWidgets(history.undo.pop());
-  toast('Действие отменено');
+  toast(t('editor.toast.undo'));
 }
 
 function redo() {
   if (!profile || history.redo.length === 0) return;
   history.undo.push(snapshotWidgets());
   restoreWidgets(history.redo.pop());
-  toast('Действие повторено');
+  toast(t('editor.toast.redo'));
 }
 
 // ---------------------------------------------------------------------
@@ -839,7 +837,7 @@ function showPalette() {
   card.style.cssText =
     'width:min(360px,92vw);max-height:76vh;overflow:auto;padding:18px;border-radius:18px;border:1px solid var(--line-strong);background:#0b1117;box-shadow:var(--shadow-panel);';
   const title = document.createElement('h2');
-  title.textContent = 'Добавить прибор';
+  title.textContent = t('editor.paletteTitle');
   title.style.cssText = 'margin:0 0 12px;font-size:16px;';
   card.append(title);
 
@@ -849,7 +847,7 @@ function showPalette() {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'ed-palette__item';
-    button.textContent = meta.label;
+    button.textContent = t(meta.label);
     button.addEventListener('click', () => {
       addWidget(type);
       overlay.remove();
@@ -878,7 +876,7 @@ function addWidget(type) {
   const def = {
     id,
     type,
-    label: meta.label,
+    label: t(meta.label),
     bindings: { ...meta.bindings },
     layout: {
       base: { x: 0.06, y: 0.06, w: meta.size?.w ?? 0.2, h: meta.size?.h ?? 0.2 },
@@ -929,11 +927,11 @@ async function save() {
     await api.saveProfile(profile);
     dirty = false;
     markDirty();
-    toast('Профиль сохранён на хосте');
+    toast(t('editor.toast.saved'));
   } catch (error) {
     // Сохранение не удалось — откатываем ревизию, чтобы не «съедать» номера.
     profile.revision = previousRevision;
-    toast(`Ошибка сохранения: ${error.message}`, 'danger');
+    toast(t('editor.toast.saveError', { message: error.message }), 'danger');
   } finally {
     saving = false;
   }
@@ -972,6 +970,13 @@ document.addEventListener('keydown', (event) => {
     event.preventDefault();
     redo();
   }
+});
+
+onLocaleChange(() => {
+  if (!profile) return;
+  renderPanel();
+  renderProperties();
+  markDirty();
 });
 
 updateHistoryButtons();

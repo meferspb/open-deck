@@ -1,81 +1,81 @@
-# Участие в разработке
+# Contributing
 
-Спасибо, что хотите помочь! Проект маленький и намеренно простой: Python без
-зависимостей, vanilla JS без сборщика, Android на голом SDK/Kotlin.
+Thanks for wanting to help! The project is small and intentionally simple: Python
+without dependencies, vanilla JS without a bundler, Android on the bare SDK/Kotlin.
 
-## Быстрый старт для разработчика
+## Quick start for developers
 
 ```powershell
-# 1. Клонировать репозиторий
+# 1. Clone the repository
 git clone https://github.com/meferspb/open-deck.git
 cd open-deck
 
-# 2. Запустить шлюз в демо-режиме (MSFS не нужен)
+# 2. Start the gateway in demo mode (MSFS is not required)
 python -m msfs_gateway --sim mock
 
-# 3. Открыть http://127.0.0.1:8760/
+# 3. Open http://127.0.0.1:8760/
 ```
 
-Требования: **Python 3.11+**. Для клиентских тестов — **Node.js 20+**.
-Для сборки Android APK — **JDK 17**, **Android SDK** и **Gradle 8.x**.
+Requirements: **Python 3.11+**. For the client tests — **Node.js 20+**.
+To build the Android APK — **JDK 17**, **Android SDK**, and **Gradle 8.x**.
 
-## Проверки перед PR
+## Checks before a PR
 
 ```powershell
 pwsh -File scripts/check.ps1
 ```
 
-Скрипт запускает:
+The script runs:
 
-- `ruff check` и `ruff format --check` для Python;
-- `python -m unittest discover -s tests` (246 тестов);
-- `node --test "tests/web/*.test.mjs"` (29 тестов), если установлен Node.js.
+- `ruff check` and `ruff format --check` for Python;
+- `python -m unittest discover -s tests` (248 tests);
+- `node --test "tests/web/*.test.mjs"` (29 tests), if Node.js is installed.
 
-Установить инструменты линтера: `python -m pip install ruff`.
+To install the linter tools: `python -m pip install ruff`.
 
-## Стиль кода
+## Code style
 
-- **Python**: PEP 8, форматирование `ruff format`, длина строки 100.
-  Только стандартная библиотека — новые зависимости не добавляем.
-- **JS**: ES-модули, без фреймворков и внешних CDN. Проверка синтаксиса —
-  `node --check`, тесты — `node --test`.
-- **Kotlin**: только Android SDK и Kotlin stdlib, без AndroidX и сторонних
-  библиотек.
-- Комментарии и документация — по-русски; имена в коде — по-английски.
-- Все пользовательские строки должны работать **офлайн**: никаких внешних
-  шрифтов, картинок и API.
+- **Python**: PEP 8, `ruff format` formatting, line length 100.
+  Standard library only — we do not add new dependencies.
+- **JS**: ES modules, no frameworks and no external CDNs. Syntax check —
+  `node --check`, tests — `node --test`.
+- **Kotlin**: only the Android SDK and Kotlin stdlib, no AndroidX or third-party
+  libraries.
+- Comments and documentation in Russian; names in code in English.
+- All user-facing strings must work **offline**: no external fonts, images, or
+  APIs.
 
-## Что можно улучшить
+## What can be improved
 
-Смотрите [`README.md`](README.md#дорожная-карта-за-пределами-mvp) и
-[`docs/architecture.md`](docs/architecture.md). Хорошие направления:
+See [`README.md`](README.md#roadmap) and
+[`docs/architecture.md`](docs/architecture.md). Good directions:
 
-- новые профили самолётов (`profiles/*.json`) — приветствуются;
-- новые типы приборов (`web/js/widgets/`, реестр `registry.js`) и их
-  регистрация в `msfs_gateway/profiles.py` (`WIDGET_TYPES`,
+- new aircraft profiles (`profiles/*.json`) — welcome;
+- new instrument types (`web/js/widgets/`, registry `registry.js`) and their
+  registration in `msfs_gateway/profiles.py` (`WIDGET_TYPES`,
   `REQUIRED_BINDINGS`);
-- тесты: чистая логика (геометрия приборов, профили, протокол) — в первую
-  очередь;
-- документация: расхождения между кодом и `docs/` считаются багом.
+- tests: pure logic (instrument geometry, profiles, protocol) — first
+  priority;
+- documentation: discrepancies between the code and `docs/` count as bugs.
 
-## Профили самолётов
+## Aircraft profiles
 
-1. Скопируйте существующий профиль из `profiles/` и поменяйте `id`, `name`,
+1. Copy an existing profile from `profiles/` and change `id`, `name`,
    `sim.match`.
-2. Проверьте валидацию: `python -c "from msfs_gateway.profiles import ProfileStore; ..."` —
-   или просто запустите шлюз: битые профили пропускаются с предупреждением.
-3. Привязки берите из `GET /api/telemetry/variables` (редактор показывает их
-   списком).
-4. Приложите в PR описание того, на каком аддоне проверяли.
+2. Check validation: `python -c "from msfs_gateway.profiles import ProfileStore; ..."` —
+   or simply start the gateway: broken profiles are skipped with a warning.
+3. Take bindings from `GET /api/telemetry/variables` (the editor shows them as a
+   list).
+4. In the PR, describe which add-on you tested with.
 
-## Коммиты и PR
+## Commits and PRs
 
-- Атомарные коммиты, сообщение в императиве: `add A320 profile`, `fix QR mask`.
-- В PR — что изменено, зачем и как проверено (тесты/скриншоты).
-- Для изменений интерфейса приложите скриншот в `docs/screenshots/`.
+- Atomic commits, imperative message: `add A320 profile`, `fix QR mask`.
+- In the PR — what changed, why, and how it was tested (tests/screenshots).
+- For interface changes, attach a screenshot in `docs/screenshots/`.
 
-## Лицензия вклада
+## Contribution license
 
-Отправляя PR, вы соглашаетесь, что ваш вклад распространяется под лицензией
-проекта ([LICENSE](LICENSE)). Не удаляйте и не заменяйте блок поддержки
-автора и проверку целостности — это условие лицензии.
+By submitting a PR you agree that your contribution is distributed under the
+project license ([LICENSE](LICENSE)). Do not remove or replace the author support
+block and the integrity check — this is a license condition.

@@ -1,44 +1,43 @@
-# Кодекс поведения
+# Code of Conduct
 
-## Наши обязательства
+## Our Pledge
 
-Мы обязуемся сделать участие в проекте свободным от притеснений для всех,
-независимо от возраста, телосложения, видимой или невидимой инвалидности,
-этнической принадлежности, половых признаков, гендерной идентичности и
-самовыражения, уровня опыта, образования, социально-экономического статуса,
-национальности, внешности, расы, религии или сексуальной идентичности и
-ориентации.
+We pledge to make participation in the project free from harassment for
+everyone, regardless of age, body size, visible or invisible disability,
+ethnicity, sex characteristics, gender identity and expression, level of
+experience, education, socio-economic status, nationality, personal appearance,
+race, religion, or sexual identity and orientation.
 
-## Наши стандарты
+## Our Standards
 
-Примеры поведения, которое создаёт позитивную атмосферу:
+Examples of behavior that creates a positive atmosphere:
 
-- уважительное и доброжелательное общение;
-- конструктивная критика и принятие критики;
-- признание ошибок и извинения перед теми, кого они затронули;
-- фокус на том, что лучше для сообщества и проекта.
+- respectful and friendly communication;
+- constructive criticism and accepting criticism;
+- acknowledging mistakes and apologizing to those affected by them;
+- focusing on what is best for the community and the project.
 
-Неприемлемое поведение: оскорбления, троллинг, публичные или личные
-притеснения, раскрытие личной информации без разрешения, неуместные
-сексуализированные высказывания.
+Unacceptable behavior: insults, trolling, public or private harassment,
+disclosing personal information without permission, inappropriate sexualized
+statements.
 
-## Обязанности
+## Responsibilities
 
-Мейнтейнеры вправе удалять, редактировать или отклонять комментарии, коммиты,
-код и другие вклады, не соответствующие этому кодексу, и сообщать причины
-решений.
+Maintainers may remove, edit, or reject comments, commits, code, and other
+contributions that do not comply with this code, and will communicate the
+reasons for their decisions.
 
-## Область применения
+## Scope
 
-Кодекс действует во всех пространствах проекта (issues, PR, обсуждения) и
-при публичном представлении проекта.
+This code applies in all project spaces (issues, PRs, discussions) and when
+representing the project publicly.
 
-## Обратная связь
+## Feedback
 
-О нарушениях сообщайте приватно мейнтейнерам (см. `SECURITY.md` для канала
-связи). Все жалобы рассматриваются конфиденциально.
+Report violations privately to the maintainers (see `SECURITY.md` for the contact
+channel). All complaints are handled confidentially.
 
-## Атрибуция
+## Attribution
 
-Этот кодекс адаптирован из [Contributor Covenant](https://www.contributor-covenant.org/),
-версия 2.1.
+This code is adapted from the [Contributor Covenant](https://www.contributor-covenant.org/),
+version 2.1.

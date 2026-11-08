@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "algorithm": "sha256",
-  "generatedAt": "2026-11-07T22:17:16+00:00",
+  "generatedAt": "2026-11-07T23:52:29+00:00",
   "files": {
-    "web/index.html": "59f9268fcb5d098cdf9dfe8b26188a7be59ff0fea5cb8ce0016c51040b013423",
-    "web/editor.html": "ee71a68d212dc8332b1c9b8e6ccbebecc4eb408a122f385cb7f00a5f37885c45",
-    "web/js/ui/donation.js": "aebbf268eab819e2e55405ab52c4cccf5adeceadf6c453153b6f230996ff8ae5",
-    "web/js/ui/integrity.js": "9cfe4b45165b8ba9d5178e8e7e321e17526e44718a61098041585ffe0c9e8ca5",
-    "web/css/donation.css": "1f86107b39defc77070a2524fd62b0f31ede4437f8c8ed96b292a171150dcca2",
+    "web/index.html": "64d0ea70cbc23e870ac067a1dc21c4c92ab4cf9ff1db0e5e59c0ce93b1bc9cc8",
+    "web/editor.html": "0fffbd650f97b09b21bacd3279ee516588f9f833ff71338a7551cb1fafba0cbf",
+    "web/js/ui/donation.js": "59b70603126d5a0584d03feab16733b60816856ae8f4fc22b06e3886533504c9",
+    "web/js/ui/integrity.js": "a432848067bba54f357348a5f2d540756186a0ab439580d6deeaa0d4239e3fc5",
+    "web/css/donation.css": "f82edae4b7494f31981ea1eaf8f8b02954bdbb10817aa439b67693dae7928f7c",
     "config/donation.json": "e303c86f9653698e5cc287ca1199c79665747e7d559e237130832297de0f0432"
   }
 }

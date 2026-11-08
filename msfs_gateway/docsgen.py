@@ -1,11 +1,11 @@
-"""Генерация справочных документов из кода.
+"""Generate reference documents from code.
 
-Единый источник правды — реестры `telemetry.VARIABLES` и
-`profiles.WIDGET_TYPES`/`REQUIRED_BINDINGS`, поэтому документация не
-расходится с реализацией. Скрипт поддерживает два режима:
+The single source of truth is the `telemetry.VARIABLES` and
+`profiles.WIDGET_TYPES`/`REQUIRED_BINDINGS` registries, so the documentation
+does not drift from the implementation. The script supports two modes:
 
-    python -m msfs_gateway.docsgen --write   # обновить docs/telemetry.md и docs/widgets.md
-    python -m msfs_gateway.docsgen --check   # проверить, что файлы актуальны
+    python -m msfs_gateway.docsgen --write   # update docs/telemetry.md and docs/widgets.md
+    python -m msfs_gateway.docsgen --check   # verify that the files are up to date
 """
 
 from __future__ import annotations
@@ -28,27 +28,27 @@ from .profiles import (
 TELEMETRY_DOC: Final = "telemetry.md"
 WIDGETS_DOC: Final = "widgets.md"
 
-#: Человеческие заголовки групп (первый сегмент ключа телеметрии).
+#: Human-readable group titles (the first segment of a telemetry key).
 GROUP_TITLES: Final[dict[str, str]] = {
-    "power": "Электрика и питание",
-    "engine": "Двигатель",
-    "attitude": "Пространственное положение",
-    "altitude": "Высота",
-    "speed": "Скорость",
-    "verticalSpeed": "Вариометр",
-    "heading": "Курс",
-    "flaps": "Механизация крыла",
-    "fuel": "Топливо",
-    "autopilot": "Автопилот",
-    "aircraft": "Состояние воздушного судна",
-    "groundSpeed": "Руление",
-    "nav": "Навигация (ILS)",
-    "controls": "Органы управления",
-    "brakes": "Тормоза",
+    "power": "Electrical and power",
+    "engine": "Engine",
+    "attitude": "Spatial attitude",
+    "altitude": "Altitude",
+    "speed": "Speed",
+    "verticalSpeed": "VSI",
+    "heading": "Heading",
+    "flaps": "Wing flaps",
+    "fuel": "Fuel",
+    "autopilot": "Autopilot",
+    "aircraft": "Aircraft state",
+    "groundSpeed": "Taxi",
+    "nav": "Navigation (ILS)",
+    "controls": "Controls",
+    "brakes": "Brakes",
 }
 GROUP_ORDER: Final[tuple[str, ...]] = tuple(GROUP_TITLES)
 
-#: Порядок и описания типов приборов (UI-часть, в Python-реестре её нет).
+#: Order and descriptions of instrument types (the UI part is not in the Python registry).
 WIDGET_ORDER: Final[tuple[str, ...]] = (
     "attitude",
     "gauge.radial",
@@ -61,132 +61,135 @@ WIDGET_ORDER: Final[tuple[str, ...]] = (
     "heading",
 )
 WIDGET_TITLES: Final[dict[str, str]] = {
-    "attitude": "Авиагоризонт",
-    "gauge.radial": "Круговая шкала",
-    "readout": "Цифровое табло",
-    "switch.toggle": "Тумблер",
-    "knob.rotary": "Галетник / энкодер",
-    "annunciator": "Табло-лампы",
-    "vsi": "Вариометр",
-    "altimeter": "Высотомер",
-    "heading": "Курсоуказатель",
+    "attitude": "Attitude indicator",
+    "gauge.radial": "Circular gauge",
+    "readout": "Digital readout",
+    "switch.toggle": "Toggle switch",
+    "knob.rotary": "Rotary selector / encoder",
+    "annunciator": "Annunciator lights",
+    "vsi": "VSI",
+    "altimeter": "Altimeter",
+    "heading": "Heading indicator",
 }
 WIDGET_DESCRIPTIONS: Final[dict[str, str]] = {
     "attitude": (
-        "Авиагоризонт: тангаж и крен по `pitch`/`bank`, шкала крена, "
-        "метка нуля. Дополнительных опций нет."
+        "Attitude indicator: pitch and bank via `pitch`/`bank`, a bank scale, "
+        "and a zero mark. There are no additional options."
     ),
     "gauge.radial": (
-        "Круговая стрелочная шкала: значение `value` в диапазоне `min..max`, "
-        "деления, красная зона, подпись и единицы."
+        "Circular needle gauge: the `value` within the `min..max` range, "
+        "tick marks, a red zone, a caption, and units."
     ),
     "readout": (
-        "Цифровое табло: форматирует `value` с заданным числом знаков, "
-        "единицами и подписью; умеет подсвечивать аварийный порог."
+        "Digital readout: formats `value` with the given number of digits, "
+        "units, and a caption; it can highlight an alarm threshold."
     ),
     "switch.toggle": (
-        "Тумблер: показывает логическое `state` и отправляет команду "
-        "`command.key`; действие `set` посылает противоположное значение, "
-        "`toggle` — событие-переключатель."
+        "Toggle switch: shows a boolean `state` and sends the `command.key` "
+        "command; the `set` action sends the opposite value, and `toggle` "
+        "sends a toggle event."
     ),
     "knob.rotary": (
-        "Галетник/энкодер: вращение и свайпы меняют `value` на `step` в "
-        "диапазоне `min..max`, отправляя команду с новым значением."
+        "Rotary selector/encoder: rotation and swipes change `value` by `step` "
+        "within the `min..max` range, sending a command with the new value."
     ),
     "annunciator": (
-        "Табло-лампы: горит при истинном `active`; подпись, тон и инверсия настраиваются опциями."
+        "Annunciator lights: light up when `active` is true; the caption, "
+        "tone, and inversion are configured through options."
     ),
-    "vsi": ("Вариометр: стрелка вертикальной скорости, шкала ограничена `limit`, подписи в fpm."),
+    "vsi": ("VSI: a vertical speed needle, with the gauge limited by `limit`, and labels in fpm."),
     "altimeter": (
-        "Высотомер с тремя стрелками (сотни/тысячи/десятки тысяч футов) по значению `value`."
+        "A three-pointer altimeter (hundreds/thousands/tens of thousands of feet) "
+        "based on the `value`."
     ),
     "heading": (
-        "Курсоуказатель с вращающейся картушкой и «жучком»; значение — магнитный курс в градусах."
+        'A heading indicator with a rotating compass card and a "bug"; '
+        "the value is the magnetic heading in degrees."
     ),
 }
-#: Опции приборов по данным веб-клиента. (имя, описание, обязательность)
+#: Instrument options based on the web client data. (name, description, required)
 WIDGET_OPTIONS: Final[dict[str, tuple[tuple[str, str, bool], ...]]] = {
     "attitude": (),
     "gauge.radial": (
-        ("min", "минимум шкалы", True),
-        ("max", "максимум шкалы", True),
-        ("redline", "красная зона (в диапазоне min..max)", False),
-        ("zones", "дополнительные цветные зоны", False),
-        ("majorTicks", "число больших делений", False),
-        ("minorTicks", "число малых делений", False),
-        ("decimals", "знаков после запятой", False),
-        ("unit", "единицы подписи", False),
+        ("min", "gauge minimum", True),
+        ("max", "gauge maximum", True),
+        ("redline", "red zone (within the min..max range)", False),
+        ("zones", "additional colored zones", False),
+        ("majorTicks", "number of major tick marks", False),
+        ("minorTicks", "number of minor tick marks", False),
+        ("decimals", "digits after the decimal point", False),
+        ("unit", "unit label", False),
     ),
     "readout": (
-        ("unit", "единицы", False),
-        ("decimals", "знаков после запятой", False),
-        ("caption", "подпись над значением", False),
-        ("alarm", "порог аварийной подсветки", False),
+        ("unit", "units", False),
+        ("decimals", "digits after the decimal point", False),
+        ("caption", "caption above the value", False),
+        ("alarm", "alarm highlight threshold", False),
     ),
     "switch.toggle": (
-        ("caption", "подпись тумблера", False),
-        ("onLabel", "текст включённого состояния", False),
-        ("offLabel", "текст выключенного состояния", False),
+        ("caption", "toggle caption", False),
+        ("onLabel", "text for the on state", False),
+        ("offLabel", "text for the off state", False),
     ),
     "knob.rotary": (
-        ("min", "минимум", False),
-        ("max", "максимум", False),
-        ("step", "шаг изменения", False),
-        ("wrap", "зацикливать значение", False),
-        ("unit", "единицы", False),
-        ("decimals", "знаков после запятой", False),
-        ("caption", "подпись", False),
+        ("min", "minimum", False),
+        ("max", "maximum", False),
+        ("step", "change step", False),
+        ("wrap", "loop the value", False),
+        ("unit", "units", False),
+        ("decimals", "digits after the decimal point", False),
+        ("caption", "caption", False),
     ),
     "annunciator": (
-        ("caption", "подпись лампы", False),
-        ("tone", "цвет/тон свечения", False),
-        ("invert", "инвертировать логику", False),
+        ("caption", "lamp caption", False),
+        ("tone", "glow color/tone", False),
+        ("invert", "invert the logic", False),
     ),
-    "vsi": (("limit", "предел шкалы, fpm", False),),
+    "vsi": (("limit", "gauge limit, fpm", False),),
     "altimeter": (),
     "heading": (),
 }
-#: Приборы, которым обязателен блок `command`.
+#: Instrument types that require a `command` block.
 COMMAND_TYPES: Final[frozenset[str]] = frozenset({"switch.toggle", "knob.rotary"})
 
 
-#: Русские описания переменных (label в реестре — английский, для кода).
+#: Human-readable variable descriptions (the registry label is an English fallback for code).
 VARIABLE_DESCRIPTIONS: Final[dict[str, str]] = {
-    "power.batteryMaster": "Выключатель аккумулятора",
-    "power.avionicsMaster": "Питание авионики",
-    "power.busVolts": "Напряжение основной шины",
-    "engine.rpm": "Обороты двигателя",
-    "engine.fuelFlowGph": "Часовой расход топлива",
-    "engine.torquePct": "Момент турбовинтового двигателя",
-    "engine.ittC": "Температура ИТТ",
-    "engine.propRpm": "Обороты воздушного винта",
-    "engine.n1Pct": "N1 двигателя №1",
-    "engine.n1Pct2": "N1 двигателя №2",
-    "attitude.pitchDeg": "Тангаж",
-    "attitude.bankDeg": "Крен",
-    "heading.magneticDeg": "Магнитный курс",
-    "altitude.indicatedFt": "Приборная высота",
-    "verticalSpeed.fpm": "Вертикальная скорость",
-    "speed.iasKt": "Приборная скорость",
-    "autopilot.headingBugDeg": "Заданный курс (heading bug)",
-    "autopilot.master": "Автопилот включён",
-    "autopilot.approachHold": "Режим APR — команда включения",
-    "autopilot.approach": "Режим APR активен",
-    "aircraft.onGround": "Самолёт на земле",
-    "aircraft.radioAltitudeFt": "Радиовысота над ВПП",
-    "groundSpeed.kt": "Путевая скорость",
-    "nav.localizer": "Отклонение от курсового маяка",
-    "nav.glideSlope": "Отклонение от глиссады",
-    "nav.locFlag": "Курсовой маяк захвачен",
-    "nav.gsFlag": "Глиссада захвачена",
-    "controls.throttlePct": "Положение РУД (команда ассистента)",
-    "controls.rudder": "Руль направления (команда ассистента)",
-    "brakes.parking": "Стояночный тормоз",
-    "flaps.percent": "Положение закрылков",
-    "fuel.leftGal": "Топливо в левом баке",
-    "fuel.rightGal": "Топливо в правом баке",
-    "fuel.totalGal": "Всего топлива",
-    "aircraft.title": "Название борта в симуляторе",
+    "power.batteryMaster": "Battery master switch",
+    "power.avionicsMaster": "Avionics power",
+    "power.busVolts": "Main bus voltage",
+    "engine.rpm": "Engine RPM",
+    "engine.fuelFlowGph": "Fuel flow per hour",
+    "engine.torquePct": "Turboprop engine torque",
+    "engine.ittC": "ITT temperature",
+    "engine.propRpm": "Propeller RPM",
+    "engine.n1Pct": "Engine #1 N1",
+    "engine.n1Pct2": "Engine #2 N1",
+    "attitude.pitchDeg": "Pitch",
+    "attitude.bankDeg": "Bank",
+    "heading.magneticDeg": "Magnetic heading",
+    "altitude.indicatedFt": "Indicated altitude",
+    "verticalSpeed.fpm": "Vertical speed",
+    "speed.iasKt": "Indicated airspeed",
+    "autopilot.headingBugDeg": "Target heading (heading bug)",
+    "autopilot.master": "Autopilot engaged",
+    "autopilot.approachHold": "APR mode — engage command",
+    "autopilot.approach": "APR mode active",
+    "aircraft.onGround": "Aircraft on the ground",
+    "aircraft.radioAltitudeFt": "Radio altitude above the runway",
+    "groundSpeed.kt": "Ground speed",
+    "nav.localizer": "Localizer deviation",
+    "nav.glideSlope": "Glideslope deviation",
+    "nav.locFlag": "Localizer captured",
+    "nav.gsFlag": "Glideslope captured",
+    "controls.throttlePct": "Throttle lever position (assist command)",
+    "controls.rudder": "Rudder (assist command)",
+    "brakes.parking": "Parking brake",
+    "flaps.percent": "Flap position",
+    "fuel.leftGal": "Left tank fuel",
+    "fuel.rightGal": "Right tank fuel",
+    "fuel.totalGal": "Total fuel",
+    "aircraft.title": "Aircraft title in the simulator",
 }
 
 
@@ -207,27 +210,29 @@ def _sorted_groups() -> list[str]:
 
 
 def generate_telemetry_doc() -> str:
-    """Возвращает markdown-каталог всех переменных телеметрии."""
+    """Returns a Markdown catalog of all telemetry variables."""
     lines: list[str] = [
-        "# 📊 Каталог переменных телеметрии",
+        "# 📊 Telemetry Variable Catalog",
         "",
-        "> Файл сгенерирован из `msfs_gateway/telemetry.py`; не редактируйте вручную.",
-        "> Обновить: `python -m msfs_gateway.docsgen --write`.",
+        "> This file is generated from `msfs_gateway/telemetry.py`; do not edit it manually.",
+        "> Update: `python -m msfs_gateway.docsgen --write`.",
         "",
-        "Реестр — единственный источник правды: по этим ключам профили панелей",
-        "привязывают приборы, а шлюз читает SimVar и отправляет команды.",
+        "The registry is the single source of truth: panel profiles bind instruments to",
+        "these keys, and the gateway reads SimVars and sends commands.",
         "",
-        "## Как читать таблицу",
+        "## How to read the table",
         "",
-        "- **Ключ** — имя переменной в кадре телеметрии и в `bindings` профиля.",
-        "- **Тип** — `number`, `bool` или `string`; `bool` в JSON приходит как",
-        "  `true/false`, числа — как `float`.",
-        "- **Чтение** — SimVar, из которого шлюз берёт значение (для `custom.*`",
-        "  источника нет: их читает WASM-мост по описанию из профиля).",
-        "- **Команда** — SimConnect-событие, которым переменная меняется;",
-        "  прочерк означает «только чтение».",
+        "- **Key** — the variable name in the telemetry frame and in the profile's",
+        "  `bindings`.",
+        "- **Type** — `number`, `bool`, or `string`; `bool` arrives in JSON as",
+        "  `true/false`, numbers as `float`.",
+        "- **Read** — the SimVar from which the gateway takes the value (for `custom.*`",
+        "  there is no source: they are read by the WASM bridge according to the profile",
+        "  description).",
+        "- **Command** — the SimConnect event used to change the variable;",
+        '  a dash means "read-only".',
         "",
-        "## Переменные по группам",
+        "## Variables by group",
         "",
     ]
 
@@ -235,7 +240,7 @@ def generate_telemetry_doc() -> str:
         title = GROUP_TITLES.get(group, group)
         lines.append(f"### {title}")
         lines.append("")
-        lines.append("| Ключ | Тип | Ед. | Чтение (SimVar) | Команда | Описание |")
+        lines.append("| Key | Type | Unit | Read (SimVar) | Command | Description |")
         lines.append("| --- | --- | --- | --- | --- | --- |")
         for variable in telemetry.VARIABLES.values():
             if _group_of(variable.key) != group:
@@ -250,13 +255,13 @@ def generate_telemetry_doc() -> str:
 
     writable = [variable for variable in telemetry.VARIABLES.values() if variable.writable]
     lines += [
-        "## Переменные с командами",
+        "## Variables with commands",
         "",
-        "Эти ключи можно менять через `POST /api/sim/command` и WebSocket",
-        "`command`. Значение приводится к типу переменной; для событий с",
-        "параметром оно масштабируется (например, проценты → 0..16383).",
+        "These keys can be changed through `POST /api/sim/command` and the WebSocket",
+        "`command`. The value is coerced to the variable type; for events with a",
+        "parameter it is scaled (for example, percent → 0..16383).",
         "",
-        "| Ключ | Событие | Параметр | Масштаб |",
+        "| Key | Event | Parameter | Scale |",
         "| --- | --- | --- | --- |",
     ]
     for variable in writable:
@@ -264,31 +269,30 @@ def generate_telemetry_doc() -> str:
             "| `{}` | `{}` | {} | {} |".format(
                 variable.key,
                 variable.sim_event,
-                "да" if variable.sim_event_param else "нет",
+                "yes" if variable.sim_event_param else "no",
                 variable.sim_event_scale,
             )
         )
     lines += [
         "",
-        "## Пользовательские переменные `custom.*`",
+        "## Custom variables `custom.*`",
         "",
-        "Профиль может объявить свои LVAR/RPN в блоке `variables`; ключ обязан",
-        "начинаться со строчного сегмента (обычно `custom.`) и не совпадать со",
-        "встроенными. Такой ключ появляется в кадре как обычная переменная.",
+        "A profile can declare its own LVAR/RPN in the `variables` block; the key must",
+        "start with a lowercase segment (usually `custom.`) and must not collide with",
+        "built-in variables. Such a key appears in the frame as an ordinary variable.",
         "",
-        f"Допустимые виды: {', '.join(sorted(CUSTOM_KINDS))}; источники: "
-        f"{', '.join(sorted(CUSTOM_SOURCES))}. Формат ключа: "
+        f"Allowed kinds: {', '.join(sorted(CUSTOM_KINDS))}; sources: "
+        f"{', '.join(sorted(CUSTOM_SOURCES))}. Key format: "
         f"`{CUSTOM_KEY_PATTERN.pattern}`.",
         "",
-        "Пример:",
+        "Example:",
         "",
         "```json",
         '{ "key": "custom.apuBleed", "kind": "bool", "source": "lvar",',
         '  "name": "APU_BLEED", "initial": false }',
         "```",
         "",
-        "Подробности — в "
-        "[profile-schema.md](profile-schema.md#6-пользовательские-переменные-lvar--rpn).",
+        "Details are in [profile-schema.md](profile-schema.md#6-custom-variables-lvar--rpn).",
         "",
     ]
     return "\n".join(lines)
@@ -309,28 +313,28 @@ def _options_text(widget_type: str) -> str:
 
 
 def generate_widgets_doc() -> str:
-    """Возвращает markdown-каталог типов приборов и их опций."""
+    """Returns a Markdown catalog of instrument types and their options."""
     unknown = set(WIDGET_TYPES) - set(WIDGET_ORDER)
     if unknown:
-        raise RuntimeError(f"docsgen: нет описания для типов {sorted(unknown)}")
+        raise RuntimeError(f"docsgen: no description for types {sorted(unknown)}")
 
     lines: list[str] = [
-        "# 🧩 Каталог приборов",
+        "# 🧩 Instrument Catalog",
         "",
-        "> Файл сгенерирован из `msfs_gateway/profiles.py` (типы и обязательные",
-        "> привязки) и веб-клиента (опции). Обновить:",
+        "> This file is generated from `msfs_gateway/profiles.py` (types and required",
+        "> bindings) and the web client (options). Update:",
         "> `python -m msfs_gateway.docsgen --write`.",
         "",
-        "Каждый прибор — элемент массива `widgets[]` профиля. Полная схема",
-        "профиля — в [profile-schema.md](profile-schema.md).",
+        "Each instrument is an element of the profile's `widgets[]` array. The full",
+        "profile schema is in [profile-schema.md](profile-schema.md).",
         "",
-        "## Общая структура",
+        "## Common structure",
         "",
         "```json",
         "{",
         '  "id": "attitude-main",',
         '  "type": "attitude",',
-        '  "label": "Авиагоризонт",',
+        '  "label": "Attitude indicator",',
         '  "bindings": { "pitch": "attitude.pitchDeg", "bank": "attitude.bankDeg" },',
         '  "layout": {',
         '    "base": { "x": 0.02, "y": 0.03, "w": 0.36, "h": 0.62 },',
@@ -340,16 +344,16 @@ def generate_widgets_doc() -> str:
         "}",
         "```",
         "",
-        "- `id` — уникальный slug (`[a-z0-9][a-z0-9-]`), используется в редакторе",
-        "  и для привязки событий.",
-        "- `layout` — координаты в долях панели; обязателен `base`, опциональны",
-        f"  {', '.join(f'`{factor}`' for factor in FORM_FACTORS)}.",
-        "- `options` — необязательный объект, зависит от типа.",
-        "- `command` — обязателен для тумблера и галетника (см. ниже).",
+        "- `id` — a unique slug (`[a-z0-9][a-z0-9-]`), used in the editor",
+        "  and for binding events.",
+        "- `layout` — coordinates in panel fractions; `base` is required,",
+        f"  {', '.join(f'`{factor}`' for factor in FORM_FACTORS)} are optional.",
+        "- `options` — an optional object that depends on the type.",
+        "- `command` — required for a toggle switch and a rotary selector (see below).",
         "",
-        "## Типы приборов",
+        "## Instrument types",
         "",
-        "| Тип | Прибор | Обязательные bindings | `command` | Основные options |",
+        "| Type | Instrument | Required bindings | `command` | Main options |",
         "| --- | --- | --- | --- | --- |",
     ]
     for widget_type in WIDGET_ORDER:
@@ -358,16 +362,16 @@ def generate_widgets_doc() -> str:
                 widget_type,
                 WIDGET_TITLES[widget_type],
                 _bindings_text(widget_type),
-                "обязателен" if widget_type in COMMAND_TYPES else "—",
+                "required" if widget_type in COMMAND_TYPES else "—",
                 _options_text(widget_type),
             )
         )
     lines += [
         "",
-        "`*` у опции — обязательна. Остальные опции имеют разумные значения по",
-        "умолчанию и нужны для настройки внешнего вида.",
+        "`*` next to an option means it is required. The other options have sensible",
+        "defaults and are used to configure the appearance.",
         "",
-        "## Описание типов",
+        "## Type descriptions",
         "",
     ]
     for widget_type in WIDGET_ORDER:
@@ -379,12 +383,12 @@ def generate_widgets_doc() -> str:
         ]
         options = WIDGET_OPTIONS.get(widget_type, ())
         if options:
-            lines += ["| Опция | Значение | Обязательна |", "| --- | --- | --- |"]
+            lines += ["| Option | Meaning | Required |", "| --- | --- | --- |"]
             for name, description, required in options:
-                lines.append(f"| `{name}` | {description} | {'да' if required else 'нет'} |")
+                lines.append(f"| `{name}` | {description} | {'yes' if required else 'no'} |")
             lines.append("")
         lines += [
-            "Минимальный пример:",
+            "Minimal example:",
             "",
             "```json",
             _example_widget(widget_type),
@@ -393,30 +397,30 @@ def generate_widgets_doc() -> str:
         ]
 
     lines += [
-        "## Команды с тумблера и галетника",
+        "## Commands from a toggle switch and a rotary selector",
         "",
-        "Блок `command` описывает, что отправить на шлюз:",
+        "The `command` block describes what to send to the gateway:",
         "",
-        "| Поле | Значение |",
+        "| Field | Meaning |",
         "| --- | --- |",
-        "| `key` | переменная с признаком «принимает команды» (см. каталог телеметрии) |",
-        "| `action` | `set` — отправить новое значение; `toggle` — событие-переключатель |",
-        "| `value` | для `set`: `true/false`/число; по умолчанию противоположное текущему |",
+        '| `key` | a variable with the "commands accepted" flag (see the telemetry catalog) |',
+        "| `action` | `set` — send a new value; `toggle` — a toggle event |",
+        "| `value` | for `set`: `true/false`/number; by default the opposite "
+        "of the current value |",
         "",
-        "Пример тумблера:",
+        "Toggle switch example:",
         "",
         "```json",
         '{ "type": "switch.toggle", "bindings": { "state": "power.batteryMaster" },',
         '  "command": { "key": "power.batteryMaster", "action": "set" } }',
         "```",
         "",
-        "## Валидация",
+        "## Validation",
         "",
-        "- Тип обязан входить в список выше; неизвестный тип редактор не сохранит.",
-        "- Обязательные роли `bindings` должны ссылаться на существующие ключи",
-        "  телеметрии.",
-        "- `layout.base` и переопределения обязаны быть прямоугольниками в",
-        "  пределах `0..1` (см. схему профиля).",
+        "- The type must be in the list above; the editor will not save an unknown type.",
+        "- The required `bindings` roles must reference existing telemetry keys.",
+        "- `layout.base` and the overrides must be rectangles within `0..1`",
+        "  (see the profile schema).",
         "",
     ]
     return "\n".join(lines)
@@ -475,7 +479,7 @@ def _example_widget(widget_type: str) -> str:
 
 
 def write_docs(root: Path) -> None:
-    """Записывает сгенерированные документы."""
+    """Writes the generated documents."""
     docs = root / "docs"
     docs.mkdir(parents=True, exist_ok=True)
     (docs / TELEMETRY_DOC).write_text(generate_telemetry_doc(), encoding="utf-8")
@@ -483,7 +487,7 @@ def write_docs(root: Path) -> None:
 
 
 def check_docs(root: Path) -> list[str]:
-    """Возвращает список устаревших файлов (пусто — всё актуально)."""
+    """Returns a list of stale files (empty means everything is up to date)."""
     expected = {
         TELEMETRY_DOC: generate_telemetry_doc(),
         WIDGETS_DOC: generate_widgets_doc(),
@@ -497,28 +501,28 @@ def check_docs(root: Path) -> list[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI генерации/проверки документации."""
+    """CLI for generating and checking documentation."""
     from .settings import APP_ROOT
 
     parser = argparse.ArgumentParser(prog="msfs_gateway.docsgen", description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument(
-        "--write", action="store_true", help="записать docs/telemetry.md и docs/widgets.md"
+        "--write", action="store_true", help="write docs/telemetry.md and docs/widgets.md"
     )
-    mode.add_argument("--check", action="store_true", help="проверить актуальность файлов")
+    mode.add_argument("--check", action="store_true", help="verify that the files are up to date")
     args = parser.parse_args(argv)
 
     if args.write:
         write_docs(APP_ROOT)
-        print(f"Обновлено: docs/{TELEMETRY_DOC}, docs/{WIDGETS_DOC}")
+        print(f"Updated: docs/{TELEMETRY_DOC}, docs/{WIDGETS_DOC}")
         return 0
 
     stale = check_docs(APP_ROOT)
     if stale:
-        print("Документация устарела: " + ", ".join(stale), file=sys.stderr)
-        print("Запустите: python -m msfs_gateway.docsgen --write", file=sys.stderr)
+        print("Documentation is out of date: " + ", ".join(stale), file=sys.stderr)
+        print("Run: python -m msfs_gateway.docsgen --write", file=sys.stderr)
         return 1
-    print("Документация актуальна.")
+    print("Documentation is up to date.")
     return 0
 
 

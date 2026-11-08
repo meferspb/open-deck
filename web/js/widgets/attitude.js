@@ -4,6 +4,7 @@
  */
 
 import { toFiniteNumber } from '../core/format.js';
+import { t } from '../core/i18n.js';
 import { CanvasSurface, Smoother, Widget, createCard, degToRad } from './base.js';
 
 const MONO = '"Cascadia Mono", "Consolas", monospace';
@@ -221,6 +222,6 @@ export class AttitudeWidget extends Widget {
     ctx.font = `600 ${Math.max(9, Math.round(radius * 0.11))}px ${MONO}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('НЕТ ДАННЫХ', cx, cy + radius * 0.32);
+    ctx.fillText(t('widget.noData'), cx, cy + radius * 0.32);
   }
 }

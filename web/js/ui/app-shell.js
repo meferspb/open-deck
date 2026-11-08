@@ -3,17 +3,19 @@
  * Здесь только DOM — вся логика загрузки живёт в main.js.
  */
 
-const CONNECTION_LABELS = {
-  connecting: 'подключение…',
-  online: 'телеметрия',
-  reconnecting: 'переподключение…',
-  offline: 'нет связи',
+import { onLocaleChange, t } from '../core/i18n.js';
+
+const CONNECTION_KEYS = {
+  connecting: 'connection.connecting',
+  online: 'connection.online',
+  reconnecting: 'connection.reconnecting',
+  offline: 'connection.offline',
 };
 
 /** @param {string} id */
 function byId(id) {
   const element = document.getElementById(id);
-  if (!element) throw new Error(`Не найден элемент #${id}`);
+  if (!element) throw new Error(t('error.elementMissing', { id }));
   return element;
 }
 
@@ -56,6 +58,74 @@ export function createAppShell({ onDeviceChange, onAircraftChange, onRetry, onLo
   /** @type {ReturnType<typeof setTimeout> | null} */
   let toastTimer = null;
   let locked = false;
+  /** @type {Array<{id: string, name: string}>} */
+  let lastProfiles = [];
+  /** @type {string | null} */
+  let lastActiveId = null;
+  /** @type {{state: string, detail?: string} | null} */
+  let connectionInfo = null;
+  /** @type {{reason?: string, code?: string} | null} */
+  let lockInfo = null;
+
+  function renderProfiles() {
+    if (!lastProfiles.length) {
+      const option = document.createElement('option');
+      option.textContent = t('panel.noProfiles');
+      option.disabled = true;
+      el.aircraftSelect.replaceChildren(option);
+      return;
+    }
+    const options = lastProfiles.map((profile) => {
+      const option = document.createElement('option');
+      option.value = profile.id;
+      option.textContent = profile.name;
+      return option;
+    });
+    el.aircraftSelect.replaceChildren(...options);
+    if (lastActiveId) el.aircraftSelect.value = lastActiveId;
+  }
+
+  function renderConnection() {
+    if (!connectionInfo) return;
+    const { state, detail } = connectionInfo;
+    el.connection.dataset.state = state;
+    const label = CONNECTION_KEYS[state] ? t(CONNECTION_KEYS[state]) : state;
+    el.connectionText.textContent = detail ? `${label} · ${detail}` : label;
+    el.connection.title = detail ? `${label}: ${detail}` : label;
+  }
+
+  function renderStatus() {
+    const keys = {
+      profileLabel: 'panel.profileStatus',
+      layoutLabel: 'panel.layoutStatus',
+      rate: 'panel.rateStatus',
+      gateway: 'panel.gatewayStatus',
+    };
+    const targets = {
+      profileLabel: el.statusProfile,
+      layoutLabel: el.statusLayout,
+      rate: el.statusRate,
+      gateway: el.statusGateway,
+    };
+    for (const [field, key] of Object.entries(keys)) {
+      const value = status[field];
+      if (value) targets[field].textContent = t(key, { value });
+    }
+  }
+
+  function renderLock() {
+    if (!locked || !lockInfo) return;
+    el.lockTitle.textContent = t('lock.title');
+    el.lockDetail.textContent = lockInfo.reason || t('lock.detailDefault');
+    el.lockCode.textContent = lockInfo.code ? t('lock.code', { code: lockInfo.code }) : '';
+  }
+
+  onLocaleChange(() => {
+    renderProfiles();
+    renderConnection();
+    renderStatus();
+    renderLock();
+  });
 
   // --- события --------------------------------------------------------
   el.aircraftSelect.addEventListener('change', () => {
@@ -80,21 +150,9 @@ export function createAppShell({ onDeviceChange, onAircraftChange, onRetry, onLo
   return {
     /** @param {Array<{id: string, name: string}>} profiles @param {string|null} activeId */
     setProfiles(profiles, activeId) {
-      if (!profiles?.length) {
-        const option = document.createElement('option');
-        option.textContent = 'нет профилей';
-        option.disabled = true;
-        el.aircraftSelect.replaceChildren(option);
-        return;
-      }
-      const options = profiles.map((profile) => {
-        const option = document.createElement('option');
-        option.value = profile.id;
-        option.textContent = profile.name;
-        return option;
-      });
-      el.aircraftSelect.replaceChildren(...options);
-      if (activeId) el.aircraftSelect.value = activeId;
+      lastProfiles = Array.isArray(profiles) ? profiles : [];
+      lastActiveId = activeId;
+      renderProfiles();
     },
 
     /** @param {string} deviceId */
@@ -106,19 +164,14 @@ export function createAppShell({ onDeviceChange, onAircraftChange, onRetry, onLo
 
     /** @param {{state: string, detail?: string}} event */
     setConnection({ state, detail }) {
-      el.connection.dataset.state = state;
-      const label = CONNECTION_LABELS[state] ?? state;
-      el.connectionText.textContent = detail ? `${label} · ${detail}` : label;
-      el.connection.title = detail ? `${label}: ${detail}` : label;
+      connectionInfo = { state, detail };
+      renderConnection();
     },
 
     /** @param {Partial<{profileLabel: string, layoutLabel: string, rate: string, gateway: string}>} patch */
     setStatus(patch) {
       Object.assign(status, patch);
-      if (status.profileLabel) el.statusProfile.textContent = `профиль: ${status.profileLabel}`;
-      if (status.layoutLabel) el.statusLayout.textContent = `раскладка: ${status.layoutLabel}`;
-      if (status.rate) el.statusRate.textContent = `поток: ${status.rate}`;
-      if (status.gateway) el.statusGateway.textContent = `шлюз: ${status.gateway}`;
+      renderStatus();
     },
 
     /**
@@ -155,14 +208,11 @@ export function createAppShell({ onDeviceChange, onAircraftChange, onRetry, onLo
      */
     setLocked(isLocked, info = {}) {
       locked = isLocked;
+      lockInfo = isLocked ? info : null;
       document.body.classList.toggle('is-locked', isLocked);
       el.lockScreen.hidden = !isLocked;
       if (isLocked) {
-        el.lockTitle.textContent = 'Работа приложения заблокирована';
-        el.lockDetail.textContent =
-          info.reason ||
-          'Проверка целостности интерфейса не пройдена. Восстановите файлы клиента и перезапустите шлюз.';
-        el.lockCode.textContent = info.code ? `код: ${info.code}` : '';
+        renderLock();
         el.toast.hidden = true;
         if (el.devtools) el.devtools.hidden = true;
       } else {

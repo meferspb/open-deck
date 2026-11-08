@@ -1,163 +1,165 @@
-# 📊 Каталог переменных телеметрии
+# 📊 Telemetry Variable Catalog
 
-> Файл сгенерирован из `msfs_gateway/telemetry.py`; не редактируйте вручную.
-> Обновить: `python -m msfs_gateway.docsgen --write`.
+> This file is generated from `msfs_gateway/telemetry.py`; do not edit it manually.
+> Update: `python -m msfs_gateway.docsgen --write`.
 
-Реестр — единственный источник правды: по этим ключам профили панелей
-привязывают приборы, а шлюз читает SimVar и отправляет команды.
+The registry is the single source of truth: panel profiles bind instruments to
+these keys, and the gateway reads SimVars and sends commands.
 
-## Как читать таблицу
+## How to read the table
 
-- **Ключ** — имя переменной в кадре телеметрии и в `bindings` профиля.
-- **Тип** — `number`, `bool` или `string`; `bool` в JSON приходит как
-  `true/false`, числа — как `float`.
-- **Чтение** — SimVar, из которого шлюз берёт значение (для `custom.*`
-  источника нет: их читает WASM-мост по описанию из профиля).
-- **Команда** — SimConnect-событие, которым переменная меняется;
-  прочерк означает «только чтение».
+- **Key** — the variable name in the telemetry frame and in the profile's
+  `bindings`.
+- **Type** — `number`, `bool`, or `string`; `bool` arrives in JSON as
+  `true/false`, numbers as `float`.
+- **Read** — the SimVar from which the gateway takes the value (for `custom.*`
+  there is no source: they are read by the WASM bridge according to the profile
+  description).
+- **Command** — the SimConnect event used to change the variable;
+  a dash means "read-only".
 
-## Переменные по группам
+## Variables by group
 
-### Электрика и питание
+### Electrical and power
 
-| Ключ | Тип | Ед. | Чтение (SimVar) | Команда | Описание |
+| Key | Type | Unit | Read (SimVar) | Command | Description |
 | --- | --- | --- | --- | --- | --- |
-| `power.batteryMaster` | bool | — | ELECTRICAL MASTER BATTERY | TOGGLE_MASTER_BATTERY | Выключатель аккумулятора |
-| `power.avionicsMaster` | bool | — | AVIONICS MASTER SWITCH | TOGGLE_AVIONICS_MASTER | Питание авионики |
-| `power.busVolts` | number | V | ELECTRICAL MAIN BUS VOLTAGE | — | Напряжение основной шины |
+| `power.batteryMaster` | bool | — | ELECTRICAL MASTER BATTERY | TOGGLE_MASTER_BATTERY | Battery master switch |
+| `power.avionicsMaster` | bool | — | AVIONICS MASTER SWITCH | TOGGLE_AVIONICS_MASTER | Avionics power |
+| `power.busVolts` | number | V | ELECTRICAL MAIN BUS VOLTAGE | — | Main bus voltage |
 
-### Двигатель
+### Engine
 
-| Ключ | Тип | Ед. | Чтение (SimVar) | Команда | Описание |
+| Key | Type | Unit | Read (SimVar) | Command | Description |
 | --- | --- | --- | --- | --- | --- |
-| `engine.rpm` | number | RPM | GENERAL ENG RPM:1 | — | Обороты двигателя |
-| `engine.fuelFlowGph` | number | GPH | ENG FUEL FLOW GPH:1 | — | Часовой расход топлива |
-| `engine.torquePct` | number | % | TURB ENG MAX TORQUE PERCENT:1 | — | Момент турбовинтового двигателя |
-| `engine.ittC` | number | °C | TURB ENG ITT:1 | — | Температура ИТТ |
-| `engine.propRpm` | number | RPM | PROP RPM:1 | — | Обороты воздушного винта |
-| `engine.n1Pct` | number | % | TURB ENG N1:1 | — | N1 двигателя №1 |
-| `engine.n1Pct2` | number | % | TURB ENG N1:2 | — | N1 двигателя №2 |
+| `engine.rpm` | number | RPM | GENERAL ENG RPM:1 | — | Engine RPM |
+| `engine.fuelFlowGph` | number | GPH | ENG FUEL FLOW GPH:1 | — | Fuel flow per hour |
+| `engine.torquePct` | number | % | TURB ENG MAX TORQUE PERCENT:1 | — | Turboprop engine torque |
+| `engine.ittC` | number | °C | TURB ENG ITT:1 | — | ITT temperature |
+| `engine.propRpm` | number | RPM | PROP RPM:1 | — | Propeller RPM |
+| `engine.n1Pct` | number | % | TURB ENG N1:1 | — | Engine #1 N1 |
+| `engine.n1Pct2` | number | % | TURB ENG N1:2 | — | Engine #2 N1 |
 
-### Пространственное положение
+### Spatial attitude
 
-| Ключ | Тип | Ед. | Чтение (SimVar) | Команда | Описание |
+| Key | Type | Unit | Read (SimVar) | Command | Description |
 | --- | --- | --- | --- | --- | --- |
-| `attitude.pitchDeg` | number | ° | PLANE PITCH DEGREES | — | Тангаж |
-| `attitude.bankDeg` | number | ° | PLANE BANK DEGREES | — | Крен |
+| `attitude.pitchDeg` | number | ° | PLANE PITCH DEGREES | — | Pitch |
+| `attitude.bankDeg` | number | ° | PLANE BANK DEGREES | — | Bank |
 
-### Высота
+### Altitude
 
-| Ключ | Тип | Ед. | Чтение (SimVar) | Команда | Описание |
+| Key | Type | Unit | Read (SimVar) | Command | Description |
 | --- | --- | --- | --- | --- | --- |
-| `altitude.indicatedFt` | number | FT | INDICATED ALTITUDE | — | Приборная высота |
+| `altitude.indicatedFt` | number | FT | INDICATED ALTITUDE | — | Indicated altitude |
 
-### Скорость
+### Speed
 
-| Ключ | Тип | Ед. | Чтение (SimVar) | Команда | Описание |
+| Key | Type | Unit | Read (SimVar) | Command | Description |
 | --- | --- | --- | --- | --- | --- |
-| `speed.iasKt` | number | KT | AIRSPEED INDICATED | — | Приборная скорость |
+| `speed.iasKt` | number | KT | AIRSPEED INDICATED | — | Indicated airspeed |
 
-### Вариометр
+### VSI
 
-| Ключ | Тип | Ед. | Чтение (SimVar) | Команда | Описание |
+| Key | Type | Unit | Read (SimVar) | Command | Description |
 | --- | --- | --- | --- | --- | --- |
-| `verticalSpeed.fpm` | number | FPM | VERTICAL SPEED | — | Вертикальная скорость |
+| `verticalSpeed.fpm` | number | FPM | VERTICAL SPEED | — | Vertical speed |
 
-### Курс
+### Heading
 
-| Ключ | Тип | Ед. | Чтение (SimVar) | Команда | Описание |
+| Key | Type | Unit | Read (SimVar) | Command | Description |
 | --- | --- | --- | --- | --- | --- |
-| `heading.magneticDeg` | number | ° | PLANE HEADING DEGREES MAGNETIC | — | Магнитный курс |
+| `heading.magneticDeg` | number | ° | PLANE HEADING DEGREES MAGNETIC | — | Magnetic heading |
 
-### Механизация крыла
+### Wing flaps
 
-| Ключ | Тип | Ед. | Чтение (SimVar) | Команда | Описание |
+| Key | Type | Unit | Read (SimVar) | Command | Description |
 | --- | --- | --- | --- | --- | --- |
-| `flaps.percent` | number | % | TRAILING EDGE FLAPS LEFT PERCENT | — | Положение закрылков |
+| `flaps.percent` | number | % | TRAILING EDGE FLAPS LEFT PERCENT | — | Flap position |
 
-### Топливо
+### Fuel
 
-| Ключ | Тип | Ед. | Чтение (SimVar) | Команда | Описание |
+| Key | Type | Unit | Read (SimVar) | Command | Description |
 | --- | --- | --- | --- | --- | --- |
-| `fuel.leftGal` | number | GAL | FUEL LEFT QUANTITY | — | Топливо в левом баке |
-| `fuel.rightGal` | number | GAL | FUEL RIGHT QUANTITY | — | Топливо в правом баке |
-| `fuel.totalGal` | number | GAL | — | — | Всего топлива |
+| `fuel.leftGal` | number | GAL | FUEL LEFT QUANTITY | — | Left tank fuel |
+| `fuel.rightGal` | number | GAL | FUEL RIGHT QUANTITY | — | Right tank fuel |
+| `fuel.totalGal` | number | GAL | — | — | Total fuel |
 
-### Автопилот
+### Autopilot
 
-| Ключ | Тип | Ед. | Чтение (SimVar) | Команда | Описание |
+| Key | Type | Unit | Read (SimVar) | Command | Description |
 | --- | --- | --- | --- | --- | --- |
-| `autopilot.headingBugDeg` | number | ° | AUTOPILOT HEADING LOCK DIR | HEADING_BUG_SET | Заданный курс (heading bug) |
-| `autopilot.master` | bool | — | AUTOPILOT MASTER | AP_MASTER | Автопилот включён |
-| `autopilot.approachHold` | bool | — | AUTOPILOT APPROACH HOLD | AP_APR_HOLD | Режим APR — команда включения |
-| `autopilot.approach` | bool | — | AUTOPILOT APPROACH HOLD | — | Режим APR активен |
+| `autopilot.headingBugDeg` | number | ° | AUTOPILOT HEADING LOCK DIR | HEADING_BUG_SET | Target heading (heading bug) |
+| `autopilot.master` | bool | — | AUTOPILOT MASTER | AP_MASTER | Autopilot engaged |
+| `autopilot.approachHold` | bool | — | AUTOPILOT APPROACH HOLD | AP_APR_HOLD | APR mode — engage command |
+| `autopilot.approach` | bool | — | AUTOPILOT APPROACH HOLD | — | APR mode active |
 
-### Состояние воздушного судна
+### Aircraft state
 
-| Ключ | Тип | Ед. | Чтение (SimVar) | Команда | Описание |
+| Key | Type | Unit | Read (SimVar) | Command | Description |
 | --- | --- | --- | --- | --- | --- |
-| `aircraft.onGround` | bool | — | SIM ON GROUND | — | Самолёт на земле |
-| `aircraft.radioAltitudeFt` | number | FT | RADIO HEIGHT | — | Радиовысота над ВПП |
-| `aircraft.title` | string | — | TITLE | — | Название борта в симуляторе |
+| `aircraft.onGround` | bool | — | SIM ON GROUND | — | Aircraft on the ground |
+| `aircraft.radioAltitudeFt` | number | FT | RADIO HEIGHT | — | Radio altitude above the runway |
+| `aircraft.title` | string | — | TITLE | — | Aircraft title in the simulator |
 
-### Руление
+### Taxi
 
-| Ключ | Тип | Ед. | Чтение (SimVar) | Команда | Описание |
+| Key | Type | Unit | Read (SimVar) | Command | Description |
 | --- | --- | --- | --- | --- | --- |
-| `groundSpeed.kt` | number | KT | GPS GROUND SPEED | — | Путевая скорость |
+| `groundSpeed.kt` | number | KT | GPS GROUND SPEED | — | Ground speed |
 
-### Навигация (ILS)
+### Navigation (ILS)
 
-| Ключ | Тип | Ед. | Чтение (SimVar) | Команда | Описание |
+| Key | Type | Unit | Read (SimVar) | Command | Description |
 | --- | --- | --- | --- | --- | --- |
-| `nav.localizer` | number | ° | NAV LOCALIZER | — | Отклонение от курсового маяка |
-| `nav.glideSlope` | number | ° | NAV GLIDE SLOPE | — | Отклонение от глиссады |
-| `nav.locFlag` | bool | — | NAV LOC FLAG | — | Курсовой маяк захвачен |
-| `nav.gsFlag` | bool | — | NAV GS FLAG | — | Глиссада захвачена |
+| `nav.localizer` | number | ° | NAV LOCALIZER | — | Localizer deviation |
+| `nav.glideSlope` | number | ° | NAV GLIDE SLOPE | — | Glideslope deviation |
+| `nav.locFlag` | bool | — | NAV LOC FLAG | — | Localizer captured |
+| `nav.gsFlag` | bool | — | NAV GS FLAG | — | Glideslope captured |
 
-### Органы управления
+### Controls
 
-| Ключ | Тип | Ед. | Чтение (SimVar) | Команда | Описание |
+| Key | Type | Unit | Read (SimVar) | Command | Description |
 | --- | --- | --- | --- | --- | --- |
-| `controls.throttlePct` | number | % | GENERAL ENG THROTTLE LEVER POSITION:1 | THROTTLE_SET | Положение РУД (команда ассистента) |
-| `controls.rudder` | number | % | RUDDER POSITION | RUDDER_SET | Руль направления (команда ассистента) |
+| `controls.throttlePct` | number | % | GENERAL ENG THROTTLE LEVER POSITION:1 | THROTTLE_SET | Throttle lever position (assist command) |
+| `controls.rudder` | number | % | RUDDER POSITION | RUDDER_SET | Rudder (assist command) |
 
-### Тормоза
+### Brakes
 
-| Ключ | Тип | Ед. | Чтение (SimVar) | Команда | Описание |
+| Key | Type | Unit | Read (SimVar) | Command | Description |
 | --- | --- | --- | --- | --- | --- |
-| `brakes.parking` | bool | — | BRAKE PARKING POSITION | PARKING_BRAKES | Стояночный тормоз |
+| `brakes.parking` | bool | — | BRAKE PARKING POSITION | PARKING_BRAKES | Parking brake |
 
-## Переменные с командами
+## Variables with commands
 
-Эти ключи можно менять через `POST /api/sim/command` и WebSocket
-`command`. Значение приводится к типу переменной; для событий с
-параметром оно масштабируется (например, проценты → 0..16383).
+These keys can be changed through `POST /api/sim/command` and the WebSocket
+`command`. The value is coerced to the variable type; for events with a
+parameter it is scaled (for example, percent → 0..16383).
 
-| Ключ | Событие | Параметр | Масштаб |
+| Key | Event | Parameter | Scale |
 | --- | --- | --- | --- |
-| `power.batteryMaster` | `TOGGLE_MASTER_BATTERY` | нет | 1.0 |
-| `power.avionicsMaster` | `TOGGLE_AVIONICS_MASTER` | нет | 1.0 |
-| `autopilot.headingBugDeg` | `HEADING_BUG_SET` | да | 1.0 |
-| `autopilot.master` | `AP_MASTER` | нет | 1.0 |
-| `autopilot.approachHold` | `AP_APR_HOLD` | нет | 1.0 |
-| `controls.throttlePct` | `THROTTLE_SET` | да | 163.83 |
-| `controls.rudder` | `RUDDER_SET` | да | 163.83 |
-| `brakes.parking` | `PARKING_BRAKES` | нет | 1.0 |
+| `power.batteryMaster` | `TOGGLE_MASTER_BATTERY` | no | 1.0 |
+| `power.avionicsMaster` | `TOGGLE_AVIONICS_MASTER` | no | 1.0 |
+| `autopilot.headingBugDeg` | `HEADING_BUG_SET` | yes | 1.0 |
+| `autopilot.master` | `AP_MASTER` | no | 1.0 |
+| `autopilot.approachHold` | `AP_APR_HOLD` | no | 1.0 |
+| `controls.throttlePct` | `THROTTLE_SET` | yes | 163.83 |
+| `controls.rudder` | `RUDDER_SET` | yes | 163.83 |
+| `brakes.parking` | `PARKING_BRAKES` | no | 1.0 |
 
-## Пользовательские переменные `custom.*`
+## Custom variables `custom.*`
 
-Профиль может объявить свои LVAR/RPN в блоке `variables`; ключ обязан
-начинаться со строчного сегмента (обычно `custom.`) и не совпадать со
-встроенными. Такой ключ появляется в кадре как обычная переменная.
+A profile can declare its own LVAR/RPN in the `variables` block; the key must
+start with a lowercase segment (usually `custom.`) and must not collide with
+built-in variables. Such a key appears in the frame as an ordinary variable.
 
-Допустимые виды: bool, number, string; источники: lvar, rpn. Формат ключа: `^[a-z][a-z0-9]*(\.[A-Za-z0-9][A-Za-z0-9-]*)+$`.
+Allowed kinds: bool, number, string; sources: lvar, rpn. Key format: `^[a-z][a-z0-9]*(\.[A-Za-z0-9][A-Za-z0-9-]*)+$`.
 
-Пример:
+Example:
 
 ```json
 { "key": "custom.apuBleed", "kind": "bool", "source": "lvar",
   "name": "APU_BLEED", "initial": false }
 ```
 
-Подробности — в [profile-schema.md](profile-schema.md#6-пользовательские-переменные-lvar--rpn).
+Details are in [profile-schema.md](profile-schema.md#6-custom-variables-lvar--rpn).

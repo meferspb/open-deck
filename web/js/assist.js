@@ -7,26 +7,31 @@
  */
 
 import { hydrateDonationLinks } from './core/donation-links.js';
+import { initI18n, onLocaleChange, t } from './core/i18n.js';
+
+initI18n();
 
 const $ = (id) => document.getElementById(id);
 
 const PHASES = {
-  off: 'выключен',
-  armed: 'взведён',
-  approach: 'заход',
-  flare: 'выравнивание',
-  rollout: 'пробег',
-  done: 'готово',
-  toga: 'TOGA',
+  off: 'assist.phase.off',
+  armed: 'assist.phase.armed',
+  approach: 'assist.phase.approach',
+  flare: 'assist.phase.flare',
+  rollout: 'assist.phase.rollout',
+  done: 'assist.phase.done',
+  toga: 'assist.phase.toga',
 };
 
 let status = null;
 let draggingSpeed = false;
 let warningTimer = null;
 let pollTimer = null;
+let lastLinkState = 'noData';
 
 function setLink(state, text) {
   const link = $('assist-link');
+  lastLinkState = state;
   link.dataset.state = state;
   link.textContent = text;
 }
@@ -48,7 +53,7 @@ function fmt(value, digits = 0, unit = '') {
 
 function phaseLabel(value) {
   const key = String(value || 'off');
-  return PHASES[key] ?? key;
+  return PHASES[key] ? t(PHASES[key]) : key;
 }
 
 async function request(path, options = {}) {
@@ -60,7 +65,9 @@ async function request(path, options = {}) {
   if (response.status === 401) {
     const next = window.location.pathname + window.location.search;
     window.location.replace(`/login.html?next=${encodeURIComponent(next)}`);
-    throw new Error('Требуется вход');
+    const error = new Error(t('assist.warning.loginRequired'));
+    error.code = 'login_required';
+    throw error;
   }
   const text = await response.text();
   let data = null;
@@ -68,7 +75,7 @@ async function request(path, options = {}) {
     try {
       data = JSON.parse(text);
     } catch {
-      throw new Error('Шлюз вернул ответ не в формате JSON');
+      throw new Error(t('assist.warning.nonJson'));
     }
   }
   if (!response.ok) {
@@ -79,36 +86,37 @@ async function request(path, options = {}) {
 
 function render(next) {
   status = next;
-  const t = next.telemetry || {};
+  const telemetry = next.telemetry || {};
   const taxi = next.taxi || {};
   const landing = next.landing || {};
 
   const landingBadge = $('landing-phase');
   landingBadge.dataset.phase = landing.phase || 'off';
   landingBadge.textContent = phaseLabel(landing.phase);
-  $('landing-message').textContent =
-    landing.message || 'ARM включает автопилот и режим APR.';
+  $('landing-message').textContent = landing.message || t('assist.landing.message');
 
-  $('l-ra').textContent = fmt(t.radioAltitudeFt, 0, ' ft');
-  $('l-ias').textContent = fmt(t.iasKt, 0, ' kt');
-  $('l-vs').textContent = fmt(t.verticalSpeedFpm, 0, ' fpm');
-  $('l-loc').textContent = `${fmt(t.localizerDeg, 2, '°')}${t.locValid ? '' : ' · нет'}`;
-  $('l-gs').textContent = `${fmt(t.glideSlopeDeg, 2, '°')}${t.gsValid ? '' : ' · нет'}`;
-  $('l-ap').textContent = `${t.autopilotMaster ? 'AP' : '—'} / ${t.approach ? 'APR' : '—'}`;
+  $('l-ra').textContent = fmt(telemetry.radioAltitudeFt, 0, ' ft');
+  $('l-ias').textContent = fmt(telemetry.iasKt, 0, ' kt');
+  $('l-vs').textContent = fmt(telemetry.verticalSpeedFpm, 0, ' fpm');
+  $('l-loc').textContent = `${fmt(telemetry.localizerDeg, 2, '°')}${telemetry.locValid ? '' : ` · ${t('assist.missing')}`}`;
+  $('l-gs').textContent = `${fmt(telemetry.glideSlopeDeg, 2, '°')}${telemetry.gsValid ? '' : ` · ${t('assist.missing')}`}`;
+  $('l-ap').textContent = `${telemetry.autopilotMaster ? 'AP' : '—'} / ${telemetry.approach ? 'APR' : '—'}`;
 
   const taxiBadge = $('taxi-phase');
   taxiBadge.dataset.phase = taxi.engaged ? 'engaged' : 'off';
-  taxiBadge.textContent = taxi.engaged ? 'включён' : 'выключен';
-  $('taxi-message').textContent =
-    taxi.message || 'Держит скорость и курс на земле.';
+  taxiBadge.textContent = taxi.engaged ? t('assist.taxi.engaged') : t('assist.taxi.off');
+  $('taxi-message').textContent = taxi.message || t('assist.taxi.message');
 
-  $('t-gs').textContent = fmt(t.groundSpeedKt, 1, ' kt');
-  $('t-hdg').textContent = fmt(t.headingDeg, 0, '°');
+  $('t-gs').textContent = fmt(telemetry.groundSpeedKt, 1, ' kt');
+  $('t-hdg').textContent = fmt(telemetry.headingDeg, 0, '°');
   $('t-thr').textContent = fmt(taxi.throttlePct, 1, ' %');
   $('t-rud').textContent = fmt(taxi.rudderPct, 1, ' %');
   $('t-target').textContent = `${fmt(taxi.targetSpeedKt, 0)} kt · ${fmt(taxi.targetHeadingDeg, 0)}°`;
-  $('t-brake').textContent =
-    t.parkingBrake === true ? 'стояночный' : t.parkingBrake === false ? 'снят' : '—';
+  $('t-brake').textContent = telemetry.parkingBrake === true
+    ? t('assist.brake.parking')
+    : telemetry.parkingBrake === false
+      ? t('assist.brake.released')
+      : '—';
 
   $('taxi-heading').textContent = fmt(taxi.targetHeadingDeg, 0, '°');
 
@@ -122,9 +130,9 @@ function render(next) {
   }
 
   const landingActive = Boolean(landing.active);
-  $('landing-arm').disabled = landingActive || t.onGround === true || t.onGround == null;
+  $('landing-arm').disabled = landingActive || telemetry.onGround === true || telemetry.onGround == null;
   $('landing-disarm').disabled = !landingActive;
-  $('taxi-engage').disabled = Boolean(taxi.engaged) || !t.onGround;
+  $('taxi-engage').disabled = Boolean(taxi.engaged) || !telemetry.onGround;
   $('taxi-disengage').disabled = !taxi.engaged;
 }
 
@@ -132,11 +140,11 @@ async function refresh() {
   try {
     const next = await request('/api/assist');
     render(next);
-    setLink('online', 'на связи');
+    setLink('online', t('assist.link.online'));
   } catch (error) {
-    setLink('offline', 'нет связи');
-    if (String(error?.message || '').includes('Требуется вход')) return;
-    showWarning(`Статус недоступен: ${error.message}`);
+    setLink('offline', t('assist.link.offline'));
+    if (error?.code === 'login_required') return;
+    showWarning(t('assist.warning.status', { message: error.message }));
   }
 }
 
@@ -150,7 +158,7 @@ async function action(path, body) {
     if (response?.status) render(response.status);
     if (response?.message) showWarning(response.message);
   } catch (error) {
-    if (String(error?.message || '').includes('Требуется вход')) return;
+    if (error?.code === 'login_required') return;
     showWarning(error.message);
   }
   refresh();
@@ -163,6 +171,16 @@ function schedulePoll() {
     schedulePoll();
   }, 700);
 }
+
+onLocaleChange(() => {
+  if (status) render(status);
+  const linkKey = lastLinkState === 'online'
+    ? 'assist.link.online'
+    : lastLinkState === 'offline'
+      ? 'assist.link.offline'
+      : 'assist.link.noData';
+  setLink(lastLinkState, t(linkKey));
+});
 
 $('landing-arm').addEventListener('click', () => action('/api/assist/landing', { action: 'arm' }));
 $('landing-disarm').addEventListener('click', () =>

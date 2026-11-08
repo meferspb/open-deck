@@ -5,6 +5,10 @@
  * Пароль никогда не сохраняется в localStorage и не попадает в URL.
  */
 
+import { initI18n, onLocaleChange, t } from './core/i18n.js';
+
+initI18n();
+
 const form = document.getElementById('login-form');
 const input = document.getElementById('login-password');
 const submit = document.getElementById('login-submit');
@@ -45,7 +49,15 @@ function clearError() {
 
 function setBusy(busy) {
   submit.disabled = busy;
-  submit.textContent = busy ? 'Проверяем…' : 'Войти';
+  submit.textContent = busy ? t('login.busy') : t('login.submit');
+}
+
+let gatewayVersion = '';
+
+function applyVersion() {
+  versionLabel.textContent = gatewayVersion
+    ? t('login.gatewayVersion', { version: gatewayVersion })
+    : t('login.gateway');
 }
 
 async function loadVersion() {
@@ -53,8 +65,8 @@ async function loadVersion() {
     const response = await fetch('/api/health', { headers: { Accept: 'application/json' } });
     if (!response.ok) return;
     const health = await response.json();
-    const version = typeof health.version === 'string' ? health.version : '';
-    versionLabel.textContent = version ? `локальный шлюз · v${version}` : 'локальный шлюз';
+    gatewayVersion = typeof health.version === 'string' ? health.version : '';
+    applyVersion();
   } catch {
     // Версия — необязательная деталь.
   }
@@ -63,7 +75,7 @@ async function loadVersion() {
 async function loadDonation() {
   try {
     const response = await fetch('/api/donation', { headers: { Accept: 'application/json' } });
-    if (!response.ok) throw new Error('нет данных');
+    if (!response.ok) throw new Error(t('login.needData'));
     const config = await response.json();
     const links = Array.isArray(config?.links) ? config.links : [];
     const author = typeof config?.author === 'string' && config.author ? config.author : '';
@@ -98,21 +110,21 @@ async function loadDonation() {
     if (!rendered && !author) {
       const empty = document.createElement('div');
       empty.className = 'login-donation__empty';
-      empty.textContent = 'Реквизиты поддержки не настроены в config/donation.json.';
+      empty.textContent = t('login.donationNotConfigured');
       donationBody.append(empty);
     }
   } catch {
     donationBody.replaceChildren();
     const empty = document.createElement('div');
     empty.className = 'login-donation__empty';
-    empty.textContent = 'Реквизиты поддержки недоступны.';
+    empty.textContent = t('login.donationUnavailable');
     donationBody.append(empty);
   }
 }
 
 function showAuthenticated(next) {
-  title.textContent = 'Вы уже вошли';
-  note.textContent = 'Сессия активна. Можно открыть панель или выйти и войти другим паролем.';
+  title.textContent = t('login.authenticatedTitle');
+  note.textContent = t('login.authenticatedNote');
   form.hidden = true;
   actions.hidden = false;
   continueLink.href = next;
@@ -133,7 +145,7 @@ async function logout() {
     await fetch('/api/auth/logout', { method: 'POST', body: '{}', headers: { 'Content-Type': 'application/json' } });
     window.location.replace('/login.html');
   } catch {
-    showError('Не удалось выйти: нет связи со шлюзом.');
+    showError(t('login.logoutFailed'));
   } finally {
     logoutButton.disabled = false;
   }
@@ -144,7 +156,7 @@ async function onSubmit(event) {
   clearError();
   const password = input.value;
   if (password.length < 6) {
-    showError('Пароль должен быть не короче 6 символов.');
+    showError(t('login.passwordTooShort'));
     input.focus();
     return;
   }
@@ -165,15 +177,15 @@ async function onSubmit(event) {
     }
     if (response.status === 429) {
       const seconds = Number(payload?.retryAfter) || 60;
-      showError(`Слишком много неверных попыток. Попробуйте через ${seconds} с.`);
+      showError(t('login.tooManyAttempts', { seconds }));
     } else if (response.status === 401) {
-      showError('Неверный пароль.');
+      showError(t('login.wrongPassword'));
     } else {
-      showError(payload?.error ?? `Шлюз ответил ошибкой ${response.status}.`);
+      showError(payload?.error ?? t('login.gatewayError', { status: response.status }));
     }
     input.select();
   } catch {
-    showError('Не удалось связаться со шлюзом. Проверьте, что он запущен.');
+    showError(t('login.networkError'));
   } finally {
     setBusy(false);
   }
@@ -185,7 +197,7 @@ async function boot() {
   const next = nextTarget();
   const params = new URLSearchParams(window.location.search);
   if (params.get('error') === 'pair') {
-    showForm('QR-код устарел или уже использован. Введите пароль вручную.');
+    showForm(t('login.pairExpired'));
     return;
   }
 
@@ -202,15 +214,29 @@ async function boot() {
     }
     showForm();
   } catch {
-    showForm('Не удалось проверить статус входа. Обновите страницу.');
+    showForm(t('login.statusFailed'));
   }
 }
+
+onLocaleChange(() => {
+  if (actions.hidden) {
+    title.textContent = t('login.title');
+    note.textContent = t('login.note');
+  } else {
+    title.textContent = t('login.authenticatedTitle');
+    note.textContent = t('login.authenticatedNote');
+  }
+  submit.textContent = submit.disabled ? t('login.busy') : t('login.submit');
+  reveal.textContent = input.type === 'text' ? t('login.revealHide') : t('login.revealShow');
+  applyVersion();
+  loadDonation();
+});
 
 form.addEventListener('submit', onSubmit);
 reveal.addEventListener('click', () => {
   const visible = input.type === 'text';
   input.type = visible ? 'password' : 'text';
-  reveal.textContent = visible ? 'показать' : 'скрыть';
+  reveal.textContent = visible ? t('login.revealShow') : t('login.revealHide');
   reveal.setAttribute('aria-pressed', String(!visible));
   input.focus();
 });

@@ -17,6 +17,9 @@ import { createDonation } from './ui/donation.js';
 import { createConnect } from './ui/connect.js';
 import { createComfort } from './ui/comfort.js';
 import { verifyUiIntegrity, watchIntegrity } from './ui/integrity.js';
+import { initI18n, onLocaleChange, t } from './core/i18n.js';
+
+initI18n();
 
 const DEVICE_KEY = 'open-deck:device';
 const PROFILE_KEY = 'open-deck:profile';
@@ -46,7 +49,7 @@ let stopWatch = null;
 /** @param {string} id */
 function byId(id) {
   const element = document.getElementById(id);
-  if (!element) throw new Error(`Не найден элемент #${id}`);
+  if (!element) throw new Error(t('error.elementMissing', { id }));
   return element;
 }
 
@@ -74,10 +77,22 @@ const panelView = createPanelView({
   panel: byId('panel'),
   getState: () => store.get().telemetry,
   command: (key, value) => {
-    if (!socket) return Promise.reject(new Error('Нет соединения с шлюзом'));
+    if (!socket) return Promise.reject(new Error(t('connection.noGateway')));
     return socket.command(key, value);
   },
   notify: (message) => shell.showToast(message, 'danger'),
+});
+
+onLocaleChange(() => {
+  const { deviceId, profile } = store.get();
+  const preset = getPreset(deviceId);
+  shell.setStatus({ layoutLabel: `${t(`device.${preset.id}`)} · ${preset.width}×${preset.height}` });
+  if (profile) {
+    shell.setStatus({
+      profileLabel: `${profile.name} · ${t('panel.widgetCount', { count: profile.widgets?.length ?? 0 })}`,
+    });
+    panelView.mount(profile);
+  }
 });
 
 const donation = createDonation({
@@ -145,7 +160,7 @@ function setDevice(id, persist = false) {
   shell.setDevice(preset.id);
   stage.setPreset(preset.id);
   panelView.setDeviceClass(preset.id);
-  shell.setStatus({ layoutLabel: `${preset.title} · ${preset.width}×${preset.height}` });
+  shell.setStatus({ layoutLabel: `${t(`device.${preset.id}`)} · ${preset.width}×${preset.height}` });
   if (persist) {
     try {
       localStorage.setItem(DEVICE_KEY, preset.id);
@@ -184,16 +199,18 @@ async function selectProfile(id, fromUser) {
   try {
     const profiles = store.get().profiles ?? [];
     const target = profiles.find((profile) => profile.id === id) ?? profiles[0];
-    if (!target) throw new Error('На шлюзе нет доступных профилей');
+    if (!target) throw new Error(t('error.noProfilesAvailable'));
 
-    shell.setPanelState({ visible: true, title: `Загрузка «${target.name}»…`, hint: '' });
+    shell.setPanelState({ visible: true, title: t('panel.loadingProfile', { name: target.name }), hint: '' });
     const profile = await api.getProfile(target.id);
 
     store.set({ profileId: target.id, profile });
     shell.setProfiles(profiles, target.id);
     panelView.mount(profile);
     shell.setPanelState({ visible: false });
-    shell.setStatus({ profileLabel: `${profile.name} · ${profile.widgets?.length ?? 0} приб.` });
+    shell.setStatus({
+      profileLabel: `${profile.name} · ${t('panel.widgetCount', { count: profile.widgets?.length ?? 0 })}`,
+    });
 
     try {
       localStorage.setItem(PROFILE_KEY, target.id);
@@ -234,9 +251,9 @@ function followAircraft(incoming) {
   selectProfile(incoming, false)
     .then((profile) => {
       if (!profile) return;
-      shell.showToast(`Борт определён автоматически: ${target.name}`, 'info');
+      shell.showToast(t('toast.aircraftDetected', { name: target.name }), 'info');
       shell.setStatus({
-        profileLabel: `${profile.name} · ${profile.widgets?.length ?? 0} приб. · авто`,
+        profileLabel: `${profile.name} · ${t('panel.widgetCount', { count: profile.widgets?.length ?? 0 })} · ${t('panel.auto')}`,
       });
     })
     .catch((error) => console.warn('auto profile switch failed', error));
@@ -270,13 +287,15 @@ function handleMessage(message) {
       const provider = message.sim?.provider;
       if (provider && provider !== lastProvider) {
         lastProvider = provider;
-        shell.setStatus({ gateway: `${provider} · ${message.sim?.connected ? 'online' : 'offline'}` });
+        shell.setStatus({
+          gateway: `${provider} · ${message.sim?.connected ? t('common.online') : t('common.offline')}`,
+        });
       }
       const title = message.sim?.aircraftTitle;
       if (title && title !== lastAircraftTitle) {
         lastAircraftTitle = title;
         shell.setStatus({
-          gateway: `${provider ?? ''} · ${message.sim?.connected ? 'online' : 'offline'} · ${title}`.trim(),
+          gateway: `${provider ?? ''} · ${message.sim?.connected ? t('common.online') : t('common.offline')} · ${title}`.trim(),
         });
       }
 
@@ -317,7 +336,7 @@ function handleMessage(message) {
     }
 
     case 'error': {
-      shell.showToast(message.error ?? 'Шлюз вернул ошибку', 'danger');
+      shell.showToast(message.error ?? t('error.gateway'), 'danger');
       break;
     }
 
@@ -331,7 +350,11 @@ setInterval(() => {
   const rate = telemetryFrames;
   telemetryFrames = 0;
   const latency = socket?.latencyMs;
-  shell.setStatus({ rate: `${rate} Гц${latency != null ? ` · RTT ${latency} мс` : ''}` });
+  shell.setStatus({
+    rate: latency != null
+      ? t('panel.rateLatency', { rate, latency })
+      : t('panel.rateValue', { rate }),
+  });
 }, 1000);
 
 // ---------------------------------------------------------------------
@@ -354,7 +377,7 @@ function lockUi(reason, code) {
   socket = null;
   panelView.destroy();
   shell.setLocked(true, { reason, code });
-  shell.setConnection({ state: 'offline', detail: 'интерфейс заблокирован' });
+  shell.setConnection({ state: 'offline', detail: t('connection.uiLocked') });
 }
 
 async function retryIntegrity() {
@@ -374,13 +397,18 @@ async function retryIntegrity() {
 // ---------------------------------------------------------------------
 async function start() {
   if (locked) return;
-  shell.setPanelState({ visible: true, title: 'Загрузка профилей…', hint: 'Запрашиваем список профилей у шлюза', retry: false });
+  shell.setPanelState({
+    visible: true,
+    title: t('panel.loadingProfilesTitle'),
+    hint: t('panel.loadingProfilesHint'),
+    retry: false,
+  });
 
   try {
     const payload = await api.listProfiles();
     const profiles = payload?.profiles ?? [];
     if (!profiles.length) {
-      throw new Error('На шлюзе нет профилей — добавьте JSON-файл в каталог profiles/');
+      throw new Error(t('error.noProfiles'));
     }
 
     store.set({ profiles });
@@ -417,11 +445,11 @@ async function start() {
   } catch (error) {
     shell.setPanelState({
       visible: true,
-      title: 'Не удалось загрузить панель',
-      hint: error?.message ?? 'Неизвестная ошибка',
+      title: t('panel.loadFailedTitle'),
+      hint: error?.message ?? t('error.unknown'),
       retry: true,
     });
-    shell.setConnection({ state: 'offline', detail: 'шлюз недоступен' });
+    shell.setConnection({ state: 'offline', detail: t('connection.gatewayUnavailable') });
   }
 }
 
@@ -461,5 +489,10 @@ window.addEventListener('beforeunload', () => socket?.stop());
 
 boot().catch((error) => {
   console.error(error);
-  shell.setPanelState({ visible: true, title: 'Ошибка запуска клиента', hint: String(error?.message ?? error), retry: true });
+  shell.setPanelState({
+    visible: true,
+    title: t('panel.bootErrorTitle'),
+    hint: String(error?.message ?? error),
+    retry: true,
+  });
 });

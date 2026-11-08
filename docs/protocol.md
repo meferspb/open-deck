@@ -1,67 +1,70 @@
-# 🔌 Сетевой протокол Open Deck for MSFS
+# 🔌 Open Deck for MSFS Network Protocol
 
-Всё общение идёт по одному TCP-порту (по умолчанию `8760`):
+All communication goes over a single TCP port (`8760` by default):
 
-- **HTTP-статика** — файлы `web/` (панель, редактор, вход, ассистент);
-- **REST API** — профили, телеметрия, команды, ассистент, сборка APK;
-- **WebSocket `/ws`** — поток телеметрии и подтверждения команд.
+- **HTTP static files** — files from `web/` (panel, editor, login, assist);
+- **REST API** — profiles, telemetry, commands, assist, APK build;
+- **WebSocket `/ws`** — telemetry stream and command acknowledgements.
 
-## 0. Соглашения
+## 0. Conventions
 
-- Базовый URL: `http://<хост>:<порт>`; все пути относительные.
-- JSON — UTF-8, `Content-Type: application/json; charset=utf-8`.
-- Ответы API: `Cache-Control: no-store`; статика: `no-cache`.
-- **CORS намеренно выключен**: API рассчитано на same-origin клиентов,
-  сторонняя страница не может прочитать ответы.
-- **Same-origin защита**: если браузер прислал `Origin`, его хост и effective-порт
-  должны совпадать с `Host`. Иначе `POST`/`PUT` и WebSocket получают `403`
-  `origin_not_allowed`. Клиенты без `Origin` (Android, curl) допускаются.
-- **Host allowlist**: `Host` должен указывать на localhost, имя машины, FQDN,
-  локальный IP или имя из `--allow-host`; иначе `403 host_not_allowed`.
-  Это защита от DNS rebinding.
-- Лимит тела запроса — **2 МиБ**; неизвестный `Content-Length` → `411`.
-- Пароль (если включён) и сессии описаны в разделе 2.
-- Версия протокола в биконе автообнаружения — `protocol: 1`.
+- Base URL: `http://<host>:<port>`; all paths are relative.
+- JSON is UTF-8, `Content-Type: application/json; charset=utf-8`.
+- API responses: `Cache-Control: no-store`; static files: `no-cache`.
+- **CORS is intentionally disabled**: the API is designed for same-origin
+  clients, and a third-party page cannot read the responses.
+- **Same-origin protection**: if the browser sends `Origin`, its host and
+  effective port must match `Host`. Otherwise `POST`/`PUT` and WebSocket
+  requests receive `403` `origin_not_allowed`. Clients without `Origin`
+  (Android, curl) are allowed.
+- **Host allowlist**: `Host` must point to localhost, the machine name, FQDN,
+  a local IP, or a name from `--allow-host`; otherwise `403 host_not_allowed`.
+  This is protection against DNS rebinding.
+- Request body limit — **2 MiB**; unknown `Content-Length` → `411`.
+- The password (if enabled) and sessions are described in section 2.
+- The protocol version in the autodiscovery beacon is `protocol: 1`.
 
 ---
 
-## 1. Доступ: публично и под сессией
+## 1. Access: public and under a session
 
-Если пароль не настроен, доступно всё. Если настроен, без сессии открыты
-только страница входа, её файлы и служебные данные, нужные лицензии:
+If no password is configured, everything is available. If one is configured,
+only the login page, its files, and the service data required by the license are
+open without a session:
 
-| Путь | Доступ | Назначение |
+| Path | Access | Purpose |
 | --- | --- | --- |
-| `/login.html`, `/js/login.js`, `/css/*`, `/img/*` | публично | страница входа и оформление |
-| `/api/auth/status`, `/api/auth/login`, `/api/auth/logout` | публично | вход/выход |
-| `/api/health` | публично | «это шлюз?», версия, признак пароля |
-| `/api/integrity` | публично | проверка SHA-256 интерфейса |
-| `/api/donation` | публично | блок поддержки автора |
-| `/license` | публично | текст лицензии |
-| всё остальное | под сессией | профили, телеметрия, команды, QR, APK, ассистент, `/ws` |
+| `/login.html`, `/js/login.js`, `/css/*`, `/img/*` | public | login page and styling |
+| `/api/auth/status`, `/api/auth/login`, `/api/auth/logout` | public | login/logout |
+| `/api/health` | public | "is this the gateway?", version, password flag |
+| `/api/integrity` | public | UI SHA-256 check |
+| `/api/donation` | public | author support block |
+| `/license` | public | license text |
+| everything else | session required | profiles, telemetry, commands, QR, APK, assist, `/ws` |
 
-Без сессии:
+Without a session:
 
-- API отвечает `401` с `{"error","code":"unauthorized"}` и
+- the API responds with `401` and `{"error","code":"unauthorized"}`, plus
   `WWW-Authenticate: Bearer realm="open-deck"`;
-- HTML-страницы отвечают `302` на `/login.html?next=<путь>`;
-- WebSocket handshake отклоняется с `401` (браузер покажет ошибку соединения).
+- HTML pages respond with `302` to `/login.html?next=<path>`;
+- the WebSocket handshake is rejected with `401` (the browser will show a
+  connection error).
 
 ---
 
-## 2. Аутентификация
+## 2. Authentication
 
-Пароль — от 6 символов, хранится как PBKDF2-хеш в `config/auth.json`
-(210 000 итераций, случайная соль). Сессия — 32 случайных байта, TTL 12 часов,
-продлевается при обращении.
+The password is at least 6 characters and is stored as a PBKDF2 hash in
+`config/auth.json` (210,000 iterations, random salt). A session is 32 random
+bytes with a 12-hour TTL, extended on access.
 
-Токен принимается тремя способами:
+The token is accepted in three ways:
 
-| Способ | Где | Кому |
+| Method | Where | For whom |
 | --- | --- | --- |
-| Cookie `open_deck_session` | `HttpOnly; SameSite=Lax` | браузер и Android WebView |
-| `Authorization: Bearer <token>` | заголовок | нативные клиенты |
-| `?token=<token>` | только `/ws` | WebSocket без cookie |
+| Cookie `open_deck_session` | `HttpOnly; SameSite=Lax` | browser and Android WebView |
+| `Authorization: Bearer <token>` | header | native clients |
+| `?token=<token>` | `/ws` only | WebSocket without a cookie |
 
 ### `GET /api/auth/status`
 
@@ -72,45 +75,45 @@
 ### `POST /api/auth/login`
 
 ```json
-{ "password": "секрет" }
+{ "password": "secret" }
 ```
 
-Успех — `200`, cookie и токен:
+Success — `200`, cookie, and token:
 
 ```json
-{ "ok": true, "required": true, "token": "<43 символа>", "expiresIn": 43200 }
+{ "ok": true, "required": true, "token": "<43 characters>", "expiresIn": 43200 }
 ```
 
-Ошибки:
+Errors:
 
-| Статус | `code` | Когда |
+| Status | `code` | When |
 | --- | --- | --- |
-| `400` | `missing_password` | нет `password` |
-| `401` | `bad_password` | неверный пароль |
-| `429` | `rate_limited` | после 5 неудач с адреса; есть `Retry-After` |
+| `400` | `missing_password` | no `password` |
+| `401` | `bad_password` | incorrect password |
+| `429` | `rate_limited` | after 5 failures from an address; includes `Retry-After` |
 
-Если пароль не настроен, ответ `{"ok":true,"required":false}`.
+If no password is configured, the response is `{"ok":true,"required":false}`.
 
 ### `POST /api/auth/logout`
 
-Отзывает текущую сессию и очищает cookie: `{"ok": true}`.
+Revokes the current session and clears the cookie: `{"ok": true}`.
 
 ### `POST /api/pair`
 
-Только с сессией. Одноразовый токен для входа с телефона:
+Session required. One-time token for login from a phone:
 
 ```json
 { "url": "http://192.168.1.10:8760/?pair=…", "token": "…", "expiresIn": 600, "required": true }
 ```
 
-Переход по `url` обменивает токен на обычную сессию (cookie) и редиректит на
-`/`; повторное использование даёт `/login.html?error=pair`.
+Following `url` exchanges the token for a regular session (cookie) and redirects
+to `/`; reusing it returns `/login.html?error=pair`.
 
 ---
 
 ## 3. REST API
 
-Ниже `{id}` — идентификатор профиля (`[a-z0-9][a-z0-9-]{1,63}`).
+Below, `{id}` is a profile identifier (`[a-z0-9][a-z0-9-]{1,63}`).
 
 ### `GET /api/health`
 
@@ -142,22 +145,22 @@
 
 ### `GET /api/profiles/{id}`
 
-Полный профиль (см. [profile-schema.md](profile-schema.md)).
-`404 not_found` — нет файла; `422 invalid_profile` — не проходит валидацию.
+The full profile (see [profile-schema.md](profile-schema.md)).
+`404 not_found` — no file; `422 invalid_profile` — validation failed.
 
 ### `PUT /api/profiles/{id}`
 
-Тело — полный JSON-профиль; `id` в теле обязан совпадать с URL
-(`400 id_mismatch`). Ответ `{"ok": true, "profile": {…}}`.
+The body is a complete JSON profile; the `id` in the body must match the URL
+(`400 id_mismatch`). Response `{"ok": true, "profile": {…}}`.
 
 ### `GET /api/telemetry`
 
-Последний кадр (тот же формат, что `telemetry` в WebSocket).
-`seq` растёт; `values` содержит все ключи реестра.
+The latest frame (the same format as `telemetry` over WebSocket).
+`seq` grows; `values` contains all registry keys.
 
 ### `GET /api/telemetry/variables`
 
-Каталог переменных:
+Variable catalog:
 
 ```json
 { "variables": [
@@ -166,7 +169,7 @@
 ] }
 ```
 
-Полный человекочитаемый каталог — [telemetry.md](telemetry.md).
+The complete human-readable catalog is in [telemetry.md](telemetry.md).
 
 ### `GET /api/integrity`
 
@@ -177,13 +180,13 @@
 
 ### `GET /api/donation`
 
-Реквизиты поддержки автора из `config/donation.json` (единственный источник —
-конфигурация на хосте). Автор — Viktor Krasnikov, Donat —
+Author support details from `config/donation.json` (the only source is the host
+configuration). Author — Viktor Krasnikov, Donat —
 [`https://taps.uz/open_deck_fs`](https://taps.uz/open_deck_fs).
 
 ### `GET /api/connect`
 
-Адреса для телефона/планшета:
+Addresses for phone/tablet:
 
 ```json
 {
@@ -199,13 +202,14 @@
 }
 ```
 
-Сортировка: `192.168.*`, затем `10.*`, `172.16–31.*`, link-local, loopback.
+Sorting: `192.168.*`, then `10.*`, `172.16–31.*`, link-local, loopback.
 
 ### `GET /api/qr.svg?text=…&scale=6&border=4`
 
-SVG с QR-кодом (до 512 символов; генерируется на хосте, без библиотек).
-`400 missing_text` — нет `text`; `400` (код `error`) — `scale`/`border` не
-числа; `422 qr_too_long` — текст не помещается в поддерживаемые версии QR.
+An SVG with a QR code (up to 512 characters; generated on the host, without
+libraries). `400 missing_text` — no `text`; `400` (`code` = `error`) —
+`scale`/`border` are not numbers; `422 qr_too_long` — the text does not fit into
+the supported QR versions.
 
 ### `POST /api/sim/command`
 
@@ -213,11 +217,11 @@ SVG с QR-кодом (до 512 символов; генерируется на �
 { "key": "power.batteryMaster", "value": true }
 ```
 
-Успех — `200` с `{"type":"ack","id":…,"key":…,"ok":true,"value":…}`.
-Ошибки: `400` с `code` = `invalid_key`, `not_writable`, `invalid_value`,
-`rate_limited` или `sim_error`; `409 sim_rejected` — симулятор отказал.
-Для переменных с событием-параметром значение масштабируется
-(проценты → 0..16383).
+Success — `200` with `{"type":"ack","id":…,"key":…,"ok":true,"value":…}`.
+Errors: `400` with `code` = `invalid_key`, `not_writable`, `invalid_value`,
+`rate_limited`, or `sim_error`; `409 sim_rejected` — the simulator rejected it.
+For variables with a parameter event, the value is scaled
+(percent → 0..16383).
 
 ### `POST /api/sim/aircraft`
 
@@ -225,13 +229,14 @@ SVG с QR-кодом (до 512 символов; генерируется на �
 { "profileId": "cessna-172-sixpack" }
 ```
 
-Ответ: `{"ok": true, "profileId": "…", "aircraftTitle": "…", "pinned": false}`.
-`pinned: true` — провайдер не умеет менять борт (SimConnect), выбор закреплён
-до смены самолёта в симуляторе. `404` — профиля нет.
+Response: `{"ok": true, "profileId": "…", "aircraftTitle": "…", "pinned": false}`.
+`pinned: true` — the provider cannot switch aircraft (SimConnect), so the
+selection is pinned until the aircraft changes in the simulator. `404` — no such
+profile.
 
-### Ассистент
+### Assist
 
-`GET /api/assist` — состояние контуров:
+`GET /api/assist` — loop state:
 
 ```json
 {
@@ -252,58 +257,60 @@ SVG с QR-кодом (до 512 символов; генерируется на �
 
 `POST /api/assist/taxi`:
 
-| `action` | Поля | Смысл |
+| `action` | Fields | Meaning |
 | --- | --- | --- |
-| `engage` | — | включить удержание скорости/курса (только на земле) |
-| `disengage` | — | выключить |
-| `stop` | — | тяга 0, стояночный тормоз |
-| `speed` | `value` (3…25) | задать скорость руления |
-| `heading` | `delta` (±) | повернуть заданный курс |
+| `engage` | — | enable speed/heading hold (ground only) |
+| `disengage` | — | disable |
+| `stop` | — | throttle 0, parking brake |
+| `speed` | `value` (3…25) | set the taxi speed |
+| `heading` | `delta` (±) | turn the target heading |
 
 `POST /api/assist/landing`: `action` = `arm` (AP + APR), `disarm`, `toga`.
 
-Ответ: `{"ok": true|false, "message": "…", "status": {…}}`.
-`200` — действие выполнено; `409` — отказ (не на земле, мала скорость,
-нет связи с MSFS, неизвестное действие).
+Response: `{"ok": true|false, "message": "…", "status": {…}}`.
+`200` — action performed; `409` — rejected (not on the ground, speed too low,
+no connection to MSFS, unknown action).
 
-### Сборка Android APK
+### Android APK build
 
 - `GET /api/android/settings` — `{settings, toolchain, apk, prebuiltApk}`.
-- `PUT /api/android/settings` — сохранить настройки (имя, package id, версия,
-  адрес шлюза, пути к инструментам). `422 invalid_settings`.
-- `GET /api/android/build` — статус задачи:
+- `PUT /api/android/settings` — save settings (name, package id, version,
+  gateway address, tool paths). `422 invalid_settings`.
+- `GET /api/android/build` — job status:
   `{jobId, state, running, log, apk, error}` (`state`: `idle|running|success|failed`).
-- `POST /api/android/build` — запуск; `202` с `jobId`, `409 build_running`,
+- `POST /api/android/build` — start; `202` with `jobId`, `409 build_running`,
   `422 invalid_settings`.
-- `GET /api/android/apk` — скачать APK (`application/vnd.android.package-archive`);
-  если сборки нет — готовый APK из дистрибутива, иначе `404 apk_missing`.
+- `GET /api/android/apk` — download the APK (`application/vnd.android.package-archive`);
+  if there is no build, the ready APK from the distribution, otherwise
+  `404 apk_missing`.
 
-### Статика и служебные страницы
+### Static files and service pages
 
-- `GET /` — панель (`index.html`), `GET /editor.html` — редактор,
-  `GET /android.html` — сборка APK, `GET /assist.html` — ассистент,
-  `GET /login.html` — вход.
-- `GET /license` — текст лицензии.
-- `HEAD` — только для статики; для `/api/*` — `405`.
-- `OPTIONS` — `204` без CORS-заголовков.
+- `GET /` — panel (`index.html`), `GET /editor.html` — editor,
+  `GET /android.html` — APK build, `GET /assist.html` — assist,
+  `GET /login.html` — login.
+- `GET /license` — license text.
+- `HEAD` — static files only; for `/api/*` — `405`.
+- `OPTIONS` — `204` without CORS headers.
 
 ---
 
 ## 4. WebSocket `/ws`
 
-Handshake — RFC 6455, версия 13. Только текстовые сообщения; бинарные
-закрываются с `1002`.
+Handshake — RFC 6455, version 13. Text messages only; binary messages are
+closed with `1002`.
 
-### 4.1. Авторизация
+### 4.1. Authorization
 
-Токен берётся из cookie, `Authorization: Bearer` или `?token=` (для `/ws`).
-Без действующей сессии — HTTP `401`, upgrade не выполняется. Одноразовый
-pairing-токен здесь недействителен: он принимается только через `/?pair=`.
-При несовпадении `Origin` и `Host` — HTTP `403`, upgrade не выполняется.
+The token is taken from a cookie, `Authorization: Bearer`, or `?token=` (for
+`/ws`). Without a valid session — HTTP `401`, and the upgrade is not performed.
+A one-time pairing token is not valid here: it is accepted only through
+`/?pair=`. If `Origin` and `Host` do not match — HTTP `403`, and the upgrade is
+not performed.
 
-### 4.2. Сервер → клиент
+### 4.2. Server → client
 
-#### `hello` — первое сообщение
+#### `hello` — first message
 
 ```json
 {
@@ -312,11 +319,11 @@ pairing-токен здесь недействителен: он принима�
   "server": { "name": "Open Deck for MSFS", "version": "0.1.0",
               "telemetryHz": 30.0, "uptimeSec": 1.2 },
   "profiles": [ … ],
-  "state": { /* полный кадр telemetry */ }
+  "state": { /* full telemetry frame */ }
 }
 ```
 
-#### `telemetry` — периодически (`telemetryHz` раз в секунду)
+#### `telemetry` — periodically (`telemetryHz` times per second)
 
 ```json
 {
@@ -329,10 +336,10 @@ pairing-токен здесь недействителен: он принима�
 }
 ```
 
-- `seq` монотонен — по нему видно потери кадров;
-- `values` всегда содержит все ключи реестра. `null` означает «данных нет»:
-  SimVar не принят SimConnect или телеметрия устарела. Клиент показывает
-  прочерк, а не подставляет ноль.
+- `seq` is monotonic — it reveals frame loss;
+- `values` always contains all registry keys. `null` means "no data":
+  the SimVar was not accepted by SimConnect or the telemetry is stale. The client
+  shows a dash rather than substituting zero.
 
 #### `aircraft`
 
@@ -340,7 +347,7 @@ pairing-токен здесь недействителен: он принима�
 { "type": "aircraft", "profileId": "cessna-172-sixpack", "aircraftTitle": "…" }
 ```
 
-Приходит после смены борта/автоопределения, чтобы клиент переключил профиль.
+Arrives after an aircraft change/autodetection so the client switches profiles.
 
 #### `ack`
 
@@ -351,74 +358,74 @@ pairing-токен здесь недействителен: он принима�
 
 #### `pong`
 
-Ответ на `ping`: `{ "type": "pong", "t": <эхо>, "ts": <unix ms> }`.
+Response to `ping`: `{ "type": "pong", "t": <echo>, "ts": <unix ms> }`.
 
 #### `error`
 
 `{ "type": "error", "code": "bad_json"|"unknown_type", "error": "…" }`.
 
-### 4.3. Клиент → сервер
+### 4.3. Client → server
 
 ```json
 { "type": "ping", "t": 12345.6 }
 { "type": "command", "id": "c1", "key": "power.batteryMaster", "value": true }
 ```
 
-`id` произвольный; сервер вернёт его в `ack`.
+`id` is arbitrary; the server returns it in the `ack`.
 
-### 4.4. Коды `ack`
+### 4.4. `ack` codes
 
-| `code` | Смысл |
+| `code` | Meaning |
 | --- | --- |
-| `invalid_key` | пустой/неизвестный ключ |
-| `not_writable` | переменная только для чтения |
-| `invalid_value` | значение не приводится к типу |
-| `rate_limited` | больше 30 команд в секунду с WebSocket-клиента или IP для REST |
-| `sim_rejected` | симулятор отклонил команду |
-| `sim_error` | внутренняя ошибка провайдера |
+| `invalid_key` | empty/unknown key |
+| `not_writable` | read-only variable |
+| `invalid_value` | value cannot be coerced to the type |
+| `rate_limited` | more than 30 commands per second from a WebSocket client or IP for REST |
+| `sim_rejected` | the simulator rejected the command |
+| `sim_error` | internal provider error |
 
-### 4.5. Лимиты и поведение
+### 4.5. Limits and behavior
 
-- Максимальный размер сообщения — 256 КиБ; больше — `1002`.
-- На клиента — очередь 8 кадров телеметрии; при переполнении старые
-  выбрасываются (медленный клиент не тормозит остальных).
-- Управляющие фреймы (ping/pong/close) не фрагментируются и ≤125 байт.
-- Идле-таймаут чтения — 90 с; клиент шлёт `ping` каждые 20 с.
-- Закрытие: `1000` — нормальное, `1002` — нарушение протокола.
+- Maximum message size — 256 KiB; larger — `1002`.
+- Per client — a queue of 8 telemetry frames; on overflow the oldest are
+  dropped (a slow client does not slow down the others).
+- Control frames (ping/pong/close) are not fragmented and are ≤125 bytes.
+- Read idle timeout — 90 s; the client sends `ping` every 20 s.
+- Close: `1000` — normal, `1002` — protocol violation.
 
-### 4.6. Рекомендации клиенту
+### 4.6. Client recommendations
 
-- Визуальное состояние — по `telemetry.values`, не по `ack`.
-- Реконнект с backoff (500 мс → 8 с, jitter); если сообщений нет 45 с —
-  считать соединение «полуоткрытым» и переподключаться.
-- Не блокировать UI: показать «ожидание», откатить при `ok:false`/таймауте.
+- Visual state comes from `telemetry.values`, not from `ack`.
+- Reconnect with backoff (500 ms → 8 s, jitter); if no messages arrive for 45 s —
+  treat the connection as "half-open" and reconnect.
+- Do not block the UI: show "waiting", roll back on `ok:false`/timeout.
 
 ---
 
-## 5. Вход по QR (pairing)
+## 5. QR login (pairing)
 
 ```
-Телефон (нет сессии)                    Шлюз
-        │  GET /?pair=<одноразовый токен> │
-        ├────────────────────────────────►│
-        │                                 │ проверка токена (10 мин, один раз)
+Phone (no session)                      Gateway
+        │  GET /?pair=<one-time token>   │
+        ├───────────────────────────────►│
+        │                                │ token check (10 min, once)
         │  302 / + Set-Cookie open_deck_session  │
-        │◄────────────────────────────────┤
-        │  GET / (с cookie)               │
-        └────────────────────────────────►│ панель
+        │◄───────────────────────────────┤
+        │  GET / (with cookie)           │
+        └───────────────────────────────►│ panel
 ```
 
-QR-код рисует сам шлюз (`/api/qr.svg`); токен создаёт `POST /api/pair`
-(нужна сессия). Так телефон входит без ввода пароля. Токен одноразовый и
-не является сессией: попытка использовать его как cookie или Bearer даёт
-`401`, а TTL не продлевается.
+The QR code is drawn by the gateway itself (`/api/qr.svg`); the token is created
+by `POST /api/pair` (session required). This way the phone logs in without
+entering a password. The token is one-time and is not a session: an attempt to
+use it as a cookie or Bearer token returns `401`, and its TTL is not extended.
 
 ---
 
-## 6. Автообнаружение (UDP broadcast)
+## 6. Autodiscovery (UDP broadcast)
 
-Хост рассылает JSON-бикон на UDP-порт `8761` каждые 3 секунды (для Android и
-нативных клиентов; браузер UDP не умеет).
+The host sends a JSON beacon to UDP port `8761` every 3 seconds (for Android and
+native clients; browsers do not support UDP).
 
 ```json
 {
@@ -434,18 +441,18 @@ QR-код рисует сам шлюз (`/api/qr.svg`); токен создаё�
 }
 ```
 
-| Поле | Описание |
+| Field | Description |
 | --- | --- |
-| `type` | всегда `open-deck-msfs` |
-| `protocol` | версия схемы бикона |
-| `name` | имя хоста |
-| `httpPort` | порт HTTP/WebSocket |
-| `telemetryHz` | частота телеметрии |
-| `profiles` | доступные профили |
-| `auth` | есть только при включённом пароле (`true`) |
-| `ts` | unix-время |
+| `type` | always `open-deck-msfs` |
+| `protocol` | beacon schema version |
+| `name` | host name |
+| `httpPort` | HTTP/WebSocket port |
+| `telemetryHz` | telemetry rate |
+| `profiles` | available profiles |
+| `auth` | present only when a password is enabled (`true`) |
+| `ts` | Unix time |
 
-Проверка вручную:
+Manual check:
 
 ```powershell
 python -m msfs_gateway.discovery --listen
@@ -453,45 +460,45 @@ python -m msfs_gateway.discovery --listen
 
 ---
 
-## 7. Ошибки HTTP
+## 7. HTTP errors
 
-Формат: `{"error": "текст", "code": "машинный_код"}`.
+Format: `{"error": "text", "code": "machine_code"}`.
 
-| Статус | Типичные коды |
+| Status | Typical codes |
 | --- | --- |
 | `400` | `bad_request`, `bad_json`, `invalid_value`, `id_mismatch`, `missing_password` |
 | `401` | `unauthorized`, `bad_password` |
 | `404` | `not_found`, `apk_missing` |
-| `409` | `build_running`, `sim_rejected`, отказы ассистента |
+| `409` | `build_running`, `sim_rejected`, assist rejections |
 | `411` | `length_required` |
 | `413` | `too_large` |
 | `422` | `invalid_profile`, `invalid_settings`, `qr_too_long` |
 | `429` | `rate_limited` |
-| `501` | неподдерживаемый HTTP-метод (stdlib) |
+| `501` | unsupported HTTP method (stdlib) |
 
 ---
 
-## 8. Примеры
+## 8. Examples
 
-### Вход и запрос профилей
+### Login and profile request
 
 ```bash
 curl -c cookies.txt -H "Content-Type: application/json" \
-     -d '{"password":"секрет"}' http://127.0.0.1:8760/api/auth/login
+     -d '{"password":"secret"}' http://127.0.0.1:8760/api/auth/login
 
 curl -b cookies.txt http://127.0.0.1:8760/api/profiles
 ```
 
-### Bearer вместо cookie
+### Bearer instead of a cookie
 
 ```bash
 TOKEN=$(curl -s -H "Content-Type: application/json" \
-  -d '{"password":"секрет"}' http://127.0.0.1:8760/api/auth/login | jq -r .token)
+  -d '{"password":"secret"}' http://127.0.0.1:8760/api/auth/login | jq -r .token)
 
 curl -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8760/api/telemetry
 ```
 
-### Команда
+### Command
 
 ```bash
 curl -b cookies.txt -H "Content-Type: application/json" \
@@ -499,7 +506,7 @@ curl -b cookies.txt -H "Content-Type: application/json" \
      http://127.0.0.1:8760/api/sim/command
 ```
 
-### WebSocket (Python, без библиотек)
+### WebSocket (Python, no libraries)
 
 ```python
 import json, socket, base64, os
@@ -509,18 +516,17 @@ sock.sendall((
     "GET /ws HTTP/1.1\r\nHost: 127.0.0.1\r\nUpgrade: websocket\r\n"
     f"Connection: Upgrade\r\nSec-WebSocket-Key: {key}\r\n"
     "Sec-WebSocket-Version: 13\r\n"
-    "Cookie: open_deck_session=<токен>\r\n\r\n"
+    "Cookie: open_deck_session=<token>\r\n\r\n"
 ).encode())
-# далее — чтение кадров RFC 6455 (см. msfs_gateway/websocket.py)
+# then read RFC 6455 frames (see msfs_gateway/websocket.py)
 ```
 
 ---
 
-## 9. Совместимость
+## 9. Compatibility
 
-- Схема профиля — `schemaVersion: 1`; старый формат `v0` адаптируется
-  `legacy.py` при чтении.
-- Бикон — `protocol: 1`; новые необязательные поля (`auth`) клиенты обязаны
-  игнорировать.
-- API не версионируется в URL: ломающие изменения — только в новой мажорной
-  версии шлюза.
+- Profile schema — `schemaVersion: 1`; the old `v0` format is adapted by
+  `legacy.py` on read.
+- Beacon — `protocol: 1`; clients must ignore new optional fields (`auth`).
+- The API is not versioned in the URL: breaking changes only in a new major
+  gateway version.

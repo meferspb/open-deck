@@ -1,94 +1,95 @@
-# Open Deck for MSFS — описание сервиса
+# Open Deck for MSFS — service description
 
-Документ описывает, что делает шлюз, из чего он состоит, как с ним
-взаимодействуют клиенты и как включить вход по паролю. Рассчитан на пилотов,
-которые ставят панель «для себя», и на разработчиков, которым нужно понять
-внутреннее устройство.
+This document describes what the gateway does, what it consists of, how clients
+interact with it, and how to enable password login. It is intended for pilots
+who set up the panel "for themselves" and for developers who need to understand
+the internal design.
 
-- Версия: 0.1.0
-- Платформа хоста: Windows 10/11
-- Клиенты: браузер (ПК, телефон, планшет), Android 8+
-- Лицензия: [GNU AGPL-3.0](../LICENSE) + дополнительные условия Section 7
+- Version: 0.1.0
+- Host platform: Windows 10/11
+- Clients: browser (PC, phone, tablet), Android 8+
+- License: [GNU AGPL-3.0](../LICENSE) + additional terms Section 7
 
-## 1. Назначение
+## 1. Purpose
 
-Open Deck for MSFS превращает телефон или планшет в приборную панель Microsoft
-Flight Simulator 2020/2024. Шлюз запускается на том же компьютере, что и
-симулятор, читает телеметрию через SimConnect, отдаёт её по локальной сети и
-принимает команды (тумблеры, галетники, кнопки). Панели описываются
-JSON-профилями самолётов и редактируются прямо в браузере.
+Open Deck for MSFS turns a phone or tablet into an instrument panel for Microsoft
+Flight Simulator 2020/2024. The gateway runs on the same computer as the
+simulator, reads telemetry through SimConnect, serves it over the local network,
+and accepts commands (switches, rotary selectors, buttons). Panels are described
+by aircraft JSON profiles and edited right in the browser.
 
-Ключевые свойства:
+Key properties:
 
-- **Офлайн**: ни одного внешнего CDN, шрифта, API или телеметрии. Всё
-  работает в изолированной сети и на машине без интернета.
-- **Один порт**: статика, REST и WebSocket на одном TCP-порту (по умолчанию
-  8760) — достаточно одного правила брандмауэра.
-- **Без зависимостей**: хост — Python 3.11+ и стандартная библиотека; клиент —
-  vanilla ES-модули; Android — Kotlin без AndroidX.
-- **Необязательный пароль**: доступ к API и телеметрии можно закрыть паролем
-  от 6 символов, с сессиями, QR-входом и защитой от перебора.
+- **Offline**: no external CDN, font, API, or telemetry. Everything
+  works on an isolated network and on a machine without internet.
+- **One port**: static files, REST, and WebSocket on a single TCP port (8760 by
+  default) — a single firewall rule is enough.
+- **No dependencies**: the host is Python 3.11+ and the standard library; the
+  client is vanilla ES modules; Android is Kotlin without AndroidX.
+- **Optional password**: access to the API and telemetry can be closed with a
+  password of at least 6 characters, with sessions, QR login, and brute-force
+  protection.
 
-## 2. Модель работы
+## 2. Operating model
 
 ```
 ┌──────────────────┐   SimConnect / WASM    ┌─────────────────────────────┐
 │  MSFS 2020/2024  │◄──────────────────────►│ Open Deck for MSFS (Windows)│
-│  самолёт, LVAR   │   SimVar, TITLE, ATC   │                             │
-└──────────────────┘   Client Data Area      │  ┌───────────────────────┐ │
+│  aircraft, LVAR  │   SimVar, TITLE, ATC   │                             │
+└──────────────────┘   Client Data Area     │  ┌───────────────────────┐  │
                                              │  │ SimProvider           │  │
 ┌──────────────────┐        HTTP/WS          │  │  auto / mock / simconn│  │
-│  Браузер ПК      │◄───────────────────────►│  └──────────┬────────────┘  │
-│  панель, редактор│   8760, статика + API   │             │               │
+│  PC browser      │◄───────────────────────►│  └──────────┬────────────┘  │
+│  panel, editor   │   8760, static + API    │             │               │
 └──────────────────┘                         │  ┌──────────▼────────────┐  │
-┌──────────────────┐        HTTP/WS          │  │ Hub: телеметрия 30 Гц │  │
-│  Телефон/планшет │◄───────────────────────►│  │ команды, сессии       │  │
+┌──────────────────┐        HTTP/WS          │  │ Hub: telemetry 30 Hz  │  │
+│  Phone/tablet    │◄───────────────────────►│  │ commands, sessions    │  │
 └──────────────────┘                         │  └──────────┬────────────┘  │
 ┌──────────────────┐   HTTP (WebView)        │             │               │
-│  Android-клиент  │◄───────────────────────►│  Профили, целостность,    │
-└──────────────────┘   UDP-бикон 8761        │  аутентификация, APK       │
+│  Android client  │◄───────────────────────►│  Profiles, integrity,     │
+└──────────────────┘   UDP beacon 8761       │  authentication, APK      │
                                              └─────────────────────────────┘
 ```
 
-Поток данных:
+Data flow:
 
-1. Провайдер телеметрии (`simconnect`, `mock` или `auto`) раз в тик читает
-   значения переменных.
-2. Шина (`Hub`) собирает кадр, добавляет служебные поля и рассылает его всем
-   WebSocket-клиентам с заданной частотой (по умолчанию 30 Гц, максимум 60).
-3. Клиент рисует приборы; команды уходят обратно в шину, проверяются и
-   применяются провайдером.
-4. При смене самолёта шлюз по названию/модели ATC выбирает подходящий профиль
-   и сообщает об этом клиентам.
+1. The telemetry provider (`simconnect`, `mock`, or `auto`) reads variable
+   values once per tick.
+2. The bus (`Hub`) assembles a frame, adds service fields, and broadcasts it to
+   all WebSocket clients at the configured rate (30 Hz by default, 60 maximum).
+3. The client draws instruments; commands go back to the bus, are validated,
+   and are applied by the provider.
+4. When the aircraft changes, the gateway selects a matching profile by
+   name/ATC model and notifies clients about it.
 
-## 3. Компоненты
+## 3. Components
 
-| Компонент | Файлы | Ответственность |
+| Component | Files | Responsibility |
 | --- | --- | --- |
-| Точка входа | `msfs_gateway/app.py` | Сборка зависимостей, жизненный цикл, баннер, режимы `--set-password` / `--build-apk` |
-| Настройки | `msfs_gateway/settings.py` | Аргументы CLI, пути, значения по умолчанию |
-| HTTP/WebSocket | `msfs_gateway/http_api.py`, `websocket.py` | Статика, REST, рукопожатие и кадры RFC 6455, аутентификация |
-| Шина | `msfs_gateway/hub.py` | Кадр телеметрии, подписки, команды, лимит команд, автоопределение борта |
-| Провайдеры | `msfs_gateway/sim/` | `mock`, `simconnect`, Client Data Area, WASM-мост LVAR/RPN |
-| Профили | `msfs_gateway/profiles.py` | Чтение/валидация/атомарное сохранение JSON-профилей |
-| Телеметрия | `msfs_gateway/telemetry.py` | Каталог переменных, типы, приведение значений |
-| Аутентификация | `msfs_gateway/auth.py` | PBKDF2-хеш, сессии, QR-токены, лимит попыток |
-| Автообнаружение | `msfs_gateway/discovery.py` | UDP-бикон с именем, версией и признаком пароля |
-| Целостность | `msfs_gateway/integrity.py` | SHA-256 критичных файлов интерфейса |
-| QR | `msfs_gateway/qr.py` | Собственный генератор QR (SVG), без зависимостей |
-| Сборка APK | `msfs_gateway/android_build.py` | Настройки, поиск JDK/SDK/Gradle, запуск Gradle, выдача APK |
-| Ассистент | `msfs_gateway/assist.py` | Контуры руления (скорость/курс) и посадки (APR, retard, TOGA) |
-| Генератор документации | `msfs_gateway/docsgen.py` | `docs/telemetry.md` и `docs/widgets.md` из реестров кода |
-| Веб-клиент | `web/` | Панель, редактор, вход, ассистент, страница сборки APK |
-| Android | `android/` | WebView-оболочка, UDP-поиск, проверка целостности, cookie входа |
-| Сборка и проверки | `scripts/`, `packaging/` | Установщик, `check.ps1`, QR-проверка |
+| Entry point | `msfs_gateway/app.py` | Dependency assembly, lifecycle, banner, `--set-password` / `--build-apk` modes |
+| Settings | `msfs_gateway/settings.py` | CLI arguments, paths, defaults |
+| HTTP/WebSocket | `msfs_gateway/http_api.py`, `websocket.py` | Static files, REST, RFC 6455 handshake and frames, authentication |
+| Bus | `msfs_gateway/hub.py` | Telemetry frame, subscriptions, commands, command limiting, aircraft autodetection |
+| Providers | `msfs_gateway/sim/` | `mock`, `simconnect`, Client Data Area, LVAR/RPN WASM bridge |
+| Profiles | `msfs_gateway/profiles.py` | Reading/validation/atomic saving of JSON profiles |
+| Telemetry | `msfs_gateway/telemetry.py` | Variable catalog, types, value coercion |
+| Authentication | `msfs_gateway/auth.py` | PBKDF2 hash, sessions, QR tokens, attempt limiting |
+| Autodiscovery | `msfs_gateway/discovery.py` | UDP beacon with name, version, and password flag |
+| Integrity | `msfs_gateway/integrity.py` | SHA-256 of critical UI files |
+| QR | `msfs_gateway/qr.py` | Built-in QR generator (SVG), no dependencies |
+| APK build | `msfs_gateway/android_build.py` | Settings, JDK/SDK/Gradle lookup, Gradle launch, APK delivery |
+| Assist | `msfs_gateway/assist.py` | Taxi (speed/heading) and landing (APR, retard, TOGA) loops |
+| Documentation generator | `msfs_gateway/docsgen.py` | `docs/telemetry.md` and `docs/widgets.md` from code registries |
+| Web client | `web/` | Panel, editor, login, assist, APK build page |
+| Android | `android/` | WebView shell, UDP discovery, integrity check, login cookie |
+| Build and checks | `scripts/`, `packaging/` | Installer, `check.ps1`, QR verification |
 
-## 4. Телеметрия
+## 4. Telemetry
 
-### 4.1. Кадр
+### 4.1. Frame
 
-Кадр — JSON-объект, который приходит в WebSocket сразу после подключения и
-затем с частотой шлюза:
+A frame is a JSON object that arrives over WebSocket immediately after
+connection and then at the gateway's rate:
 
 ```json
 {
@@ -115,52 +116,53 @@ JSON-профилями самолётов и редактируются пря�
 }
 ```
 
-`seq` монотонно растёт, `ts` — миллисекунды Unix. Пропуски кадров клиент
-обнаруживает по `seq` и просто продолжает рисовать (для стрелок это неважно).
+`seq` grows monotonically, `ts` is Unix milliseconds. The client detects dropped
+frames by `seq` and simply keeps drawing (this does not matter for needles).
 
-### 4.2. Переменные
+### 4.2. Variables
 
-Полный каталог с типами, единицами, SimVar и событиями —
-[telemetry.md](telemetry.md). Ниже — только категории.
+The complete catalog with types, units, SimVars, and events is in
+[telemetry.md](telemetry.md). Only the categories are listed below.
 
-Каталог переменных — единый источник истины (`telemetry.py`). У каждой записи
-есть тип (`number`, `bool`, `string`), признак «принимает команды» и описание.
-Клиент может получить каталог через `GET /api/telemetry/variables`.
+The variable catalog is the single source of truth (`telemetry.py`). Each entry
+has a type (`number`, `bool`, `string`), a "commands accepted" flag, and a
+description. The client can retrieve the catalog through
+`GET /api/telemetry/variables`.
 
-Категории:
+Categories:
 
-- отношение, высота, скорость, курс, вариометр;
-- двигатель (обороты, наддув/момент, N1, ИТТ, топливо);
-- электрика, закрылки, автопилот;
-- `custom.<...>` — LVAR/RPN из активного профиля.
+- attitude, altitude, speed, heading, VSI;
+- engine (RPM, manifold/torque, N1, ITT, fuel);
+- electrical, flaps, autopilot;
+- `custom.<...>` — LVAR/RPN from the active profile.
 
-### 4.3. Провайдеры
+### 4.3. Providers
 
-| Провайдер | Когда используется | Особенности |
+| Provider | When used | Features |
 | --- | --- | --- |
-| `simconnect` | реальный полёт | `ctypes` + `SimConnect.dll`; строковые датумы `TITLE`, `ATC MODEL`; Client Data Area для LVAR/RPN. Если стандартный `SimConnect.cfg` не работает, шлюз сам пробует TCP `127.0.0.1:19999` (порт MSFS 2020/2024) через временный конфиг |
-| `mock` | демо, разработка, тесты | Процедурная модель полёта, стартовые значения LVAR из профиля |
-| `auto` | по умолчанию | Пытается подключить SimConnect, при неудаче переходит на mock |
+| `simconnect` | real flight | `ctypes` + `SimConnect.dll`; string datums `TITLE`, `ATC MODEL`; Client Data Area for LVAR/RPN. If the standard `SimConnect.cfg` does not work, the gateway itself tries TCP `127.0.0.1:19999` (the MSFS 2020/2024 port) through a temporary config |
+| `mock` | demo, development, tests | Procedural flight model, initial LVAR values from the profile |
+| `auto` | default | Tries to connect SimConnect and falls back to mock on failure |
 
-Если WASM-модуль не установлен, ключи `custom.*` просто отсутствуют, а панель
-показывает «--» — остальная телеметрия работает. После двух таймаутов подряд
-предохранитель Client Data приостанавливает опрос на 30 секунд, чтобы не
-блокировать поток рассылки телеметрии.
+If the WASM module is not installed, the `custom.*` keys are simply absent and
+the panel shows "--" — the rest of the telemetry keeps working. After two
+consecutive timeouts, the Client Data circuit breaker pauses polling for 30
+seconds so it does not block the telemetry broadcast thread.
 
-### 4.4. Доставка и устойчивость
+### 4.4. Delivery and resilience
 
-- У каждого WebSocket-клиента своя очередь (8 кадров) и поток-отправитель:
-  медленный планшет не тормозит остальных, старые кадры выбрасываются.
-- Переподключение на клиенте — с экспоненциальной задержкой; если сообщений
-  нет дольше 45 секунд, клиент считает соединение «полуоткрытым» и
-  переподключается.
-- Сессия может истечь во время полёта — клиент раз в минуту проверяет статус и
-  уводит на страницу входа.
+- Each WebSocket client has its own queue (8 frames) and sender thread:
+  a slow tablet does not slow down the others, and old frames are dropped.
+- Client reconnection uses exponential backoff; if no messages arrive for more
+  than 45 seconds, the client considers the connection "half-open" and
+  reconnects.
+- A session may expire during flight — the client checks the status once a
+  minute and redirects to the login page.
 
-## 5. Профили самолётов
+## 5. Aircraft profiles
 
-Профиль — JSON-файл в `profiles/`. Подробная схема — в
-[`profile-schema.md`](profile-schema.md). Кратко:
+A profile is a JSON file in `profiles/`. The detailed schema is in
+[`profile-schema.md`](profile-schema.md). In brief:
 
 ```json
 {
@@ -175,7 +177,7 @@ JSON-профилями самолётов и редактируются пря�
     {
       "id": "attitude",
       "type": "attitude",
-      "label": "Авиагоризонт",
+      "label": "Attitude indicator",
       "bindings": { "pitch": "attitude.pitchDeg", "bank": "attitude.bankDeg" },
       "layout": {
         "base": { "x": 0.02, "y": 0.03, "w": 0.36, "h": 0.62 },
@@ -186,338 +188,345 @@ JSON-профилями самолётов и редактируются пря�
 }
 ```
 
-- `sim.match` — шаблоны (glob) по названию борта и модели ATC; шлюз сам
-  переключает профиль.
-- `layout` — координаты в долях панели (0..1); `base` и переопределения
+- `sim.match` — templates (glob) for the aircraft title and ATC model; the
+  gateway switches the profile itself.
+- `layout` — coordinates in panel fractions (0..1); `base` and the overrides
   `phone`, `tablet-sm`, `tablet-lg`.
-- `revision` — растёт при каждом сохранении из редактора.
-- Сохранение атомарное: временный файл → `fsync` → `os.replace`.
+- `revision` — grows on every save from the editor.
+- Saving is atomic: temporary file → `fsync` → `os.replace`.
 
-## 6. Клиенты
+## 6. Clients
 
-### 6.1. Веб-панель
+### 6.1. Web panel
 
-- Три форм-фактора с автоподбором по ширине экрана; ручной выбор запоминается.
-- Приборы: авиагоризонт, круглые шкалы, табло, тумблеры, галетник,
-  вариометр, высотомер, курсоуказатель; анимация через `requestAnimationFrame`.
-- Комфорт: яркость 100/72/45 % (`B`), режим киоска (`F`, выход `Esc`).
-- Кнопка телефона показывает QR для быстрого входа.
+- Three form factors with automatic selection by screen width; the manual
+  choice is remembered.
+- Instruments: attitude indicator, round gauges, readouts, switches, rotary
+  selector, VSI, altimeter, heading indicator; animation through
+  `requestAnimationFrame`.
+- Comfort: brightness 100/72/45 % (`B`), kiosk mode (`F`, exit with `Esc`).
+- The phone button shows a QR code for quick login.
 
-### 6.2. Редактор
+### 6.2. Editor
 
-`/editor.html`: drag-and-drop, изменение размеров, сетка 1 %, undo/redo,
-копирование раскладки между форм-факторами, сохранение на хост.
+`/editor.html`: drag-and-drop, resizing, 1 % grid, undo/redo, copying layouts
+between form factors, saving to the host.
 
 ### 6.3. Android
 
-WebView-оболочка: находит хост по UDP-бикону или принимает адрес вручную,
-проверяет целостность интерфейса, открывает панель. Если на шлюзе включён
-пароль, WebView показывает страницу входа; сессия хранится в cookie WebView и
-переживает перезапуск приложения. Хосты с паролем помечены замком.
+WebView shell: finds the host via the UDP beacon or accepts a manual address,
+checks the UI integrity, and opens the panel. If a password is enabled on the
+gateway, the WebView shows the login page; the session is stored in a WebView
+cookie and survives an app restart. Password-protected hosts are marked with a
+lock.
 
-### 6.4. Страница входа
+### 6.4. Login page
 
-`/login.html` — единственная страница, доступная без входа (вместе с
-оформлением). Она показывает поле пароля, ошибки, блок поддержки автора и
-кнопку «Выйти», если сессия уже активна. Пароль передаётся только на свой
-шлюз, по HTTP в локальной сети (см. раздел «Безопасность»).
+`/login.html` is the only page available without login (along with its styling).
+It shows a password field, errors, the author support block, and a "Log out"
+button if a session is already active. The password is sent only to its own
+gateway, over HTTP on the local network (see the "Security" section).
 
-## 7. Сеть и подключение
+## 7. Network and connection
 
-| Что | Порт | Протокол |
+| What | Port | Protocol |
 | --- | --- | --- |
-| Статика, REST, WebSocket | 8760 (настраивается `--port`) | TCP/HTTP + WS |
-| Автообнаружение | 8761 | UDP broadcast |
+| Static files, REST, WebSocket | 8760 (configurable via `--port`) | TCP/HTTP + WS |
+| Autodiscovery | 8761 | UDP broadcast |
 
-- Шлюз слушает `0.0.0.0` и печатает все свои адреса при старте.
-- Android находит хост по бикону: имя ПК, версия, число профилей, признак
-  пароля.
-- QR-код на панели содержит адрес и одноразовый токен: телефон входит одним
-  сканированием, без ввода пароля (токен живёт 10 минут и используется один раз).
-- Ручной ввод адреса: `192.168.1.10`, `192.168.1.10:8760` или полный URL.
+- The gateway listens on `0.0.0.0` and prints all its addresses at startup.
+- Android finds the host via the beacon: PC name, version, profile count,
+  password flag.
+- The QR code on the panel contains the address and a one-time token: the phone
+  logs in with a single scan, without entering a password (the token lives for
+  10 minutes and is used once).
+- Manual address entry: `192.168.1.10`, `192.168.1.10:8760`, or a full URL.
 
-## 8. Аутентификация паролем
+## 8. Password authentication
 
-### 8.1. Как включить
+### 8.1. How to enable
 
-Любой из способов:
+Any of the following ways:
 
 ```powershell
-# 1. Сохранить пароль в config/auth.json (постоянно)
+# 1. Save the password to config/auth.json (persistently)
 OpenDeck.exe --set-password
-#    или без диалога:
-OpenDeck.exe --set-password "мой-пароль"
+#    or without a prompt:
+OpenDeck.exe --set-password "my-password"
 
-# 2. Передать пароль только на этот запуск (на диск не пишется)
-OpenDeck.exe --password "мой-пароль"
+# 2. Pass the password for this run only (not written to disk)
+OpenDeck.exe --password "my-password"
 
-# 3. Переменная окружения
-$env:OPEN_DECK_PASSWORD = "мой-пароль"
+# 3. Environment variable
+$env:OPEN_DECK_PASSWORD = "my-password"
 ```
 
-В установленном приложении для этого есть ярлык «Задать пароль» в меню
-«Пуск». Файл `config/auth.json` хранит **только PBKDF2-хеш** (соль случайная,
-210 000 итераций); удалите файл — вход снова станет свободным. Флаг
-`--no-auth` игнорирует файл и пароль (только для доверенной сети).
+In the installed app there is a "Set password" shortcut in the Start menu for
+this. The file `config/auth.json` stores **only the PBKDF2 hash** (random salt,
+210,000 iterations); delete the file and login becomes free again. The
+`--no-auth` flag ignores the file and the password (trusted network only).
 
-Пароль из `--password` не пишется на диск, но виден в списке процессов
-(`Get-Process` / диспетчер задач). Для постоянного использования лучше
-`--set-password`: в памяти он хешируется один раз при старте.
+The password from `--password` is not written to disk but is visible in the
+process list (`Get-Process` / Task Manager). For permanent use, prefer
+`--set-password`: it is hashed once in memory at startup.
 
-Минимальная длина пароля — **6 символов**; ограничения: не более 256 символов,
-без управляющих символов, без пробелов по краям.
+The minimum password length is **6 characters**; limits: no more than 256
+characters, no control characters, no leading or trailing spaces.
 
-### 8.2. Как устроен вход
+### 8.2. How login works
 
-1. Клиент открывает `/login.html`, вводит пароль.
-2. `POST /api/auth/login` проверяет PBKDF2-хеш; при успехе создаётся сессия
-   (32 случайных байта, TTL 12 часов, продлевается при активности).
-3. Сервер ставит cookie `open_deck_session` с `HttpOnly`, `SameSite=Lax` — JavaScript
-   её не видит, браузер присылает её автоматически.
-4. Для нативных клиентов в JSON возвращается `token`; его можно передавать как
-   `Authorization: Bearer <token>` или `?token=` для WebSocket.
-5. `POST /api/auth/logout` отзывает сессию и очищает cookie.
+1. The client opens `/login.html` and enters the password.
+2. `POST /api/auth/login` verifies the PBKDF2 hash; on success a session is
+   created (32 random bytes, 12-hour TTL, extended on activity).
+3. The server sets the `open_deck_session` cookie with `HttpOnly`, `SameSite=Lax` —
+   JavaScript cannot see it, and the browser sends it automatically.
+4. For native clients the JSON response returns a `token`; it can be passed as
+   `Authorization: Bearer <token>` or `?token=` for WebSocket.
+5. `POST /api/auth/logout` revokes the session and clears the cookie.
 
-Публично доступны только:
+Only the following are publicly accessible:
 
-| Путь | Зачем |
+| Path | Why |
 | --- | --- |
-| `/login.html`, `/js/login.js`, `/css/*`, `/img/*` | страница входа и её оформление |
-| `/api/auth/status`, `/api/auth/login`, `/api/auth/logout` | сам вход |
-| `/api/health` | проверка «это шлюз?» и признак пароля |
-| `/api/integrity` | проверка целостности интерфейса (условие лицензии) |
-| `/api/donation` | блок поддержки автора (условие лицензии) |
-| `/license` | текст лицензии |
+| `/login.html`, `/js/login.js`, `/css/*`, `/img/*` | the login page and its styling |
+| `/api/auth/status`, `/api/auth/login`, `/api/auth/logout` | login itself |
+| `/api/health` | "is this the gateway?" check and the password flag |
+| `/api/integrity` | UI integrity check (license condition) |
+| `/api/donation` | author support block (license condition) |
+| `/license` | license text |
 
-Всё остальное — профили, телеметрия, команды, настройки Android, сборка APK,
-QR, `WS /ws` — требует сессию. Страницы без сессии отвечают редиректом на
-`/login.html?next=…`.
+Everything else — profiles, telemetry, commands, Android settings, APK build,
+QR, `WS /ws` — requires a session. Pages without a session respond with a
+redirect to `/login.html?next=…`.
 
-### 8.3. Защита от перебора
+### 8.3. Brute-force protection
 
-- 5 неудачных попыток с одного IP за 60 секунд → блокировка на 60 секунд
-  (ответ `429` с `Retry-After`).
-- Сравнение хеша — `hmac.compare_digest` (постоянное время).
-- Неудачные попытки пишутся в лог с адресом, но без пароля.
+- 5 failed attempts from one IP within 60 seconds → blocked for 60 seconds
+  (response `429` with `Retry-After`).
+- Hash comparison uses `hmac.compare_digest` (constant time).
+- Failed attempts are logged with the address but without the password.
 
-### 8.4. QR-вход с телефона
+### 8.4. QR login from a phone
 
-Кнопка «телефон» на панели запрашивает `POST /api/pair` (нужна сессия).
-Шлюз выдаёт одноразовый токен на 10 минут; QR кодирует
-`http://<адрес>:<порт>/?pair=<токен>`. Телефон открывает ссылку, шлюз
-обменяет токен на обычную сессию, ставит cookie и перенаправляет на `/`.
-Сам pairing-токен сессией не является: как cookie или Bearer он даёт `401`,
-поэтому ссылку нельзя переиспользовать после обмена.
-Повторное использование токена отклоняется.
+The "phone" button on the panel requests `POST /api/pair` (a session is
+required). The gateway issues a one-time token for 10 minutes; the QR encodes
+`http://<address>:<port>/?pair=<token>`. The phone opens the link, the gateway
+exchanges the token for a regular session, sets the cookie, and redirects to `/`.
+The pairing token itself is not a session: as a cookie or Bearer token it
+returns `401`, so the link cannot be reused after the exchange.
+Reusing the token is rejected.
 
-## 9. Ассистент посадки и руления
+## 9. Landing and taxi assist
 
-Страница `/assist.html` и API `/api/assist*` добавляют два вспомогательных
-контура. Это **не сертифицированный автопилот**: пилот контролирует полёт и
-может выключить ассистент в любой момент.
+The page `/assist.html` and the API `/api/assist*` add two auxiliary loops.
+This is **not a certified autopilot**: the pilot controls the flight and can
+disable the assist at any time.
 
-### 9.1. Руление
+### 9.1. Taxi
 
-- Включается только на земле, при снятом стояночном тормозе и скорости ниже
-  35 уз.
-- Держит заданную путевую скорость (3–25 уз) ПИ-регулятором тяги и курс
-  П-регулятором руля направления; пилот меняет курс кнопками ±1°/±5°.
-- «СТОП»: тяга 0, руль 0, стояночный тормоз.
-- Автоматически выключается, если самолёт оторвался от земли, включён
-  стояночный тормоз или скорость превысила 35 уз.
+- Enabled only on the ground, with the parking brake released and speed below
+  35 kt.
+- Holds the target ground speed (3–25 kt) with a PI throttle controller and the
+  heading with a P rudder controller; the pilot changes heading with the
+  ±1°/±5° buttons.
+- "STOP": throttle 0, rudder 0, parking brake.
+- Automatically disengages if the aircraft lifts off, the parking brake is
+  engaged, or the speed exceeds 35 kt.
 
-### 9.2. Посадка
+### 9.2. Landing
 
-- ARM: включает `AP_MASTER` и `AP_APR_HOLD` (заход по ILS). Требуется скорость
-  не ниже 40 уз и самолёт в воздухе.
-- На 60–15 футах радио altitude ассистент линейно убирает тягу с 45 % до 0.
-- На касании: тяга 0, автопилот выключен; после замедления ниже 5 уз —
-  «пробег завершён».
-- TOGA: полная тяга, AP и APR выключены (уход на второй круг).
-- Руль высоты ассистент не трогает: заход и выравнивание остаются за
-  автопилотом/пилотом.
+- ARM: enables `AP_MASTER` and `AP_APR_HOLD` (ILS approach). Requires a speed
+  of at least 40 kt and the aircraft in the air.
+- At 60–15 ft radio altitude the assist linearly reduces throttle from 45 % to 0.
+- On touchdown: throttle 0, autopilot off; after slowing below 5 kt —
+  "rollout complete".
+- TOGA: full throttle, AP and APR off (go-around).
+- The assist does not touch the elevator: the approach and flare remain with the
+  autopilot/pilot.
 
-Состояние и уставки: `GET /api/assist`; действия — `POST /api/assist/taxi`
-(`engage`, `disengage`, `stop`, `speed`, `heading`) и `POST /api/assist/landing`
-(`arm`, `disarm`, `toga`). Все запросы требуют сессию.
+State and setpoints: `GET /api/assist`; actions — `POST /api/assist/taxi`
+(`engage`, `disengage`, `stop`, `speed`, `heading`) and `POST /api/assist/landing`
+(`arm`, `disarm`, `toga`). All requests require a session.
 
 ## 10. API
 
-Базовый URL: `http://<хост>:<порт>`. Все ответы — JSON, ошибки имеют вид
+Base URL: `http://<host>:<port>`. All responses are JSON; errors have the form
 `{"error": "…", "code": "…"}`.
 
-| Метод | Путь | Доступ | Описание |
+| Method | Path | Access | Description |
 | --- | --- | --- | --- |
-| GET | `/api/health` | публично | Статус, версия, частота, признак пароля |
-| GET | `/api/auth/status` | публично | `{required, authenticated}` |
-| POST | `/api/auth/login` | публично | `{password}` → сессия + cookie |
-| POST | `/api/auth/logout` | публично | Отзыв текущей сессии |
-| POST | `/api/pair` | нужен вход | Одноразовый QR-токен |
-| GET | `/api/profiles` | нужен вход | Список профилей |
-| GET | `/api/profiles/{id}` | нужен вход | Полный профиль |
-| PUT | `/api/profiles/{id}` | нужен вход | Сохранить профиль (id в теле = id в URL) |
-| GET | `/api/telemetry` | нужен вход | Последний кадр |
-| GET | `/api/telemetry/variables` | нужен вход | Каталог переменных |
-| POST | `/api/sim/command` | нужен вход | `{key, value}` → подтверждение |
-| POST | `/api/sim/aircraft` | нужен вход | `{profileId}` — ручной выбор борта |
-| GET | `/api/integrity` | публично | Результат проверки SHA-256 |
-| GET | `/api/donation` | публично | Реквизиты поддержки автора |
-| GET | `/api/connect` | нужен вход | Адреса шлюза для QR/подсказок |
-| GET | `/api/qr.svg?text=…` | нужен вход | SVG с QR-кодом |
-| GET/PUT | `/api/android/settings` | нужен вход | Настройки сборки APK |
-| GET/POST | `/api/android/build` | нужен вход | Запуск/статус сборки APK |
-| GET | `/api/android/apk` | нужен вход | Скачивание APK |
-| GET | `/api/assist` | нужен вход | Состояние ассистента и телеметрия |
-| POST | `/api/assist/taxi` | нужен вход | Управление ассистентом руления |
-| POST | `/api/assist/landing` | нужен вход | ARM / DISARM / TOGA |
-| WS | `/ws` | нужен вход | Телеметрия и команды |
+| GET | `/api/health` | public | Status, version, rate, password flag |
+| GET | `/api/auth/status` | public | `{required, authenticated}` |
+| POST | `/api/auth/login` | public | `{password}` → session + cookie |
+| POST | `/api/auth/logout` | public | Revoke the current session |
+| POST | `/api/pair` | session required | One-time QR token |
+| GET | `/api/profiles` | session required | Profile list |
+| GET | `/api/profiles/{id}` | session required | Full profile |
+| PUT | `/api/profiles/{id}` | session required | Save a profile (id in body = id in URL) |
+| GET | `/api/telemetry` | session required | Latest frame |
+| GET | `/api/telemetry/variables` | session required | Variable catalog |
+| POST | `/api/sim/command` | session required | `{key, value}` → confirmation |
+| POST | `/api/sim/aircraft` | session required | `{profileId}` — manual aircraft selection |
+| GET | `/api/integrity` | public | SHA-256 check result |
+| GET | `/api/donation` | public | Author support details |
+| GET | `/api/connect` | session required | Gateway addresses for QR/hints |
+| GET | `/api/qr.svg?text=…` | session required | SVG with a QR code |
+| GET/PUT | `/api/android/settings` | session required | APK build settings |
+| GET/POST | `/api/android/build` | session required | Start/status of the APK build |
+| GET | `/api/android/apk` | session required | Download the APK |
+| GET | `/api/assist` | session required | Assist state and telemetry |
+| POST | `/api/assist/taxi` | session required | Taxi assist control |
+| POST | `/api/assist/landing` | session required | ARM / DISARM / TOGA |
+| WS | `/ws` | session required | Telemetry and commands |
 
-Пример входа и запроса:
+Login and request example:
 
 ```bash
 curl -c cookies.txt -H "Content-Type: application/json" \
-     -d '{"password":"мой-пароль"}' http://127.0.0.1:8760/api/auth/login
+     -d '{"password":"my-password"}' http://127.0.0.1:8760/api/auth/login
 
 curl -b cookies.txt http://127.0.0.1:8760/api/profiles
 ```
 
-Команда:
+Command:
 
 ```json
 {"type": "command", "id": "c17", "key": "power.batteryMaster", "value": true}
 ```
 
-Ответ: `{"type": "ack", "id": "c17", "ok": true, "value": true}` или `ok:false`
-с кодом ошибки. Команды ограничены ~20 в секунду на клиента.
+Response: `{"type": "ack", "id": "c17", "ok": true, "value": true}` or `ok:false`
+with an error code. Commands are limited to ~20 per second per client.
 
-## 11. Установка и запуск
+## 11. Installation and startup
 
-### 11.1. Установщик Windows
+### 11.1. Windows installer
 
-`OpenDeck-Setup-<версия>.exe` — установка per-user без прав
-администратора, Python не нужен. Создаются ярлыки: запуск шлюза, панель в
-браузере, страница сборки APK, «Задать пароль», удаление.
+`OpenDeck-Setup-<version>.exe` — per-user installation without administrator
+rights, Python not required. Shortcuts are created for: starting the gateway,
+the panel in the browser, the APK build page, "Set password", and uninstall.
 
-### 11.2. Из исходников
+### 11.2. From source
 
 ```powershell
-python -m msfs_gateway --sim auto          # реальный полёт
-python -m msfs_gateway --sim mock          # демо без симулятора
+python -m msfs_gateway --sim auto          # real flight
+python -m msfs_gateway --sim mock          # demo without the simulator
 python -m msfs_gateway --password "secret123"
 ```
 
-| Параметр | По умолчанию | Назначение |
+| Parameter | Default | Purpose |
 | --- | --- | --- |
-| `--host` / `--port` | `0.0.0.0` / `8760` | адрес и порт |
-| `--allow-host NAME` | — | дополнительное DNS-имя для Host (если панель открывают по имени) |
+| `--host` / `--port` | `0.0.0.0` / `8760` | address and port |
+| `--allow-host NAME` | — | additional DNS name for Host (if the panel is opened by name) |
 | `--sim` | `auto` | `auto`, `mock`, `simconnect` |
-| `--telemetry-hz` | `30` | частота кадров, 1..60 |
-| `--simconnect-dll` | автопоиск | путь к `SimConnect.dll` |
-| `--simconnect-host` | `127.0.0.1` | адрес SimConnect (удалённый симулятор) |
-| `--simconnect-port` | `19999` | TCP-порт SimConnect |
-| `--profile-dir` | `profiles/` | каталог профилей |
-| `--password` | — | пароль на этот запуск |
-| `--set-password [PWD]` | — | сохранить хеш и выйти |
-| `--auth-file` | `config/auth.json` | файл хеша |
-| `--web-dir` / `--profile-dir` | `web/` / `profiles/` | каталоги статики и профилей |
-| `--donation-config` | `config/donation.json` | реквизиты поддержки автора |
+| `--telemetry-hz` | `30` | frame rate, 1..60 |
+| `--simconnect-dll` | auto-detect | path to `SimConnect.dll` |
+| `--simconnect-host` | `127.0.0.1` | SimConnect address (remote simulator) |
+| `--simconnect-port` | `19999` | SimConnect TCP port |
+| `--profile-dir` | `profiles/` | profile directory |
+| `--password` | — | password for this run |
+| `--set-password [PWD]` | — | save the hash and exit |
+| `--auth-file` | `config/auth.json` | hash file |
+| `--web-dir` / `--profile-dir` | `web/` / `profiles/` | static and profile directories |
+| `--donation-config` | `config/donation.json` | author support details |
 | `--log-level` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` |
-| `--discovery-port` / `--discovery-interval` | `8761` / `3` | UDP-бикон: порт и период |
-| `--no-auth` | — | игнорировать пароль |
-| `--no-wasm` | — | без LVAR/RPN |
-| `--no-discovery` | — | без UDP-бикона |
-| `--build-apk [CONFIG]` | — | собрать APK и выйти |
+| `--discovery-port` / `--discovery-interval` | `8761` / `3` | UDP beacon: port and period |
+| `--no-auth` | — | ignore the password |
+| `--no-wasm` | — | no LVAR/RPN |
+| `--no-discovery` | — | no UDP beacon |
+| `--build-apk [CONFIG]` | — | build the APK and exit |
 
 ### 11.3. Android APK
 
-В установке есть исходники Android; готовый APK собирается в
-`android/dist/OpenDeck-Android-<версия>.apk`. Страница `/android.html` (нужен
-вход) позволяет поменять имя, package id, версию и адрес шлюза по умолчанию и
-собрать APK на месте. Нужны JDK 17, Android SDK и Gradle 8.x; в релизном
-дистрибутиве APK уже приложен.
+The installation contains the Android sources; the ready APK is built to
+`android/dist/OpenDeck-Android-<version>.apk`. The page `/android.html` (login
+required) lets you change the name, package id, version, and default gateway
+address and build the APK in place. JDK 17, Android SDK, and Gradle 8.x are
+required; in the release distribution the APK is already attached.
 
-## 12. Диагностика
+## 12. Diagnostics
 
-| Симптом | Что проверить |
+| Symptom | What to check |
 | --- | --- |
-| Панель не открывается с телефона | один Wi-Fi, адрес из баннера, брандмауэр Windows (порт 8760), `--host 0.0.0.0` |
-| «Требуется вход по паролю» | пароль задан; введите его на `/login.html`; QR-токен живёт 10 минут |
-| «Неверный пароль» | раскладка/регистр; сбросить: удалить `config/auth.json` или `--no-auth` |
-| Приборы показывают «--» | нет SimConnect/WASM, выбран mock, самолёт без профиля, симулятор ещё в главном меню |
-| Профиль не переключается | `sim.match` не совпадает с названием/моделью; выберите вручную |
-| Сборка APK не стартует | JDK/SDK/Gradle не найдены; укажите пути на `/android.html` |
-| «Целостность нарушена» | изменены критичные файлы; `python -m msfs_gateway.integrity --write` |
-| `SimConnect_Open … 0x80004005` | шлюз сам пробует TCP `127.0.0.1:19999`; если не помогло — проверьте `%APPDATA%\Microsoft Flight Simulator\SimConnect.cfg` (он перекрывает настройки) и что полёт загружен; для удалённого симулятора задайте `--simconnect-host/--simconnect-port` |
+| The panel does not open from the phone | same Wi-Fi, the address from the banner, Windows firewall (port 8760), `--host 0.0.0.0` |
+| "Password login required" | a password is set; enter it on `/login.html`; the QR token lives for 10 minutes |
+| "Incorrect password" | keyboard layout/case; reset: delete `config/auth.json` or use `--no-auth` |
+| Instruments show "--" | no SimConnect/WASM, mock selected, aircraft has no profile, the simulator is still in the main menu |
+| The profile does not switch | `sim.match` does not match the name/model; select it manually |
+| The APK build does not start | JDK/SDK/Gradle not found; specify the paths on `/android.html` |
+| "Integrity violated" | critical files were modified; `python -m msfs_gateway.integrity --write` |
+| `SimConnect_Open … 0x80004005` | the gateway itself tries TCP `127.0.0.1:19999`; if that did not help — check `%APPDATA%\Microsoft Flight Simulator\SimConnect.cfg` (it overrides the settings) and that a flight is loaded; for a remote simulator set `--simconnect-host/--simconnect-port` |
 
-Логи: консоль шлюза (уровень `--log-level DEBUG`), вкладка «Сеть» браузера,
-`adb logcat` для Android (тег `OpenDeckDiscovery`).
+Logs: the gateway console (`--log-level DEBUG`), the browser's "Network" tab,
+and `adb logcat` for Android (tag `OpenDeckDiscovery`).
 
-## 13. Безопасность
+## 13. Security
 
-- Пароль защищает API и телеметрию от «соседа по Wi-Fi», но **трафик идёт по
-  HTTP без TLS**. В доверенной домашней сети это приемлемо; для гостевых сетей
-  используйте отдельный VLAN или reverse-proxy с TLS.
-- Cookie сессии `HttpOnly` + `SameSite=Lax`; CSRF-риск снижен. Токены в URL
-  используются только для WebSocket (`?token=`) и одноразового QR (`?pair=`).
-  QR-токен принимается только через `/?pair=` и не является сессией.
-- Проверка `Origin` для браузерных POST/PUT и WebSocket: запрос с чужим
-  `Origin` получает `403`; клиенты без `Origin` допускаются.
-- Проверка `Host` по локальным именам/IP: неизвестный Host получает `403`
-  (защита от DNS rebinding).
-- Ограничение попыток входа — 5 в минуту с адреса.
-- CORS намеренно выключен: сторонняя страница не сможет читать ответы API.
-- Если пароль не задан, шлюз явно предупреждает в консоли, что панель и
-  команды доступны всем в локальной сети.
-- UDP-бикон не подписан: любой хост в сети может представиться шлюзом. Не
-  выставляйте шлюз в интернет.
-- Android: allow-list навигации WebView, запрещён доступ к `file:`/`content:`,
-  смешанный контент запрещён.
+- The password protects the API and telemetry from a "Wi-Fi neighbor", but
+  **traffic goes over HTTP without TLS**. In a trusted home network this is
+  acceptable; for guest networks, use a separate VLAN or a reverse proxy with
+  TLS.
+- The session cookie is `HttpOnly` + `SameSite=Lax`; the CSRF risk is reduced.
+  URL tokens are used only for WebSocket (`?token=`) and the one-time QR
+  (`?pair=`). The QR token is accepted only through `/?pair=` and is not a
+  session.
+- `Origin` checking for browser POST/PUT and WebSocket: a request with a foreign
+  `Origin` receives `403`; clients without `Origin` are allowed.
+- `Host` checking against local names/IPs: an unknown Host receives `403`
+  (protection against DNS rebinding).
+- Login attempts are limited to 5 per minute per address.
+- CORS is intentionally disabled: a third-party page cannot read API responses.
+- If no password is set, the gateway explicitly warns in the console that the
+  panel and commands are available to everyone on the local network.
+- The UDP beacon is unsigned: any host on the network can impersonate the
+  gateway. Do not expose the gateway to the internet.
+- Android: WebView navigation allow-list, access to `file:`/`content:` is
+  forbidden, mixed content is forbidden.
 
-## 14. Ограничения
+## 14. Limitations
 
-- Живой прогон SimConnect/WASM требует установленного MSFS; в репозитории
-  логика проверена эмуляцией.
-- APK подписывается debug-ключом; release-подпись пока не автоматизирована.
-- Нет mDNS: только UDP-бикон.
-- Один активный шлюз на порт; профили — файлы, без базы данных.
+- A live run of SimConnect/WASM requires MSFS to be installed; in the repository
+  the logic is verified by emulation.
+- The APK is signed with a debug key; release signing is not automated yet.
+- No mDNS: only the UDP beacon.
+- One active gateway per port; profiles are files, without a database.
 
-## 15. Глоссарий
+## 15. Glossary
 
-| Термин | Значение |
+| Term | Meaning |
 | --- | --- |
-| **Шлюз** | Процесс на ПК с симулятором: читает телеметрию и раздаёт её клиентам |
-| **Хост** | Машина, где запущен шлюз (в Android-клиенте — найденный ПК) |
-| **Профиль** | JSON-файл с приборами и раскладками для конкретного самолёта |
-| **Прибор / виджет** | Элемент панели: авиагоризонт, шкала, тумблер и т. д. |
-| **Форм-фактор** | Класс экрана: `phone`, `tablet-sm`, `tablet-lg` |
-| **Борт** | Конкретный самолёт в симуляторе; профиль подбирается по `TITLE`/`ATC MODEL` |
-| **Телеметрия** | Поток значений SimVar и `custom.*` в кадре JSON |
-| **Кадр** | Одно сообщение `telemetry` с `seq`, `ts`, `sim`, `values` |
-| **LVAR** | Локальная переменная самолёта (PMDG, Fenix, FBW и др.) |
-| **RPN** | Обратная польская нотация — скрипт вычисления значения в MSFS |
-| **WASM-мост** | Обмен LVAR/RPN через Client Data Area модуля MobiFlight/SimBridge |
-| **Client Data Area** | Именованная область SimConnect для обмена блоками данных |
-| **AP / APR / AT** | Автопилот / режим захода по ILS / автомат тяги |
-| **Retard** | Плавный сброс тяги на выравнивании (ассистент посадки) |
-| **TOGA** | Take Off / Go Around: полная тяга и уход на второй круг |
-| **Pairing** | Вход с телефона по одноразовому QR-токену |
-| **Сессия** | Действующий вход: токен в cookie/Bearer, TTL 12 часов |
-| **Целостность** | Сверка SHA-256 критичных файлов интерфейса с манифестом |
-| **Air-gapped** | Сеть без выхода в интернет; все ресурсы локальные |
+| **Gateway** | The process on the PC with the simulator: reads telemetry and serves it to clients |
+| **Host** | The machine where the gateway runs (in the Android client — the discovered PC) |
+| **Profile** | A JSON file with instruments and layouts for a specific aircraft |
+| **Instrument / widget** | A panel element: attitude indicator, gauge, switch, etc. |
+| **Form factor** | A screen class: `phone`, `tablet-sm`, `tablet-lg` |
+| **Aircraft** | A specific aircraft in the simulator; the profile is selected by `TITLE`/`ATC MODEL` |
+| **Telemetry** | The stream of SimVar and `custom.*` values in a JSON frame |
+| **Frame** | A single `telemetry` message with `seq`, `ts`, `sim`, `values` |
+| **LVAR** | A local aircraft variable (PMDG, Fenix, FBW, etc.) |
+| **RPN** | Reverse Polish notation — a script for computing a value in MSFS |
+| **WASM bridge** | LVAR/RPN exchange through the Client Data Area of the MobiFlight/SimBridge module |
+| **Client Data Area** | A named SimConnect area for exchanging data blocks |
+| **AP / APR / AT** | Autopilot / ILS approach mode / autothrottle |
+| **Retard** | Smooth throttle reduction during the flare (landing assist) |
+| **TOGA** | Take Off / Go Around: full throttle and go-around |
+| **Pairing** | Login from a phone using a one-time QR token |
+| **Session** | An active login: a token in a cookie/Bearer, TTL 12 hours |
+| **Integrity** | Comparison of the SHA-256 of critical UI files with the manifest |
+| **Air-gapped** | A network without internet access; all resources are local |
 
-## 16. Обратная связь и поддержка
+## 16. Feedback and support
 
-- **Автор:** Viktor Krasnikov — [github.com/meferspb/open-deck](https://github.com/meferspb/open-deck).
+- **Author:** Viktor Krasnikov — [github.com/meferspb/open-deck](https://github.com/meferspb/open-deck).
 - **Donat:** [https://taps.uz/open_deck_fs](https://taps.uz/open_deck_fs).
-- Ошибки и предложения — через issue-шаблоны GitHub (см. `.github/`).
-- Уязвимости — приватно, по правилам [SECURITY.md](../SECURITY.md).
-- Вопросы по настройке — Discussions (если включены) или issue с шаблоном
-  «Ошибка».
-- Лицензия и обязательный блок поддержки автора — [LICENSE](../LICENSE).
+- Bugs and suggestions — through GitHub issue templates (see `.github/`).
+- Vulnerabilities — privately, according to [SECURITY.md](../SECURITY.md).
+- Setup questions — Discussions (if enabled) or an issue using the
+  "Bug" template.
+- License and the mandatory author support block — [LICENSE](../LICENSE).
 
-## 17. Лицензия
+## 17. License
 
-[GNU Affero General Public License v3.0](../LICENSE) и
-[дополнительные условия Section 7](../COPYING.ADDITIONAL): исходный код открыт,
-модификации распространяются под AGPL; блок поддержки автора и проверка
-целостности обязательны и не могут быть удалены.
+[GNU Affero General Public License v3.0](../LICENSE) and
+[additional terms Section 7](../COPYING.ADDITIONAL): the source code is open,
+modifications are distributed under AGPL; the author support block and integrity
+checking are mandatory and cannot be removed.

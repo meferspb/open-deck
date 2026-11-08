@@ -1,61 +1,62 @@
-# Политика безопасности
+# Security Policy
 
-## Модель угроз
+## Threat model
 
-Open Deck for MSFS рассчитан на **доверенную локальную сеть** (домашний Wi-Fi,
-изолированный сегмент в кокпите, air-gapped машина). По умолчанию:
+Open Deck for MSFS is designed for a **trusted local network** (home Wi-Fi,
+an isolated cockpit segment, an air-gapped machine). By default:
 
-- HTTP и WebSocket работают **без TLS** (пароль защищает вход, но не
-  шифрует трафик);
-- UDP-бикон автообнаружения не подписан — любой хост в сети может
-  представиться шлюзом;
-- клиент доверяет файлам, которые отдаёт хост (проверка SHA-256 защищает
-  только блок доната и целостность интерфейса, не подлинность сервера).
+- HTTP and WebSocket run **without TLS** (the password protects login but does
+  not encrypt traffic);
+- the auto-discovery UDP beacon is unsigned — any host on the network can
+  impersonate the gateway;
+- the client trusts the files served by the host (the SHA-256 check protects
+  only the donation block and UI integrity, not server authenticity).
 
-**Не выставляйте шлюз в интернет** и не запускайте в сетях, где есть
-недоверенные устройства. Для гостевых сетей используйте отдельный VLAN или
-добавьте собственный reverse-proxy с аутентификацией.
+**Do not expose the gateway to the internet** and do not run it on networks that
+contain untrusted devices. For guest networks, use a separate VLAN or
+add your own reverse proxy with authentication.
 
-## Что уже сделано
+## What is already in place
 
-- **необязательный вход по паролю**: PBKDF2-хеш (210 000 итераций) в
-  `config/auth.json`, сессии с TTL 12 часов, cookie `HttpOnly`,
-  `SameSite=Lax`, Bearer для нативных клиентов, лимит 5 попыток в минуту,
-  одноразовые QR-токены на 10 минут (принимаются только через `/?pair=`);
-- проверка целостности критичных файлов (SHA-256) при старте хоста и в
-  браузере. Это барьер от случайной/намеренной правки, а не криптографическая
-  защита: манифест можно пересчитать командой `--write`;
-- CSP `default-src 'self'`, запрет внешних ресурсов;
-- ограничение размера тела запроса, валидация профилей и команд;
-- CORS выключен: сторонняя страница не может читать ответы API;
-- проверка `Origin` для браузерных POST/PUT и WebSocket: чужой Origin
-  получает `403` (клиенты без Origin допускаются);
-- проверка `Host` по списку локальных имён и IP — защита от DNS rebinding;
-  неизвестный Host получает `403`;
-- без аутентификации остаются только страница входа, `/api/health`,
-  `/api/integrity` и `/api/donation` (требования лицензии). Если пароль не
-  задан, шлюз печатает предупреждение в консоли;
-- Android: allow-list переходов WebView, только `http(s)`-ссылки в донате,
-  отключённый file/content access.
+- **optional password login**: PBKDF2 hash (210,000 iterations) in
+  `config/auth.json`, sessions with a 12-hour TTL, `HttpOnly` cookie,
+  `SameSite=Lax`, Bearer for native clients, a limit of 5 attempts per minute,
+  one-time QR tokens valid for 10 minutes (accepted only via `/?pair=`);
+- integrity verification of critical files (SHA-256) at host startup and in the
+  browser. This is a barrier against accidental/intentional edits, not
+  cryptographic protection: the manifest can be recomputed with the `--write`
+  command;
+- CSP `default-src 'self'`, external resources disallowed;
+- request body size limit, profile and command validation;
+- CORS disabled: a third-party page cannot read API responses;
+- `Origin` check for browser POST/PUT and WebSocket: a foreign Origin
+  receives `403` (clients without Origin are allowed);
+- `Host` check against a list of local names and IPs — protection against DNS
+  rebinding; an unknown Host receives `403`;
+- without authentication, only the login page, `/api/health`,
+  `/api/integrity`, and `/api/donation` remain (license requirements). If no
+  password is set, the gateway prints a warning to the console;
+- Android: WebView navigation allow-list, only `http(s)` links in the donation
+  block, file/content access disabled.
 
-## Сообщить об уязвимости
+## Reporting a vulnerability
 
-Пожалуйста, **не открывайте публичный issue**. Используйте приватный канал:
+Please **do not open a public issue**. Use a private channel:
 
-- GitHub → Security → **Report a vulnerability** (Security Advisories), или
-- письмо на `security@example.invalid` (замените на реальный адрес перед
-  публикацией).
+- GitHub → Security → **Report a vulnerability** (Security Advisories), or
+- email to `security@example.invalid` (replace with a real address before
+  publishing).
 
-Укажите версию, шаги воспроизведения и ожидаемое/фактическое поведение. Мы
-ответим в течение 7 дней.
+Include the version, reproduction steps, and expected/actual behavior. We will
+respond within 7 days.
 
-## Поддерживаемые версии
+## Supported versions
 
-| Версия | Поддержка |
+| Version | Support |
 | --- | --- |
-| 0.1.x | да |
+| 0.1.x | yes |
 
-## Поддержка проекта
+## Project support
 
-- Автор: Viktor Krasnikov — [github.com/meferspb/open-deck](https://github.com/meferspb/open-deck)
-- Donat: [https://taps.uz/open_deck_fs](https://taps.uz/open_deck_fs)
+- Author: Viktor Krasnikov — [github.com/meferspb/open-deck](https://github.com/meferspb/open-deck)
+- Donation: [https://taps.uz/open_deck_fs](https://taps.uz/open_deck_fs)

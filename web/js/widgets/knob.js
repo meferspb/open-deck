@@ -7,6 +7,7 @@
  */
 
 import { formatNumber, toFiniteNumber } from '../core/format.js';
+import { t } from '../core/i18n.js';
 import { CanvasSurface, Smoother, Widget, createCard, degToRad } from './base.js';
 
 const MONO = '"Cascadia Mono", "Consolas", monospace';
@@ -29,7 +30,7 @@ export class KnobWidget extends Widget {
     this.step = Number(this.options.step) || 1;
     this.decimals = Number(this.options.decimals ?? 0);
     this.unit = typeof this.options.unit === 'string' ? this.options.unit : '';
-    this.caption = this.options.caption ?? def.label ?? 'KNOB';
+    this.caption = this.options.caption ?? def.label ?? t('editor.widget.knob.rotary');
     this.sensitivity = (this.max - this.min) / 240;
 
     this.card = createCard(element, 'knob');
@@ -147,7 +148,7 @@ export class KnobWidget extends Widget {
     this.ctx
       .command(this.key, value)
       .catch((error) => {
-        this.ctx.notify?.(`${this.caption}: ${error?.message ?? 'команда не выполнена'}`);
+        this.ctx.notify?.(`${this.caption}: ${error?.message ?? t('widget.commandNotExecuted')}`);
       });
   }
 

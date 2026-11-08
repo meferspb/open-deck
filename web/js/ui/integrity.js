@@ -11,9 +11,9 @@
  */
 
 import { api } from '../core/api.js';
+import { isSupportLabel, t } from '../core/i18n.js';
 
 const BADGE_SELECTOR = '[data-donation-badge]';
-const BADGE_TEXT = /поддержать/i;
 
 /** @param {Element | null} element */
 function isVisiblyRendered(element) {
@@ -38,7 +38,7 @@ export async function verifyUiIntegrity() {
   } catch (error) {
     return {
       ok: false,
-      reason: 'Шлюз не ответил на проверку целостности интерфейса.',
+      reason: t('integrity.unreachable'),
       code: 'gateway_unreachable',
       report: null,
     };
@@ -47,7 +47,7 @@ export async function verifyUiIntegrity() {
   if (!report?.verified) {
     return {
       ok: false,
-      reason: 'Шлюз сообщил о нарушении целостности файлов интерфейса.',
+      reason: t('integrity.hostFailed'),
       code: 'host_integrity_failed',
       report,
     };
@@ -57,7 +57,7 @@ export async function verifyUiIntegrity() {
   if (!badge) {
     return {
       ok: false,
-      reason: 'Блок поддержки автора отсутствует на странице.',
+      reason: t('integrity.badgeMissing'),
       code: 'badge_missing',
       report,
     };
@@ -65,15 +65,15 @@ export async function verifyUiIntegrity() {
   if (!isVisiblyRendered(badge)) {
     return {
       ok: false,
-      reason: 'Блок поддержки автора скрыт или не отображается.',
+      reason: t('integrity.badgeHidden'),
       code: 'badge_hidden',
       report,
     };
   }
-  if (!BADGE_TEXT.test(badge.textContent || '')) {
+  if (!isSupportLabel(badge.textContent || '')) {
     return {
       ok: false,
-      reason: 'Текст блока поддержки автора изменён.',
+      reason: t('integrity.badgeText'),
       code: 'badge_text_changed',
       report,
     };
@@ -93,9 +93,9 @@ export function watchIntegrity({ badge, onViolation, intervalMs = 2500 }) {
 
   const check = () => {
     if (triggered) return;
-    if (!badge || !isVisiblyRendered(badge) || !BADGE_TEXT.test(badge.textContent || '')) {
+    if (!badge || !isVisiblyRendered(badge) || !isSupportLabel(badge.textContent || '')) {
       triggered = true;
-      onViolation('Блок поддержки автора удалён или скрыт на странице', 'badge_tampered');
+      onViolation(t('integrity.badgeTampered'), 'badge_tampered');
     }
   };
 

@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Ассистент посадки и руления — Open Deck for MSFS</title>
+    <title data-i18n="assist.docTitle">Landing and taxi assistant — Open Deck for MSFS</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
     <link rel="stylesheet" href="/css/tokens.css" />
     <link rel="stylesheet" href="/css/base.css" />
@@ -11,69 +11,70 @@
   </head>
   <body class="assist-page">
     <header class="assist-bar">
-      <a class="assist-back" href="/">← Панель</a>
+      <a class="assist-back" href="/" data-i18n="assist.back">← Panel</a>
       <img class="assist-logo" src="/img/open-deck-mark.jpg" alt="" />
       <div class="assist-heading">
-        <div class="assist-title">Ассистент</div>
-        <div class="assist-sub">посадка · руление</div>
+        <div class="assist-title" data-i18n="assist.heading">Assistant</div>
+        <div class="assist-sub" data-i18n="assist.sub">landing · taxi</div>
       </div>
-      <span class="assist-link" id="assist-link">нет данных</span>
+      <select id="language-select" class="lang-select" data-language-select data-i18n-aria-label="lang.label" data-i18n-title="lang.label" title="Language" aria-label="Language"></select>
+      <span class="assist-link" id="assist-link" data-i18n="assist.link.noData">no data</span>
     </header>
 
     <main class="assist-grid">
       <section class="assist-card" aria-labelledby="landing-title">
         <div class="assist-card__head">
-          <h2 id="landing-title">Посадка</h2>
-          <span class="assist-badge" id="landing-phase">выключен</span>
+          <h2 id="landing-title" data-i18n="assist.landing.title">Landing</h2>
+          <span class="assist-badge" id="landing-phase" data-i18n="assist.phase.off">off</span>
         </div>
-        <p class="assist-msg" id="landing-message">
-          ARM включает автопилот и режим APR. На 60–15 футах ассистент плавно
-          убирает тягу, на касании выключает AP.
+        <p class="assist-msg" id="landing-message" data-i18n="assist.landing.message">
+          ARM enables the autopilot and APR mode. At 60–15 ft the assistant smoothly
+          reduces thrust, and on touchdown it disengages AP.
         </p>
 
         <dl class="assist-readouts">
-          <div><dt>RA</dt><dd id="l-ra">—</dd></div>
-          <div><dt>IAS</dt><dd id="l-ias">—</dd></div>
-          <div><dt>VS</dt><dd id="l-vs">—</dd></div>
-          <div><dt>LOC</dt><dd id="l-loc">—</dd></div>
-          <div><dt>GS</dt><dd id="l-gs">—</dd></div>
-          <div><dt>AP / APR</dt><dd id="l-ap">—</dd></div>
+          <div><dt data-i18n="assist.readout.ra">RA</dt><dd id="l-ra">—</dd></div>
+          <div><dt data-i18n="assist.readout.ias">IAS</dt><dd id="l-ias">—</dd></div>
+          <div><dt data-i18n="assist.readout.vs">VS</dt><dd id="l-vs">—</dd></div>
+          <div><dt data-i18n="assist.readout.loc">LOC</dt><dd id="l-loc">—</dd></div>
+          <div><dt data-i18n="assist.readout.gs">GS</dt><dd id="l-gs">—</dd></div>
+          <div><dt data-i18n="assist.readout.ap">AP / APR</dt><dd id="l-ap">—</dd></div>
         </dl>
 
         <div class="assist-actions">
-          <button class="assist-btn assist-btn--primary" type="button" id="landing-arm">ARM</button>
-          <button class="assist-btn" type="button" id="landing-disarm">Выключить</button>
-          <button class="assist-btn assist-btn--danger" type="button" id="landing-toga">TOGA</button>
+          <button class="assist-btn assist-btn--primary" type="button" id="landing-arm" data-i18n="assist.landing.arm">ARM</button>
+          <button class="assist-btn" type="button" id="landing-disarm" data-i18n="assist.landing.disarm">Disarm</button>
+          <button class="assist-btn assist-btn--danger" type="button" id="landing-toga" data-i18n="assist.landing.toga">TOGA</button>
         </div>
-        <p class="assist-hint">TOGA: полная тяга и выключение автопилота (уход на второй круг).</p>
+        <p class="assist-hint" data-i18n="assist.landing.hint">TOGA: full thrust and autopilot disengagement (go-around).</p>
       </section>
 
       <section class="assist-card" aria-labelledby="taxi-title">
         <div class="assist-card__head">
-          <h2 id="taxi-title">Руление</h2>
-          <span class="assist-badge" id="taxi-phase">выключен</span>
+          <h2 id="taxi-title" data-i18n="assist.taxi.title">Taxi</h2>
+          <span class="assist-badge" id="taxi-phase" data-i18n="assist.phase.off">off</span>
         </div>
-        <p class="assist-msg" id="taxi-message">
-          Ассистент держит заданную скорость и курс: тягу и руль считает сам.
-          Работает только на земле и ниже 35 уз.
+        <p class="assist-msg" id="taxi-message" data-i18n="assist.taxi.message">
+          The assistant holds the set speed and heading: it manages thrust and rudder itself.
+          Works only on the ground and below 35 kt.
         </p>
 
         <dl class="assist-readouts">
-          <div><dt>GS</dt><dd id="t-gs">—</dd></div>
-          <div><dt>Курс</dt><dd id="t-hdg">—</dd></div>
-          <div><dt>Тяга</dt><dd id="t-thr">—</dd></div>
-          <div><dt>Руль</dt><dd id="t-rud">—</dd></div>
-          <div><dt>Задано</dt><dd id="t-target">—</dd></div>
-          <div><dt>Тормоз</dt><dd id="t-brake">—</dd></div>
+          <div><dt data-i18n="assist.readout.gs">GS</dt><dd id="t-gs">—</dd></div>
+          <div><dt data-i18n="assist.readout.heading">Heading</dt><dd id="t-hdg">—</dd></div>
+          <div><dt data-i18n="assist.readout.throttle">Throttle</dt><dd id="t-thr">—</dd></div>
+          <div><dt data-i18n="assist.readout.rudder">Rudder</dt><dd id="t-rud">—</dd></div>
+          <div><dt data-i18n="assist.readout.target">Target</dt><dd id="t-target">—</dd></div>
+          <div><dt data-i18n="assist.readout.brake">Brake</dt><dd id="t-brake">—</dd></div>
         </dl>
 
         <div class="assist-speed">
-          <label for="taxi-speed">Скорость руления: <output id="taxi-speed-value">12</output> уз</label>
+          <label for="taxi-speed"><span data-i18n="assist.taxi.speedLabel">Taxi speed:</span> <output id="taxi-speed-value">12</output> <span data-i18n="assist.taxi.speedUnit">kt</span></label>
           <input id="taxi-speed" type="range" min="3" max="25" step="1" value="12" />
         </div>
 
         <div class="assist-heading-row">
-          <span>Курс: <strong id="taxi-heading">—</strong></span>
+          <span><span data-i18n="assist.taxi.headingLabel">Heading:</span> <strong id="taxi-heading">—</strong></span>
           <button class="assist-btn assist-btn--small" type="button" data-heading="-5">−5°</button>
           <button class="assist-btn assist-btn--small" type="button" data-heading="-1">−1°</button>
           <button class="assist-btn assist-btn--small" type="button" data-heading="1">+1°</button>
@@ -81,24 +82,24 @@
         </div>
 
         <div class="assist-actions">
-          <button class="assist-btn assist-btn--primary" type="button" id="taxi-engage">Включить</button>
-          <button class="assist-btn" type="button" id="taxi-disengage">Выключить</button>
-          <button class="assist-btn assist-btn--danger" type="button" id="taxi-stop">СТОП</button>
+          <button class="assist-btn assist-btn--primary" type="button" id="taxi-engage" data-i18n="assist.taxi.engage">Engage</button>
+          <button class="assist-btn" type="button" id="taxi-disengage" data-i18n="assist.taxi.disengage">Disengage</button>
+          <button class="assist-btn assist-btn--danger" type="button" id="taxi-stop" data-i18n="assist.taxi.stop">STOP</button>
         </div>
-        <p class="assist-hint">СТОП: тяга 0 и стояночный тормоз. Курс меняйте кнопками — самолёт плавно доворачивает.</p>
+        <p class="assist-hint" data-i18n="assist.taxi.hint">STOP: idle thrust and parking brake. Change heading with the buttons — the aircraft turns smoothly.</p>
       </section>
     </main>
 
     <p class="assist-warning" id="assist-warning" hidden></p>
 
     <footer class="assist-note">
-      Ассистент — вспомогательный контур, а не сертифицированный автопилот.
-      Пилот контролирует полёт, состояние ВПП и может выключить ассистент в любой момент.
+      <span data-i18n="assist.note">The assistant is an auxiliary loop, not a certified autopilot. The pilot controls the flight and runway conditions and can disengage the assistant at any time.</span>
       <a
         class="assist-link"
         href="#"
         data-donation-link
-        title="Donat — поддержать проект"
+        title="Donat — support the project"
+        data-i18n-title="donation.linkTitle"
       >Donat</a>
     </footer>
 

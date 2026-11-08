@@ -8,12 +8,27 @@
 
 import { api } from '../core/api.js';
 import { applyDonationLinksFromConfig } from '../core/donation-links.js';
+import { isSupportLabel, onLocaleChange, t } from '../core/i18n.js';
 
 /**
  * @param {{chip: HTMLElement, dialog: HTMLDialogElement, body: HTMLElement, closeButton: HTMLElement}} refs
  */
 export function createDonation({ chip, dialog, body, closeButton }) {
   let config = null;
+
+  function updateChip() {
+    const label = chip.querySelector('span');
+    const configured = typeof config?.chipLabel === 'string' ? config.chipLabel.trim() : '';
+    // Стандартную подпись из конфига переводим; нестандартную оставляем автором.
+    if (label) {
+      label.textContent = configured && !isSupportLabel(configured)
+        ? configured
+        : t('donation.support');
+    }
+    chip.title = config?.title
+      ? t('donation.chipTitleWith', { title: config.title })
+      : t('donation.chipTitle');
+  }
 
   async function load() {
     try {
@@ -23,18 +38,14 @@ export function createDonation({ chip, dialog, body, closeButton }) {
     }
 
     applyDonationLinksFromConfig(config);
-    const label = chip.querySelector('span');
-    if (label && typeof config?.chipLabel === 'string' && config.chipLabel.trim()) {
-      label.textContent = config.chipLabel;
-    }
-    chip.title = config?.title ? `${config.title} — поддержать автора` : 'Поддержать автора проекта';
+    updateChip();
   }
 
   function copyValue(text, button) {
     const done = () => {
-      button.textContent = 'скопировано';
+      button.textContent = t('donation.copied');
       setTimeout(() => {
-        button.textContent = 'копировать';
+        button.textContent = t('donation.copy');
       }, 1400);
     };
     if (navigator.clipboard?.writeText) {
@@ -60,15 +71,14 @@ export function createDonation({ chip, dialog, body, closeButton }) {
 
     const intro = document.createElement('p');
     intro.className = 'donation-card__note';
-    intro.textContent =
-      config?.message ?? 'Реквизиты поддержки не настроены в config/donation.json на хосте.';
+    intro.textContent = config?.message ?? t('donation.noConfig');
     body.append(intro);
 
     const links = Array.isArray(config?.links) ? config.links : [];
     if (!links.length) {
       const empty = document.createElement('p');
       empty.className = 'donation-dialog__empty';
-      empty.textContent = 'Автор ещё не указал реквизиты — блок остаётся видимым по условиям лицензии.';
+      empty.textContent = t('donation.noRequisites');
       body.append(empty);
     }
 
@@ -78,7 +88,7 @@ export function createDonation({ chip, dialog, body, closeButton }) {
 
       const label = document.createElement('span');
       label.className = 'donation-card__label';
-      label.textContent = String(link?.label ?? 'Поддержка');
+      label.textContent = String(link?.label ?? t('donation.labelFallback'));
       card.append(label);
 
       if (typeof link?.url === 'string' && /^https?:\/\//i.test(link.url)) {
@@ -101,7 +111,7 @@ export function createDonation({ chip, dialog, body, closeButton }) {
         const copy = document.createElement('button');
         copy.type = 'button';
         copy.className = 'btn';
-        copy.textContent = 'копировать';
+        copy.textContent = t('donation.copy');
         copy.addEventListener('click', () => copyValue(link.value, copy));
         card.append(value, copy);
       }
@@ -110,8 +120,12 @@ export function createDonation({ chip, dialog, body, closeButton }) {
 
     const meta = document.createElement('p');
     meta.className = 'donation-card__note';
-    const author = typeof config?.author === 'string' && config.author ? config.author : 'автор проекта';
-    const updated = typeof config?.updatedAt === 'string' && config.updatedAt ? ` · обновлено ${config.updatedAt}` : '';
+    const author = typeof config?.author === 'string' && config.author
+      ? config.author
+      : t('donation.authorFallback');
+    const updated = typeof config?.updatedAt === 'string' && config.updatedAt
+      ? t('donation.updated', { date: config.updatedAt })
+      : '';
     meta.textContent = `${author}${updated}`;
     body.append(meta);
   }
@@ -129,6 +143,11 @@ export function createDonation({ chip, dialog, body, closeButton }) {
     if (typeof dialog.close === 'function') dialog.close();
     else dialog.removeAttribute('open');
   }
+
+  onLocaleChange(() => {
+    updateChip();
+    if (dialog.open) renderBody();
+  });
 
   chip.addEventListener('click', open);
   closeButton.addEventListener('click', close);

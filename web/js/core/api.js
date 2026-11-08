@@ -2,6 +2,8 @@
  * Клиент REST API шлюза. Один порт, относительные URL, без внешних библиотек.
  */
 
+import { t } from './i18n.js';
+
 const REQUEST_TIMEOUT_MS = 6000;
 
 /** Страница входа; на ней сама себя не перезагружаем. */
@@ -54,7 +56,7 @@ async function request(path, { method = 'GET', body } = {}) {
       try {
         data = JSON.parse(text);
       } catch {
-        throw new ApiError('Шлюз вернул ответ не в формате JSON', { status: response.status });
+        throw new ApiError(t('error.nonJson'), { status: response.status });
       }
     }
 
@@ -68,9 +70,9 @@ async function request(path, { method = 'GET', body } = {}) {
   } catch (error) {
     if (error instanceof ApiError) throw error;
     if (error?.name === 'AbortError') {
-      throw new ApiError('Шлюз не ответил вовремя', { code: 'timeout' });
+      throw new ApiError(t('error.timeout'), { code: 'timeout' });
     }
-    throw new ApiError(error?.message ?? 'Сеть недоступна', { code: 'network' });
+    throw new ApiError(error?.message ?? t('error.network'), { code: 'network' });
   } finally {
     clearTimeout(timer);
   }

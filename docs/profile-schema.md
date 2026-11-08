@@ -1,11 +1,11 @@
-# 📄 Схема JSON-профиля самолёта
+# 📄 Aircraft JSON Profile Schema
 
-Профиль — один файл `profiles/{id}.json`, описывающий приборную панель
-декларативно. Хост валидирует его строго (`msfs_gateway/profiles.py`), клиент
-рендерит «на лету».
+A profile is a single file `profiles/{id}.json` that describes an instrument
+panel declaratively. The host validates it strictly
+(`msfs_gateway/profiles.py`), and the client renders it "on the fly".
 
-Все размеры и координаты — **доли панели (0..1)**, а не пиксели: один профиль
-работает на телефоне и на большом планшете.
+All sizes and coordinates are **panel fractions (0..1)**, not pixels: one profile
+works on a phone and on a large tablet.
 
 ```json
 {
@@ -23,47 +23,48 @@
 
 ---
 
-## 1. Поля верхнего уровня
+## 1. Top-level fields
 
-| Поле | Тип | Обязательно | Описание |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `schemaVersion` | int | да | всегда `1` |
-| `id` | slug | да | `^[a-z0-9][a-z0-9-]{1,63}$` |
-| `name` | string | да | название для UI |
-| `icao` | string | нет | код 2–4 символа (напр. `C172`) |
-| `revision` | int ≥ 1 | нет | версия профиля |
-| `description` | string | нет | пояснение |
-| `sim.match` | object | нет | правила автоопределения борта |
-| `panel` | object | да | фон, сетка, подпись |
-| `widgets` | array 1..64 | да | приборы |
-| `variables` | array 0..64 | нет | пользовательские LVAR/RPN (см. §6) |
+| `schemaVersion` | int | yes | always `1` |
+| `id` | slug | yes | `^[a-z0-9][a-z0-9-]{1,63}$` |
+| `name` | string | yes | name for the UI |
+| `icao` | string | no | 2–4 character code (e.g. `C172`) |
+| `revision` | int ≥ 1 | no | profile version |
+| `description` | string | no | explanation |
+| `sim.match` | object | no | aircraft autodetection rules |
+| `panel` | object | yes | background, grid, caption |
+| `widgets` | array 1..64 | yes | instruments |
+| `variables` | array 0..64 | no | custom LVAR/RPN (see §6) |
 
-`sim.match.title` — glob по названию ВС в симуляторе (регистронезависимо),
-например `"Cessna Skyhawk*"` подхватит любой ливер и вариант названия.
-`sim.match.atcModel` — glob по модели ATC (`C172`), срабатывает, если название
-не совпало. Клиент подхватывает профиль автоматически, как только шлюз
-прочитает `TITLE` и `ATC MODEL` через SimConnect; ручной выбор из списка
-действует, пока в симуляторе не загрузили другой самолёт.
+`sim.match.title` is a glob over the aircraft name in the simulator
+(case-insensitive), for example `"Cessna Skyhawk*"` will pick up any livery and
+name variant. `sim.match.atcModel` is a glob over the ATC model (`C172`), used
+if the name did not match. The client picks up the profile automatically as soon
+as the gateway reads `TITLE` and `ATC MODEL` through SimConnect; a manual
+selection from the list remains in effect until a different aircraft is loaded
+in the simulator.
 
 ---
 
 ## 2. `panel`
 
-| Поле | Тип | Описание |
+| Field | Type | Description |
 | --- | --- | --- |
-| `background` | цвет `#RGB(A)` / `#RRGGBB(AA)` | фон панели |
-| `gridSize` | int | шаг фоновой сетки в «единицах» (опционально) |
-| `footer` | string | подпись внизу панели |
+| `background` | color `#RGB(A)` / `#RRGGBB(AA)` | panel background |
+| `gridSize` | int | background grid step in "units" (optional) |
+| `footer` | string | caption at the bottom of the panel |
 
 ---
 
-## 3. `widgets[]` — общая структура
+## 3. `widgets[]` — common structure
 
 ```json
 {
   "id": "battery-switch",
   "type": "switch.toggle",
-  "label": "Аккумулятор",
+  "label": "Battery",
   "bindings": { "state": "power.batteryMaster" },
   "command": { "key": "power.batteryMaster", "action": "set" },
   "options": { "caption": "BATTERY", "onLabel": "ON", "offLabel": "OFF" },
@@ -74,28 +75,28 @@
 }
 ```
 
-| Поле | Назначение |
+| Field | Purpose |
 | --- | --- |
-| `id` | уникальный slug прибора |
-| `type` | тип из таблицы ниже |
-| `label` | aria-метка / подпись |
-| `bindings` | привязки к каноническим ключам телеметрии |
-| `command` | для управляющих приборов — как менять переменную |
-| `options` | типозависимые настройки (шкалы, подписи, тона) |
-| `layout` | геометрия (см. §4) |
+| `id` | unique widget slug |
+| `type` | type from the table below |
+| `label` | aria label / caption |
+| `bindings` | bindings to canonical telemetry keys |
+| `command` | for control instruments — how to change the variable |
+| `options` | type-dependent settings (gauges, labels, tones) |
+| `layout` | geometry (see §4) |
 
-### Привязки `bindings`
+### `bindings`
 
-Ключи — из канонического реестра `msfs_gateway/telemetry.py` (плоские, с
-точками): `power.batteryMaster`, `attitude.pitchDeg`, `engine.rpm`,
-`speed.iasKt`, `autopilot.headingBugDeg` и т. д. Сервер отвергает неизвестные
-ключи при валидации. Полный список с типами и единицами —
-[telemetry.md](telemetry.md); описание типов приборов и опций —
-[widgets.md](widgets.md).
+Keys come from the canonical registry `msfs_gateway/telemetry.py` (flat, with
+dots): `power.batteryMaster`, `attitude.pitchDeg`, `engine.rpm`,
+`speed.iasKt`, `autopilot.headingBugDeg`, etc. The server rejects unknown keys
+during validation. The full list with types and units is in
+[telemetry.md](telemetry.md); descriptions of instrument types and options are
+in [widgets.md](widgets.md).
 
 ---
 
-## 4. `layout` — адаптивность под форм-факторы
+## 4. `layout` — form-factor adaptivity
 
 ```json
 "layout": {
@@ -106,51 +107,51 @@
 }
 ```
 
-- `base` — обязателен; `phone` / `tablet-sm` / `tablet-lg` — необязательные
-  **переопределения**, которые сливаются поверх `base` (можно указать только
-  отличающиеся поля).
-- `x`, `y` — левый верхний угол; `w`, `h` — ширина/высота. Все в долях 0..1,
-  `w,h > 0`, прямоугольник не выходит за границы панели.
-- Значения `x,y,w,h` могут быть и «дополнительными» — клиент сам задаёт
-  размер текста от габаритов прибора через CSS-переменные `--w`/`--h`.
+- `base` is required; `phone` / `tablet-sm` / `tablet-lg` are optional
+  **overrides** that are merged on top of `base` (you can specify only the
+  fields that differ).
+- `x`, `y` — top-left corner; `w`, `h` — width/height. All in 0..1 fractions,
+  `w,h > 0`, and the rectangle must not extend beyond the panel bounds.
+- The values `x,y,w,h` can also be "additional" — the client derives the text
+  size from the instrument's dimensions through the CSS variables `--w`/`--h`.
 
 ---
 
-## 5. Типы приборов
+## 5. Instrument types
 
-| `type` | Что делает | `bindings` (обязательные роли) | `command` | Ключевые `options` |
+| `type` | What it does | `bindings` (required roles) | `command` | Key `options` |
 | --- | --- | --- | --- | --- |
-| `attitude` | авиагоризонт (canvas) | `pitch`, `bank` | — | — |
-| `gauge.radial` | круговая шкала со стрелкой | `value` | — | `min`, `max`, `redline`, `unit`, `decimals`, `majorTicks`, `minorTicks`, `zones[]` |
-| `readout` | цифровое табло | `value` | — | `caption`, `unit`, `decimals`, `alarm.{below,above}` |
-| `switch.toggle` | тумблер | `state` | `{key, action: set|toggle}` | `caption`, `onLabel`, `offLabel` |
-| `knob.rotary` | галетник (свайп/колесо/стрелки) | `value` | `{key, action: set}` | `min`, `max`, `step`, `wrap`, `unit`, `decimals`, `caption` |
-| `annunciator` | табло-лампа | `active` | — | `caption`, `tone: ok|warn|danger`, `invert` |
-| `vsi` | вариометр (canvas) | `value` | — | `limit` (по умолчанию 2000 FPM) |
-| `altimeter` | высотомер с тремя стрелками | `value` | — | — |
-| `heading` | курсоуказатель с картушкой и «жучком» | `heading` (опц. `bug`) | — | — |
+| `attitude` | attitude indicator (canvas) | `pitch`, `bank` | — | — |
+| `gauge.radial` | circular gauge with a needle | `value` | — | `min`, `max`, `redline`, `unit`, `decimals`, `majorTicks`, `minorTicks`, `zones[]` |
+| `readout` | digital readout | `value` | — | `caption`, `unit`, `decimals`, `alarm.{below,above}` |
+| `switch.toggle` | toggle switch | `state` | `{key, action: set|toggle}` | `caption`, `onLabel`, `offLabel` |
+| `knob.rotary` | rotary selector (swipe/wheel/arrows) | `value` | `{key, action: set}` | `min`, `max`, `step`, `wrap`, `unit`, `decimals`, `caption` |
+| `annunciator` | annunciator light | `active` | — | `caption`, `tone: ok|warn|danger`, `invert` |
+| `vsi` | VSI (canvas) | `value` | — | `limit` (2000 FPM by default) |
+| `altimeter` | three-pointer altimeter | `value` | — | — |
+| `heading` | heading indicator with a compass card and a "bug" | `heading` (optional `bug`) | — | — |
 
-### `options` по типам
+### `options` by type
 
-- **`gauge.radial`**: `min`/`max` — диапазон шкалы; `redline` — красная дуга от
-  `redline` до `max`; `zones` — массив `{from, to, tone}` для цветных секторов
-  (`ok`/`warn`/`danger`); `majorTicks`/`minorTicks` — деления; `decimals` — знаки
-  в цифровом значении; `unit` — подпись единицы.
-- **`readout`**: `caption` — заголовок; `unit` — единица; `decimals`; `alarm` —
-  пороги подсветки `{below, above}`.
-- **`switch.toggle`**: `caption`, `onLabel`/`offLabel` — тексты состояний;
-  `command.action = "toggle"` — отправить переключение без явного значения.
-- **`knob.rotary`**: `min`/`max`/`step`/`wrap` — диапазон и шаг; `unit`,
-  `decimals` — отображение; `wrap = true` — зациклить диапазон (например 0–359°).
-- **`annunciator`**: `tone` — цвет лампы; `invert = true` — гореть при ложном
-  значении (индикатор «BUS OFF» при выключенном питании).
-- **`vsi`**: `limit` — предел шкалы в футах/мин (по умолчанию 2000); стрелка
-  уходит на ±90° при достижении предела.
-- **`heading`**: необязательная привязка `bug` рисует заданный курс
-  (`autopilot.headingBugDeg`) отдельным указателем.
-- **`attitude`**: опций нет; подпись берётся из `label` прибора.
-- Неизвестные опции не отвергаются (для совместимости), но и не используются
-  клиентом — сверяйтесь с [widgets.md](widgets.md).
+- **`gauge.radial`**: `min`/`max` — gauge range; `redline` — a red arc from
+  `redline` to `max`; `zones` — an array of `{from, to, tone}` for colored sectors
+  (`ok`/`warn`/`danger`); `majorTicks`/`minorTicks` — tick marks; `decimals` —
+  digits in the numeric value; `unit` — unit label.
+- **`readout`**: `caption` — heading; `unit` — unit; `decimals`; `alarm` —
+  highlight thresholds `{below, above}`.
+- **`switch.toggle`**: `caption`, `onLabel`/`offLabel` — state texts;
+  `command.action = "toggle"` — send a toggle without an explicit value.
+- **`knob.rotary`**: `min`/`max`/`step`/`wrap` — range and step; `unit`,
+  `decimals` — display; `wrap = true` — loop the range (for example 0–359°).
+- **`annunciator`**: `tone` — lamp color; `invert = true` — light up on a false
+  value (a "BUS OFF" indicator when power is off).
+- **`vsi`**: `limit` — gauge limit in feet/min (2000 by default); the needle
+  goes to ±90° when the limit is reached.
+- **`heading`**: the optional `bug` binding draws the target heading
+  (`autopilot.headingBugDeg`) as a separate pointer.
+- **`attitude`**: no options; the caption comes from the instrument's `label`.
+- Unknown options are not rejected (for compatibility) but are not used by the
+  client either — check with [widgets.md](widgets.md).
 
 ### `command`
 
@@ -158,17 +159,17 @@
 "command": { "key": "power.batteryMaster", "action": "set" }
 ```
 
-`key` обязан быть **записываемой** переменной (у которой есть `sim_event`).
-`action`: `set` — установить значение из `value`; `toggle` — переключить.
+`key` must be a **writable** variable (one that has a `sim_event`).
+`action`: `set` — set the value from `value`; `toggle` — toggle it.
 
 ---
 
-## 6. Пользовательские переменные: LVAR / RPN
+## 6. Custom variables: LVAR / RPN
 
-Дефолтные SimVar покрывают Cessna 172 и большинство простых ВС, но PMDG,
-Fenix, FlyByWire и iniBuilds держат состояние в собственных переменных.
-Профиль может объявить их блоком `variables`, а виджеты — ссылаться на
-получившиеся ключи (`custom.*`) как на обычные.
+Default SimVars cover the Cessna 172 and most simple aircraft, but PMDG, Fenix,
+FlyByWire, and iniBuilds keep state in their own variables. A profile can
+declare them in the `variables` block, and widgets can reference the resulting
+keys (`custom.*`) like ordinary ones.
 
 ```json
 "variables": [
@@ -177,7 +178,7 @@ Fenix, FlyByWire и iniBuilds держат состояние в собстве�
     "kind": "number",
     "source": "lvar",
     "name": "PMDG_FUEL_LBS",
-    "label": "Топливо (фунты)",
+    "label": "Fuel (pounds)",
     "unit": "LBS",
     "initial": 1200
   },
@@ -196,49 +197,51 @@ Fenix, FlyByWire и iniBuilds держат состояние в собстве�
 ]
 ```
 
-| Поле | Описание |
+| Field | Description |
 | --- | --- |
-| `key` | ключ вида `custom.fuelLbs` (первый сегмент строчный, дальше camelCase); не может совпадать со встроенной переменной |
+| `key` | key of the form `custom.fuelLbs` (first segment lowercase, then camelCase); must not collide with a built-in variable |
 | `kind` | `number` / `bool` / `string` |
-| `source` | `lvar` — чтение LVAR через WASM-мост; `rpn` — вычисление RPN-скриптом |
-| `name` | имя LVAR (для `source: lvar`), до 127 байт UTF-8 |
-| `expression` | RPN-скрипт (для `source: rpn`), ответ парсится в число/флаг |
-| `initial` | стартовое значение для mock-режима (без MSFS) |
-| `label`, `unit` | подписи для редактора |
+| `source` | `lvar` — read an LVAR through the WASM bridge; `rpn` — compute with an RPN script |
+| `name` | LVAR name (for `source: lvar`), up to 127 UTF-8 bytes |
+| `expression` | RPN script (for `source: rpn`); the response is parsed into a number/flag |
+| `initial` | initial value for mock mode (without MSFS) |
+| `label`, `unit` | labels for the editor |
 
-Привязки виджетов валидируются против **встроенных + объявленных** ключей:
+Widget bindings are validated against **built-in + declared** keys:
 
 ```json
 { "id": "fuel", "type": "readout", "bindings": { "value": "custom.fuelLbs" } }
 ```
 
-Как это работает:
+How it works:
 
-- в **mock-режиме** провайдер подставляет `initial` — панель оживает без MSFS;
-- в **реальном полёте** значения читает `WasmBridge` (`read_specs`) через
-  WASM-модуль MobiFlight/SimBridge; шина опрашивает их не чаще 4 раз в секунду
-  и кэширует между кадрами;
-- если мост не подключён, ключи просто отсутствуют в кадре — приборы покажут
-  «--» (подставлять 0.0 было бы враньём).
+- in **mock mode** the provider substitutes `initial` — the panel comes alive
+  without MSFS;
+- in **a real flight** the values are read by `WasmBridge` (`read_specs`) through
+  the MobiFlight/SimBridge WASM module; the bus polls them at most 4 times per
+  second and caches them between frames;
+- if the bridge is not connected, the keys are simply absent from the frame —
+  the instruments show "--" (substituting 0.0 would be a lie).
 
-Пример профиля: [`profiles/demo-lvar-panel.json`](../profiles/demo-lvar-panel.json).
-
----
-
-## 7. Полный пример (Cessna 172S)
-
-См. [`profiles/cessna-172-skyhawk.json`](../profiles/cessna-172-skyhawk.json) —
-11 приборов: авиагоризонт, скорость/высота/шина (readout), тахометр и топливо
-(gauge), тумблеры батареи/авионики, лампа BUS OFF, закрылки, задатчик курса
-(knob). Второй пример — `profiles/piper-pa28-archer-ii.json` (только `layout.base`,
-проверка fallback-раскладки).
+Example profile: [`profiles/demo-lvar-panel.json`](../profiles/demo-lvar-panel.json).
 
 ---
 
-## 8. Обратная совместимость с форматом v0
+## 7. Complete example (Cessna 172S)
 
-Исходный формат из ТЗ (`bindings[]` с пиксельными `position` и `sim_var`)
-поддерживается через адаптер `msfs_gateway/legacy.py`: он транслируется во
-внутренний формат при загрузке, а координаты пересчитываются из пикселей в доли
-панели (канвас по умолчанию 1280×800 или из `layout.canvas`/`target_aspect_ratio`).
-Сохранение через `PUT /api/profiles/{id}` записывает уже внутренний формат.
+See [`profiles/cessna-172-skyhawk.json`](../profiles/cessna-172-skyhawk.json) —
+11 instruments: attitude indicator, speed/altitude/turn (readout), tachometer and
+fuel (gauge), battery/avionics switches, BUS OFF lamp, flaps, heading bug setter
+(knob). The second example is `profiles/piper-pa28-archer-ii.json` (only
+`layout.base`, testing the fallback layout).
+
+---
+
+## 8. Backward compatibility with the v0 format
+
+The original format from the specification (`bindings[]` with pixel `position`
+and `sim_var`) is supported through the `msfs_gateway/legacy.py` adapter: it is
+translated into the internal format on load, and coordinates are recalculated
+from pixels into panel fractions (the default canvas is 1280×800 or from
+`layout.canvas`/`target_aspect_ratio`). Saving through `PUT /api/profiles/{id}`
+writes the internal format.

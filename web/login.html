@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="robots" content="noindex" />
-    <title>Вход — Open Deck for MSFS</title>
+    <title data-i18n="login.docTitle">Sign in — Open Deck for MSFS</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
     <link rel="stylesheet" href="/css/tokens.css" />
     <link rel="stylesheet" href="/css/base.css" />
@@ -19,17 +19,17 @@
         </span>
         <div>
           <div class="login-brand__name">Open Deck for MSFS</div>
-          <div class="login-brand__version" id="login-version">локальный шлюз</div>
+          <div class="login-brand__version" id="login-version" data-i18n="login.gateway">local gateway</div>
         </div>
       </div>
 
-      <h1 class="login-title" id="login-title">Вход в панель</h1>
-      <p class="login-note" id="login-note">
-        Введите пароль, который задан на компьютере с симулятором.
+      <h1 class="login-title" id="login-title" data-i18n="login.title">Sign in to the panel</h1>
+      <p class="login-note" id="login-note" data-i18n="login.note">
+        Enter the password set on the simulator computer.
       </p>
 
       <form class="login-form" id="login-form" novalidate>
-        <label class="login-label" for="login-password">Пароль</label>
+        <label class="login-label" for="login-password" data-i18n="login.password">Password</label>
         <div class="login-field">
           <input
             class="login-input"
@@ -43,28 +43,35 @@
             autocapitalize="off"
             spellcheck="false"
           />
-          <button class="login-reveal" type="button" id="login-reveal" aria-pressed="false">
-            показать
+          <button class="login-reveal" type="button" id="login-reveal" aria-pressed="false" data-i18n="login.revealShow">
+            show
           </button>
         </div>
-        <p class="login-hint">Не короче 6 символов. Пароль задаётся флагом
-          <code>--set-password</code> при запуске шлюза.</p>
-        <button class="login-submit" type="submit" id="login-submit">Войти</button>
+        <p class="login-hint">
+          <span data-i18n="login.hintPrefix">At least 6 characters. The password is set with the</span>
+          <code>--set-password</code>
+          <span data-i18n="login.hintSuffix">flag when starting the gateway.</span>
+        </p>
+        <button class="login-submit" type="submit" id="login-submit" data-i18n="login.submit">Sign in</button>
       </form>
 
       <p class="login-error" id="login-error" role="alert" hidden></p>
 
       <div class="login-actions" id="login-actions" hidden>
-        <a class="login-action" id="login-continue" href="/">Открыть панель</a>
-        <button class="login-action login-action--ghost" type="button" id="login-logout">
-          Выйти
+        <a class="login-action" id="login-continue" href="/" data-i18n="login.continue">Open the panel</a>
+        <button class="login-action login-action--ghost" type="button" id="login-logout" data-i18n="login.logout">
+          Sign out
         </button>
       </div>
 
       <footer class="login-donation" id="login-donation">
-        <div class="login-donation__title">Поддержать автора проекта</div>
-        <div class="login-donation__body" id="login-donation-body">загружаем реквизиты…</div>
+        <div class="login-donation__title" data-i18n="login.donationTitle">Support the project author</div>
+        <div class="login-donation__body" id="login-donation-body" data-i18n="login.loadingDonation">loading payment details…</div>
       </footer>
+
+      <div class="login-lang">
+        <select id="language-select" class="lang-select" data-language-select data-i18n-aria-label="lang.label" data-i18n-title="lang.label" title="Language" aria-label="Language"></select>
+      </div>
     </main>
 
     <script type="module" src="/js/login.js"></script>

@@ -231,3 +231,9 @@ body.login-page {
 .login-donation__empty {
   color: var(--text-dim);
 }
+
+.login-lang {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}

@@ -4,6 +4,7 @@
  */
 
 import { Widget, createCard, h } from './base.js';
+import { t } from '../core/i18n.js';
 
 export class UnknownWidget extends Widget {
   /**
@@ -17,7 +18,7 @@ export class UnknownWidget extends Widget {
     const card = createCard(element, 'unknown');
     card.append(
       h('span', 'unknown__type', String(def?.type ?? 'unknown')),
-      h('span', 'unknown__type', 'тип прибора не поддержан'),
+      h('span', 'unknown__type', t('widget.unknownType')),
     );
   }
 }

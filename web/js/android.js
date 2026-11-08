@@ -6,6 +6,9 @@
  */
 
 import { hydrateDonationLinks } from './core/donation-links.js';
+import { initI18n, onLocaleChange, t } from './core/i18n.js';
+
+initI18n();
 
 const FIELDS = [
   'appName',
@@ -27,6 +30,10 @@ const toolchainEl = $('android-toolchain');
 const downloadEl = $('android-download');
 
 let pollTimer = null;
+/** @type {{key: string, params?: Record<string, unknown>, tone?: string} | null} */
+let lastStatus = null;
+/** @type {any} */
+let lastToolchain = null;
 
 function toast(message, tone = 'info') {
   const el = $('toast');
@@ -62,17 +69,25 @@ function fillForm(settings) {
   }
 }
 
-function setStatus(text, tone = '') {
-  statusEl.textContent = text;
+function setStatusKey(key, params = {}, tone = '') {
+  lastStatus = { key, params, tone };
+  statusEl.textContent = t(key, params);
   statusEl.dataset.tone = tone;
 }
 
 function renderToolchain(toolchain) {
+  lastToolchain = toolchain;
   if (toolchain?.ok) {
-    toolchainEl.textContent = `Инструменты найдены: JDK ${toolchain.jdk} · SDK ${toolchain.sdk} · Gradle ${toolchain.gradle}`;
+    toolchainEl.textContent = t('android.toolchainFound', {
+      jdk: toolchain.jdk,
+      sdk: toolchain.sdk,
+      gradle: toolchain.gradle,
+    });
     toolchainEl.dataset.tone = 'ok';
   } else {
-    toolchainEl.textContent = `Инструменты не найдены: ${toolchain?.error ?? 'неизвестно'}`;
+    toolchainEl.textContent = t('android.toolchainMissing', {
+      error: toolchain?.error ?? t('android.unknown'),
+    });
     toolchainEl.dataset.tone = 'warn';
   }
 }
@@ -98,20 +113,20 @@ async function request(path, options = {}) {
 }
 
 async function loadSettings() {
-  setStatus('Загрузка настроек…');
+  setStatusKey('android.loading');
   try {
     const payload = await request('/api/android/settings');
     fillForm(payload.settings ?? {});
     renderToolchain(payload.toolchain);
-    setStatus('Настройки загружены. Можно собирать.', 'ok');
+    setStatusKey('android.settingsLoaded', {}, 'ok');
     if (payload.apk) downloadEl.dataset.ready = 'true';
   } catch (error) {
-    setStatus(`Не удалось загрузить настройки: ${error.message}`, 'danger');
+    setStatusKey('android.settingsLoadFailed', { message: error.message }, 'danger');
   }
 }
 
 async function saveSettings() {
-  setStatus('Сохраняем…');
+  setStatusKey('android.saving');
   try {
     const payload = await request('/api/android/settings', {
       method: 'PUT',
@@ -119,10 +134,10 @@ async function saveSettings() {
     });
     fillForm(payload.settings ?? {});
     renderToolchain(payload.toolchain);
-    setStatus('Настройки сохранены.', 'ok');
-    toast('Настройки APK сохранены');
+    setStatusKey('android.saved', {}, 'ok');
+    toast(t('android.savedToast'));
   } catch (error) {
-    setStatus(`Ошибка настроек: ${error.message}`, 'danger');
+    setStatusKey('android.settingsError', { message: error.message }, 'danger');
   }
 }
 
@@ -132,12 +147,12 @@ function renderJob(job) {
     logEl.scrollTop = logEl.scrollHeight;
   }
   if (job.state === 'running') {
-    setStatus('Сборка идёт… Это может занять до нескольких минут.', 'busy');
+    setStatusKey('android.buildRunning', {}, 'busy');
   } else if (job.state === 'success') {
-    setStatus('Сборка завершена. APK можно скачать.', 'ok');
+    setStatusKey('android.buildSuccess', {}, 'ok');
     downloadEl.dataset.ready = 'true';
   } else if (job.state === 'failed') {
-    setStatus(`Сборка не удалась: ${job.error ?? 'см. журнал'}`, 'danger');
+    setStatusKey('android.buildFailed', { error: job.error ?? t('android.seeLog') }, 'danger');
   }
 }
 
@@ -149,12 +164,12 @@ async function pollBuild() {
       pollTimer = setTimeout(pollBuild, 1000);
     }
   } catch (error) {
-    setStatus(`Не удалось получить статус: ${error.message}`, 'danger');
+    setStatusKey('android.statusFailed', { message: error.message }, 'danger');
   }
 }
 
 async function startBuild() {
-  setStatus('Запускаем сборку…');
+  setStatusKey('android.buildStarting');
   logEl.textContent = '';
   try {
     const job = await request('/api/android/build', { method: 'POST', body: '{}' });
@@ -162,7 +177,7 @@ async function startBuild() {
     clearTimeout(pollTimer);
     pollTimer = setTimeout(pollBuild, 800);
   } catch (error) {
-    setStatus(`Сборка не запущена: ${error.message}`, 'danger');
+    setStatusKey('android.buildNotStarted', { message: error.message }, 'danger');
   }
 }
 
@@ -180,8 +195,13 @@ $('android-build').addEventListener('click', startBuild);
 $('android-download').addEventListener('click', (event) => {
   if (!downloadEl.dataset.ready) {
     event.preventDefault();
-    toast('Сначала соберите APK или проверьте готовую сборку', 'info');
+    toast(t('android.buildFirst'), 'info');
   }
+});
+
+onLocaleChange(() => {
+  if (lastToolchain) renderToolchain(lastToolchain);
+  if (lastStatus) setStatusKey(lastStatus.key, lastStatus.params, lastStatus.tone);
 });
 
 hydrateDonationLinks();

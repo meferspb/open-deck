@@ -23,8 +23,9 @@ versions — [SemVer](https://semver.org/lang/ru/).
 
 ### Fixed
 
-- Attitude indicator bank direction: MSFS `PLANE BANK DEGREES` is positive
-  for a left bank; the horizon and bank pointer are now rotated in the correct
+- Attitude indicator bank and pitch direction: MSFS `PLANE BANK DEGREES` is
+  positive for a left bank and `PLANE PITCH DEGREES` is positive for pitch
+  down; the horizon, pitch ladder, and bank pointer now move in the correct
   direction.
 - Windows installer no longer copies `web/profiles/config/integrity` and
   `LICENSE`/`README.md` twice; it closes a running `OpenDeck.exe` and clears

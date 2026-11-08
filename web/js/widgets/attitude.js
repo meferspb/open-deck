@@ -90,7 +90,10 @@ export class AttitudeWidget extends Widget {
     // MSFS/FSX: PLANE BANK DEGREES is positive for a LEFT bank. The horizon
     // moves opposite to the aircraft, so positive bank rotates it clockwise.
     ctx.rotate(degToRad(bank));
-    ctx.translate(0, pitch * pxPerDeg);
+    // PLANE PITCH DEGREES is positive for pitch DOWN. Move the horizon up
+    // for a nose-down attitude (negative canvas Y), so the displayed pitch
+    // follows the real aircraft.
+    ctx.translate(0, -pitch * pxPerDeg);
 
     const span = radius * 3;
 

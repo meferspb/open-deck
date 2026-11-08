@@ -26,6 +26,9 @@ versions — [SemVer](https://semver.org/lang/ru/).
 - Phone/tablet full-screen mode now preserves the logical profile aspect ratio
   and scales the whole panel to fit the stage. Previously a short viewport
   squashed widgets and clipped instrument readings at the edges.
+- Runtime viewport changes (Chrome DevTools device mode, rotation) now re-detect
+  the form factor and frame/full mode; manually selected device presets are
+  preserved.
 - Landing assistant NAV readouts now use the correct MSFS SimVars:
   localizer deviation from `NAV CDI:1`, glide-slope deviation from
   `NAV GLIDE SLOPE ERROR`, and `HSI CDI/GSI NEEDLE VALID` for validity.

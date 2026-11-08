@@ -137,6 +137,15 @@ function setupMode() {
   stage.setMode(useFrame ? 'frame' : 'full');
 }
 
+// Пользователь выбрал форм-фактор вручную (или он зафиксирован в URL/настройках):
+// такой выбор не перезаписываем при изменении размера окна.
+let manualDevice = Boolean(params.get('device'));
+try {
+  manualDevice = manualDevice || Boolean(localStorage.getItem(DEVICE_KEY));
+} catch {
+  /* localStorage может быть недоступен */
+}
+
 function resolveDeviceId() {
   const fromUrl = params.get('device');
   if (fromUrl && getPreset(fromUrl).id === fromUrl) return fromUrl;
@@ -162,6 +171,7 @@ function setDevice(id, persist = false) {
   panelView.setDeviceClass(preset.id);
   shell.setStatus({ layoutLabel: `${t(`device.${preset.id}`)} · ${preset.width}×${preset.height}` });
   if (persist) {
+    manualDevice = true;
     try {
       localStorage.setItem(DEVICE_KEY, preset.id);
     } catch {
@@ -484,6 +494,18 @@ async function boot() {
   installWatch();
   await start();
 }
+
+let resizeTimer = 0;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (!manualDevice) {
+      setDevice(detectDeviceClass(window.innerWidth), false);
+    }
+    setupMode();
+    stage.refresh();
+  }, 120);
+});
 
 window.addEventListener('beforeunload', () => socket?.stop());
 

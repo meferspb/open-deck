@@ -98,8 +98,12 @@ function render(next) {
   $('l-ra').textContent = fmt(telemetry.radioAltitudeFt, 0, ' ft');
   $('l-ias').textContent = fmt(telemetry.iasKt, 0, ' kt');
   $('l-vs').textContent = fmt(telemetry.verticalSpeedFpm, 0, ' fpm');
-  $('l-loc').textContent = `${fmt(telemetry.localizerDeg, 2, '°')}${telemetry.locValid ? '' : ` · ${t('assist.missing')}`}`;
-  $('l-gs').textContent = `${fmt(telemetry.glideSlopeDeg, 2, '°')}${telemetry.gsValid ? '' : ` · ${t('assist.missing')}`}`;
+  $('l-loc').textContent = telemetry.locValid
+    ? fmt(telemetry.localizerDeg, 2, '°')
+    : '—';
+  $('l-gs').textContent = telemetry.gsValid
+    ? fmt(telemetry.glideSlopeDeg, 2, '°')
+    : '—';
   $('l-ap').textContent = `${telemetry.autopilotMaster ? 'AP' : '—'} / ${telemetry.approach ? 'APR' : '—'}`;
 
   const taxiBadge = $('taxi-phase');

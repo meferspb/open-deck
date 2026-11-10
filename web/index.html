@@ -48,6 +48,21 @@
 
       <div class="app-bar__status">
         <select id="language-select" class="lang-select" data-language-select data-i18n-aria-label="lang.label" data-i18n-title="lang.label" title="Language" aria-label="Language"></select>
+        <button
+          type="button"
+          class="icon-btn"
+          id="assist-drawer-toggle"
+          aria-expanded="false"
+          title="Landing and taxi assistant"
+          aria-label="Landing and taxi assistant"
+          data-i18n-title="nav.assistant"
+          data-i18n-aria-label="nav.assistant"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 5h16M4 12h10M4 19h16" />
+          </svg>
+          <span class="visually-hidden" data-i18n="nav.assistantShort">Assistant</span>
+        </button>
         <a
           class="icon-btn"
           href="/assist.html"
@@ -77,6 +92,18 @@
             <path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7" />
           </svg>
           <span class="visually-hidden" data-i18n="nav.brightnessShort">Brightness</span>
+        </button>
+        <button
+          type="button"
+          class="icon-btn"
+          id="theme-toggle"
+          title="Cockpit theme (N)"
+          aria-label="Cockpit theme"
+          data-i18n-title="nav.themeTitle"
+          data-i18n-aria-label="nav.theme"
+        >
+          <span class="theme-toggle__dot" aria-hidden="true"></span>
+          <span class="visually-hidden" data-i18n="nav.theme">Cockpit theme</span>
         </button>
         <button
           type="button"
@@ -172,6 +199,7 @@
       <span class="status-bar__item" id="status-layout" data-i18n="panel.layoutEmpty">layout: —</span>
       <span class="status-bar__item" id="status-rate" data-i18n="panel.rateEmpty">stream: —</span>
       <span class="status-bar__item" id="status-gateway" data-i18n="panel.gatewayEmpty">gateway: —</span>
+      <span class="status-bar__item" id="status-wasm" data-i18n="panel.wasmEmpty">WASM: —</span>
     </footer>
 
     <aside class="devtools" id="devtools" hidden aria-label="Telemetry in JSON" data-i18n-aria-label="nav.devtoolsAria">

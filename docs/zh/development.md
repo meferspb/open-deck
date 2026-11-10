@@ -88,7 +88,7 @@ docs/               本文档及其他文档
 ## 9. 测试与检查
 
 ```powershell
-pwsh -File scripts/check.ps1       # ruff + format + 250 Python + 35 JS
+pwsh -File scripts/check.ps1       # ruff + format + 252 Python + 41 JS
 python -m unittest discover -s tests
 node --test "tests/web/*.test.mjs"
 python -m msfs_gateway.docsgen --check

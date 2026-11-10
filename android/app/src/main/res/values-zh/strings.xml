@@ -36,4 +36,10 @@
     <string name="donation_default_message">本项目免费且无需联网。如果面板为您的飞行节省了时间，请支持作者。</string>
     <string name="donation_author">作者：%1$s</string>
     <string name="donation_no_browser">无法在此设备上打开链接。</string>
+    <string name="back_to_setup_hint">再次按返回键以返回主机选择</string>
+    <string name="connection_lost">与主机的连接已断开</string>
+    <string name="retry_now">立即重试</string>
+    <string name="change_host">更换主机</string>
+    <string name="donation_copied">支付信息已复制</string>
+    <string name="setup_profiles_count">配置文件：%1$d</string>
 </resources>

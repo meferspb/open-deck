@@ -20,7 +20,7 @@ JSON プロファイルで記述され、3 つのフォームファクタ向け�
 | | |
 | --- | --- |
 | バージョン | 0.1.0 |
-| テスト | Python 248 + Node.js 35 |
+| テスト | Python 252 + Node.js 41 |
 | ホストプラットフォーム | Windows 10/11（Python 3.11+ またはインストーラー） |
 | クライアント | ブラウザ（任意のモダンブラウザ）、Android 8+ |
 | 作者 | Viktor Krasnikov — [github.com/meferspb/open-deck](https://github.com/meferspb/open-deck) |
@@ -257,7 +257,7 @@ integrity/               # 重要ファイルの SHA-256 マニフェスト
 ## テスト
 
 ```powershell
-python -m unittest discover -s tests        # 250 テスト
+python -m unittest discover -s tests        # 252 テスト
 node --test "tests/web/*.test.mjs"          # 29 テスト
 python -m ruff check msfs_gateway tests scripts
 ```

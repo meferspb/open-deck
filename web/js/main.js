@@ -16,6 +16,7 @@ import { createPanelView } from './ui/panel-view.js';
 import { createDonation } from './ui/donation.js';
 import { createConnect } from './ui/connect.js';
 import { createComfort } from './ui/comfort.js';
+import { createAssistDrawer } from './ui/assist-drawer.js';
 import { verifyUiIntegrity, watchIntegrity } from './ui/integrity.js';
 import { initI18n, onLocaleChange, t } from './core/i18n.js';
 
@@ -116,7 +117,10 @@ createConnect({
 
 const comfort = createComfort({
   brightnessButton: byId('brightness-toggle'),
+  themeButton: byId('theme-toggle'),
   kioskButton: byId('kiosk-toggle'),
+  // assistant drawer is mounted below, after shell handlers exist
+
   exitButton: byId('kiosk-exit'),
   onKioskChange: (on) => {
     if (on) {
@@ -125,6 +129,11 @@ const comfort = createComfort({
       setupMode();
     }
   },
+  notify: (message) => shell.showToast(message, 'info'),
+});
+
+createAssistDrawer({
+  button: byId('assist-drawer-toggle'),
   notify: (message) => shell.showToast(message, 'info'),
 });
 
@@ -400,6 +409,27 @@ async function retryIntegrity() {
   shell.setLocked(false);
   installWatch();
   await start();
+  await refreshWasmStatus();
+  // Проба WASM выполняется в фоне: обновляем индикатор после её завершения.
+  setTimeout(refreshWasmStatus, 1800);
+}
+
+async function refreshWasmStatus() {
+  try {
+    const response = await fetch('/api/health', { cache: 'no-store' });
+    if (!response.ok) return;
+    const data = await response.json();
+    const wasmState = data.wasm?.state;
+    const state =
+      wasmState === 'connected'
+        ? t('common.online')
+        : wasmState === 'unavailable'
+          ? t('common.offline')
+          : t('common.unknown');
+    shell.setStatus({ wasm: state });
+  } catch {
+    shell.setStatus({ wasm: t('common.offline') });
+  }
 }
 
 // ---------------------------------------------------------------------
@@ -493,6 +523,8 @@ async function boot() {
 
   installWatch();
   await start();
+  await refreshWasmStatus();
+  setTimeout(refreshWasmStatus, 1800);
 }
 
 let resizeTimer = 0;

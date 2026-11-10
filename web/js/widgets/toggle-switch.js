@@ -4,7 +4,7 @@
  * так панель не «врёт» при отказе симулятора.
  */
 
-import { Widget, h } from './base.js';
+import { Widget, h, haptic } from './base.js';
 import { t } from '../core/i18n.js';
 
 export class ToggleSwitchWidget extends Widget {
@@ -41,41 +41,55 @@ export class ToggleSwitchWidget extends Widget {
     this.pendingTarget = null;
     /** @type {ReturnType<typeof setTimeout> | null} */
     this.pendingTimer = null;
+    /** @type {ReturnType<typeof setTimeout> | null} */
+    this.rejectedTimer = null;
 
     this.button.addEventListener('click', () => this.onClick());
   }
 
   onClick() {
     if (this.pendingTarget !== null || !this.commandKey) return;
+    haptic();
     const target = !this.current;
     this.setPending(target);
 
     const value = this.action === 'toggle' ? true : target;
     this.ctx
       .command(this.commandKey, value)
-      .then(() => {
+      .then((ack) => {
+        if (ack?.ok === false) this.markRejected(ack.error || t('widget.commandNotExecuted'));
         // Итоговое состояние придёт в телеметрии — ждём его.
       })
       .catch((error) => {
         this.clearPending();
-        this.ctx.notify?.(`${this.caption}: ${error?.message ?? t('widget.commandNotExecuted')}`);
+        this.markRejected(error?.message ?? t('widget.commandNotExecuted'));
       });
   }
 
   /** @param {boolean} target */
   setPending(target) {
     this.pendingTarget = target;
+    this.el.classList.add('is-pending');
     this.button.classList.add('is-pending');
     this.button.setAttribute('aria-busy', 'true');
     if (this.pendingTimer) clearTimeout(this.pendingTimer);
-    this.pendingTimer = setTimeout(() => {
-      this.ctx.notify?.(`${this.caption}: ${t('widget.telemetryNotConfirmed')}`);
-      this.clearPending();
-    }, 2500);
+    this.pendingTimer = setTimeout(() => this.clearPending(), 800);
+  }
+
+  markRejected(message) {
+    this.el.classList.add('is-rejected');
+    this.button.classList.add('is-rejected');
+    if (this.rejectedTimer) clearTimeout(this.rejectedTimer);
+    this.rejectedTimer = setTimeout(() => {
+      this.el.classList.remove('is-rejected');
+      this.button.classList.remove('is-rejected');
+    }, 600);
+    this.ctx.notify?.(`${this.caption}: ${message}`);
   }
 
   clearPending() {
     this.pendingTarget = null;
+    this.el.classList.remove('is-pending');
     this.button.classList.remove('is-pending');
     this.button.removeAttribute('aria-busy');
     if (this.pendingTimer) clearTimeout(this.pendingTimer);
@@ -96,6 +110,7 @@ export class ToggleSwitchWidget extends Widget {
 
   destroy() {
     this.clearPending();
+    if (this.rejectedTimer) clearTimeout(this.rejectedTimer);
     this.button.remove();
   }
 }

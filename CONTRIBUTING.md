@@ -28,7 +28,7 @@ pwsh -File scripts/check.ps1
 The script runs:
 
 - `ruff check` and `ruff format --check` for Python;
-- `python -m unittest discover -s tests` (250 tests);
+- `python -m unittest discover -s tests` (252 tests);
 - `node --test "tests/web/*.test.mjs"` (29 tests), if Node.js is installed.
 
 To install the linter tools: `python -m pip install ruff`.

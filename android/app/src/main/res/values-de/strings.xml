@@ -36,4 +36,10 @@
     <string name="donation_default_message">Das Projekt ist kostenlos und funktioniert ohne Internet. Wenn das Panel Ihnen im Flug Zeit spart, unterstützen Sie bitte den Autor.</string>
     <string name="donation_author">Autor: %1$s</string>
     <string name="donation_no_browser">Der Link konnte auf diesem Gerät nicht geöffnet werden.</string>
+    <string name="back_to_setup_hint">Noch einmal Zurück drücken, um zur Host-Auswahl zu gelangen</string>
+    <string name="connection_lost">Verbindung zum Host verloren</string>
+    <string name="retry_now">Jetzt erneut versuchen</string>
+    <string name="change_host">Anderer Host</string>
+    <string name="donation_copied">Zahlungsdaten kopiert</string>
+    <string name="setup_profiles_count">Profile: %1$d</string>
 </resources>

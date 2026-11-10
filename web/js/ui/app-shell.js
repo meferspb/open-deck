@@ -45,6 +45,7 @@ export function createAppShell({ onDeviceChange, onAircraftChange, onRetry, onLo
     statusLayout: byId('status-layout'),
     statusRate: byId('status-rate'),
     statusGateway: byId('status-gateway'),
+    statusWasm: byId('status-wasm'),
     lockScreen: byId('lock-screen'),
     lockTitle: byId('lock-title'),
     lockDetail: byId('lock-detail'),
@@ -54,7 +55,7 @@ export function createAppShell({ onDeviceChange, onAircraftChange, onRetry, onLo
   };
 
   const deviceButtons = [...el.deviceSwitch.querySelectorAll('[data-device]')];
-  const status = { profileLabel: '', layoutLabel: '', rate: '', gateway: '' };
+  const status = { profileLabel: '', layoutLabel: '', rate: '', gateway: '', wasm: '' };
   /** @type {ReturnType<typeof setTimeout> | null} */
   let toastTimer = null;
   let locked = false;
@@ -100,12 +101,14 @@ export function createAppShell({ onDeviceChange, onAircraftChange, onRetry, onLo
       layoutLabel: 'panel.layoutStatus',
       rate: 'panel.rateStatus',
       gateway: 'panel.gatewayStatus',
+      wasm: 'panel.wasmStatus',
     };
     const targets = {
       profileLabel: el.statusProfile,
       layoutLabel: el.statusLayout,
       rate: el.statusRate,
       gateway: el.statusGateway,
+      wasm: el.statusWasm,
     };
     for (const [field, key] of Object.entries(keys)) {
       const value = status[field];

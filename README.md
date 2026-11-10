@@ -20,7 +20,7 @@ access.
 | | |
 | --- | --- |
 | Version | 0.1.0 |
-| Tests | 250 Python + 35 Node.js |
+| Tests | 252 Python + 41 Node.js |
 | Host platform | Windows 10/11 (Python 3.11+ or installer) |
 | Clients | browser (any modern one), Android 8+ |
 | Author | Viktor Krasnikov — [github.com/meferspb/open-deck](https://github.com/meferspb/open-deck) |
@@ -254,7 +254,7 @@ integrity/               # SHA-256 manifest of critical files
 ## Tests
 
 ```powershell
-python -m unittest discover -s tests        # 250 tests
+python -m unittest discover -s tests        # 252 tests
 node --test "tests/web/*.test.mjs"          # 29 tests
 python -m ruff check msfs_gateway tests scripts
 ```

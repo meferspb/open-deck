@@ -486,6 +486,9 @@ class AssistManager:
                 return self.landing.disarm()
             if action == "toga":
                 return self.landing.toga()
+            if action in {"nav", "nav_only"}:
+                ok = self._send("nav.gpsDrivesNav1", False)
+                return ok, "NAV1 выбран как источник навигации" if ok else "Нет связи с MSFS"
         return False, f"Неизвестное действие: {action or '—'}"
 
     def status(self) -> dict[str, Any]:

@@ -24,6 +24,7 @@ import queue
 import tempfile
 import threading
 import time
+from collections import deque
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -243,6 +244,7 @@ class SimConnectSim(SimProvider):
         #: Датумы, реально принятые SimConnect, в порядке datum_id.
         #: Заполняется в `_open()` после успешных `AddToDataDefinition`.
         self._data_keys: list[str] = []
+        self._diagnostics: deque[dict[str, Any]] = deque(maxlen=48)
 
         self._connect()
 
@@ -449,6 +451,9 @@ class SimConnectSim(SimProvider):
                     sim_var,
                     hr & 0xFFFFFFFF,
                 )
+                self._record_diagnostic(
+                    "definition_failed", simVar=sim_var, hresult=hr & 0xFFFFFFFF
+                )
                 continue
             self._data_keys.append(key)
 
@@ -497,6 +502,9 @@ class SimConnectSim(SimProvider):
                     label,
                     hr & 0xFFFFFFFF,
                 )
+                self._record_diagnostic(
+                    "identity_definition_failed", label=label, hresult=hr & 0xFFFFFFFF
+                )
                 continue
             hr = self._dll.SimConnect_RequestDataOnSimObject(
                 self._handle,
@@ -511,6 +519,18 @@ class SimConnectSim(SimProvider):
             )
             if hr != S_OK:
                 logger.warning("RequestDataOnSimObject(%s) вернул 0x%08X", label, hr & 0xFFFFFFFF)
+                self._record_diagnostic("request_failed", label=label, hresult=hr & 0xFFFFFFFF)
+
+    def _record_diagnostic(self, event: str, **details: Any) -> None:
+        entry = {"ts": round(time.time(), 3), "event": event, **details}
+        with self._lock:
+            self._diagnostics.append(entry)
+        logger.debug("SimConnect diagnostic: %s", entry)
+
+    def diagnostics(self) -> list[dict[str, Any]]:
+        """Последние события SimConnect для /api/diagnostics."""
+        with self._lock:
+            return list(self._diagnostics)
 
     def _disconnect(self) -> None:
         if self._dll is not None and self._handle is not None:
@@ -665,7 +685,8 @@ class SimConnectSim(SimProvider):
         # Исключение внутри колбэка уронило бы нативное приложение.
         try:
             self._handle_message(data_ptr, cb_data)
-        except Exception:
+        except Exception as exc:
+            self._record_diagnostic("dispatch_error", error=str(exc))
             logger.exception("Ошибка обработки сообщения SimConnect")
 
     def _handle_message(self, data_ptr: Any, cb_data: int) -> None:
@@ -683,6 +704,13 @@ class SimConnectSim(SimProvider):
                 exception.dwException,
                 exception.dwSendID,
                 exception.dwIndex,
+            )
+            self._record_diagnostic(
+                "simconnect_exception",
+                name=name,
+                code=exception.dwException,
+                sendId=exception.dwSendID,
+                index=exception.dwIndex,
             )
         elif recv.dwID == SIMCONNECT_RECV_ID_QUIT:
             self._quit.set()
@@ -783,6 +811,17 @@ class SimConnectSim(SimProvider):
                 values["fuel.totalGal"] = None
             elif values.get("fuel.totalGal") is None:
                 values["fuel.totalGal"] = round(float(left) + float(right), 3)
+
+            # Радиовысотомер не является рабочим инструментом на эшелоне;
+            # выше 2500 ft значение бесполезно для ассистента и вводит в
+            # заблуждение, поэтому отдаём «нет данных».
+            radio_alt = values.get("aircraft.radioAltitudeFt")
+            if (
+                isinstance(radio_alt, (int, float))
+                and not isinstance(radio_alt, bool)
+                and float(radio_alt) > 2500.0
+            ):
+                values["aircraft.radioAltitudeFt"] = None
             return values
 
     @property
@@ -812,10 +851,13 @@ class SimConnectSim(SimProvider):
         target = telemetry.coerce(key, value)
 
         if variable.sim_event_param:
-            if isinstance(target, bool) or not isinstance(target, (int, float)):
+            if isinstance(target, bool):
+                event_data = 1 if target else 0
+            elif isinstance(target, (int, float)):
+                scaled = float(target) * variable.sim_event_scale
+                event_data = round(scaled) & 0xFFFFFFFF
+            else:
                 raise SimCommandError(f"{key}: событие {variable.sim_event} ожидает число")
-            scaled = float(target) * variable.sim_event_scale
-            event_data = round(scaled) & 0xFFFFFFFF
         else:
             # Событие TOGGLE_* переключает состояние, поэтому «set» реализуем
             # сравнением с текущим значением и отправкой события только при различии.

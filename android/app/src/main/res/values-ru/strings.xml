@@ -36,4 +36,10 @@
     <string name="donation_default_message">Проект бесплатный и работает без интернета. Если панель экономит ваше время в полёте — поддержите автора.</string>
     <string name="donation_author">Автор: %1$s</string>
     <string name="donation_no_browser">Не удалось открыть ссылку на этом устройстве.</string>
+    <string name="back_to_setup_hint">Нажмите «Назад» ещё раз, чтобы вернуться к выбору хоста</string>
+    <string name="connection_lost">Связь с хостом потеряна</string>
+    <string name="retry_now">Повторить сейчас</string>
+    <string name="change_host">Другой хост</string>
+    <string name="donation_copied">Реквизиты скопированы</string>
+    <string name="setup_profiles_count">профилей: %1$d</string>
 </resources>

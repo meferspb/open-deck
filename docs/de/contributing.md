@@ -29,7 +29,7 @@ pwsh -File scripts/check.ps1
 Das Skript führt aus:
 
 - `ruff check` und `ruff format --check` für Python;
-- `python -m unittest discover -s tests` (250 Tests);
+- `python -m unittest discover -s tests` (252 Tests);
 - `node --test "tests/web/*.test.mjs"` (29 Tests), falls Node.js installiert
   ist.
 

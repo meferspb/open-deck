@@ -25,6 +25,7 @@ import logging
 import re
 import struct
 import threading
+import time
 from collections.abc import Iterable, Sequence
 from typing import Any, Final, Protocol
 
@@ -229,6 +230,8 @@ class WasmBridge:
         self._transport = transport
         self.logger = logger or logging.getLogger("msfs_gateway.wasm")
         self._lock = threading.RLock()
+        self._last_error: str | None = None
+        self._last_success_at: float | None = None
 
     @property
     def available(self) -> bool:
@@ -238,6 +241,36 @@ class WasmBridge:
     def transport(self) -> WasmTransport:
         return self._transport
 
+    def status(self) -> dict[str, Any]:
+        """Диагностика моста для /api/diagnostics и UI."""
+        with self._lock:
+            return {
+                "available": self.available,
+                "transport": type(self._transport).__name__,
+                "lastError": self._last_error,
+                "lastSuccessAt": self._last_success_at,
+            }
+
+    def probe(self) -> bool:
+        """Проверяет, отвечает ли установленный WASM-модуль."""
+        if not self.available:
+            self._last_error = "WASM-мост не подключён"
+            return False
+        payload = encode_lvar_block([("__open_deck_probe__", 0.0)])
+        try:
+            with self._lock:
+                self._transport.write_area(LVAR_AREA, payload)
+                data = self._transport.read_area(LVAR_AREA, len(payload))
+            if data is None:
+                self._last_error = "WASM-модуль не ответил на пробный запрос"
+                return False
+            self._last_success_at = time.monotonic()
+            self._last_error = None
+            return True
+        except Exception as exc:
+            self._last_error = str(exc)
+            return False
+
     def read_lvars(self, names: Sequence[str]) -> dict[str, float]:
         """Читает значения LVAR по именам (пачками, чтобы не превысить буфер).
 
@@ -246,6 +279,7 @@ class WasmBridge:
         считать достоверным без сверки с документацией ВС.
         """
         if not self.available:
+            self._last_error = "WASM-мост не подключён"
             raise WasmBridgeError("WASM-мост не подключён")
 
         unique = [name for name in dict.fromkeys(names) if name]
@@ -258,6 +292,9 @@ class WasmBridge:
                 data = self._transport.read_area(LVAR_AREA, len(request))
             if data:
                 result.update(decode_lvar_block(data, len(chunk)))
+        if result:
+            self._last_success_at = time.monotonic()
+            self._last_error = None
         return result
 
     def write_lvar(self, name: str, value: float) -> None:
@@ -269,10 +306,13 @@ class WasmBridge:
     def execute_rpn(self, script: str) -> str:
         """Выполняет RPN-скрипт и возвращает ответ модуля."""
         if not self.available:
+            self._last_error = "WASM-мост не подключён"
             raise WasmBridgeError("WASM-мост не подключён")
         with self._lock:
             self._transport.write_area(COMMAND_AREA, encode_command(script))
             data = self._transport.read_area(RESPONSE_AREA, RESPONSE_BYTES)
+        self._last_error = None
+        self._last_success_at = time.monotonic()
         return decode_response(data or b"")
 
     def read_specs(self, specs: Sequence[dict[str, Any]]) -> dict[str, Any]:

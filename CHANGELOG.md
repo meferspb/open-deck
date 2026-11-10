@@ -16,18 +16,42 @@ versions — [SemVer](https://semver.org/lang/ru/).
 
 ### Added
 
+- `/api/health` now reports the active profile, and `/api/diagnostics` returns
+  recent SimConnect exceptions plus WASM transport/probe status.
+- WASM status is shown in the panel status bar; the bridge probes the module in
+  the background and reports `connected`, `unavailable`, or `unknown`.
+- Landing assistant has a **NAV only** action (`TOGGLE_GPS_DRIVES_NAV1`) that
+  switches the CDI source back to the NAV radio.
 - **Donation** link — [https://taps.uz/open_deck_fs](https://taps.uz/open_deck_fs) — in the web panel,
   editor, login screen, assistant, Android UI, README, and documentation.
 - Author **Viktor Krasnikov** and the repository
   [github.com/meferspb/open-deck](https://github.com/meferspb/open-deck) are credited.
+- Cockpit lighting themes (`day`, `night-red`, `amber`) with a header button and
+  `N` shortcut; canvas instruments are tinted without redrawing their logic.
+- Optimistic command feedback for switches and knobs: pending state, timeout,
+  rejection flash, and haptic vibration on touch.
+- Fine-tune HUD for small rotary knobs on phones (`−10×`, `−1×`, `+1×`, `+10×`,
+  slider, large readout).
+- Slide-out flight-assistant drawer in the main panel, with the standalone
+  `/assist.html` page kept in place.
+- Editor smart guides, form-factor override badges/reset, keyboard nudging, and
+  `Ctrl+D` duplication.
+- Android: safe back navigation with double-back confirmation, non-intrusive
+  reconnection overlay with auto-retry, structured discovery cards, probing
+  progress, and clipboard support for donation values.
 
 ### Fixed
 
+- Radio altitude is reported as `null` above 2500 ft instead of showing a
+  meaningless high-altitude value in the landing assistant.
+- Idle keep-alive timeouts are logged at debug level, so normal client
+  disconnects no longer flood the server log with warnings.
 - Kiosk mode no longer triggers `badge_tampered`: the author-support badge is
   kept visible as a compact fixed chip instead of being hidden with the app bar.
-- Phone/tablet full-screen mode now preserves the logical profile aspect ratio
-  and scales the whole panel to fit the stage. Previously a short viewport
-  squashed widgets and clipped instrument readings at the edges.
+- The working panel is now full-screen on desktop and mobile; the device frame
+  is available only explicitly via `?frame=1`. Canvas gauges
+  (`gauge-radial`, `altimeter`, `heading`, `vsi`) are sized to their cards, so
+  readings are no longer clipped on high-DPI/mobile screens.
 - Runtime viewport changes (Chrome DevTools device mode, rotation) now re-detect
   the form factor and frame/full mode; manually selected device presets are
   preserved.

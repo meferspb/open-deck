@@ -260,6 +260,14 @@ _VARIABLES: Final[tuple[Variable, ...]] = (
         sim_unit="bool",
     ),
     Variable(
+        "nav.gpsDrivesNav1",
+        "bool",
+        "GPS drives NAV1 (false = NAV radio)",
+        sim_var="GPS DRIVES NAV1",
+        sim_unit="bool",
+        sim_event="TOGGLE_GPS_DRIVES_NAV1",
+    ),
+    Variable(
         "controls.throttlePct",
         "number",
         "Throttle",

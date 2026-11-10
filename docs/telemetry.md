@@ -116,6 +116,7 @@ these keys, and the gateway reads SimVars and sends commands.
 | `nav.glideSlope` | number | ° | NAV GLIDE SLOPE ERROR | — | Glideslope deviation |
 | `nav.locFlag` | bool | — | HSI CDI NEEDLE VALID | — | Localizer captured |
 | `nav.gsFlag` | bool | — | HSI GSI NEEDLE VALID | — | Glideslope captured |
+| `nav.gpsDrivesNav1` | bool | — | GPS DRIVES NAV1 | TOGGLE_GPS_DRIVES_NAV1 | GPS drives NAV1 (false = NAV radio) |
 
 ### Controls
 
@@ -143,6 +144,7 @@ parameter it is scaled (for example, percent → 0..16383).
 | `autopilot.headingBugDeg` | `HEADING_BUG_SET` | yes | 1.0 |
 | `autopilot.master` | `AP_MASTER` | no | 1.0 |
 | `autopilot.approachHold` | `AP_APR_HOLD` | no | 1.0 |
+| `nav.gpsDrivesNav1` | `TOGGLE_GPS_DRIVES_NAV1` | no | 1.0 |
 | `controls.throttlePct` | `THROTTLE_SET` | yes | 163.83 |
 | `controls.rudder` | `RUDDER_SET` | yes | 163.83 |
 | `brakes.parking` | `PARKING_BRAKES` | no | 1.0 |

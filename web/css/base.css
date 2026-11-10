@@ -307,8 +307,24 @@ select {
 }
 
 .icon-btn svg {
-  width: 17px;
-  height: 17px;
+  width: 18px;
+  height: 18px;
+}
+
+.theme-toggle__dot {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft), 0 0 12px var(--accent-soft);
+}
+
+:root[data-theme="night-red"] .theme-toggle__dot {
+  background: #ff3b30;
+}
+
+:root[data-theme="amber"] .theme-toggle__dot {
+  background: #ffb000;
 }
 
 /* ---------------------------------------------------------------- сцена */
@@ -930,4 +946,174 @@ body.android-body {
   color: #cfe3f2;
   font: 12px/1.5 "Cascadia Mono", "Consolas", monospace;
   white-space: pre-wrap;
+}
+
+/* --- Flight assistant drawer ------------------------------------------ */
+.assist-drawer__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(2, 5, 8, 0.55);
+  backdrop-filter: blur(5px);
+}
+
+.assist-drawer {
+  position: fixed;
+  z-index: 101;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(420px, 100vw);
+  overflow-y: auto;
+  padding: 18px;
+  border-left: 1px solid var(--line-strong);
+  background: linear-gradient(180deg, var(--surface-2), var(--bg));
+  box-shadow: -24px 0 60px rgba(0, 0, 0, 0.45);
+  animation: drawer-in 0.22s var(--ease);
+}
+
+@keyframes drawer-in {
+  from { transform: translateX(24px); opacity: 0.4; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.assist-drawer__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.assist-drawer__title {
+  font-size: 18px;
+}
+
+.assist-drawer__close {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.assist-drawer__section {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.assist-drawer__section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.assist-drawer__section-head h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.assist-drawer__message {
+  margin: 8px 0 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.assist-drawer__readouts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.assist-drawer__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+}
+
+.assist-drawer__label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.assist-drawer__value {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.assist-drawer__speed {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 10px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.assist-drawer__speed input {
+  grid-column: 1 / -1;
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.assist-drawer__heading {
+  display: flex;
+  gap: 6px;
+  margin: 12px 0;
+}
+
+.assist-drawer__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.assist-drawer .assist-btn--primary,
+.assist-drawer .assist-btn--danger {
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.assist-drawer .assist-btn--primary {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.assist-drawer .assist-btn--danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.assist-drawer .assist-badge[data-phase="engaged"],
+.assist-drawer .assist-badge[data-phase="armed"],
+.assist-drawer .assist-badge[data-phase="approach"],
+.assist-drawer .assist-badge[data-phase="flare"] {
+  color: var(--warn);
+}
+
+@media (max-width: 760px) {
+  .assist-drawer {
+    top: 8vh;
+    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  }
 }

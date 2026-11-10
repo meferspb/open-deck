@@ -121,6 +121,19 @@ class NumericDatumStillWorksTest(unittest.TestCase):
         values = sim.read()
         self.assertAlmostEqual(values["fuel.totalGal"], 74.3, places=3)
 
+    def test_radio_altitude_is_invalid_above_2500_ft(self):
+        sim = _make_sim(telemetry.empty_snapshot())
+        sim._handle = object()
+        sim._opened_at = time.monotonic()
+        sim._last_data_at = time.monotonic()
+        sim._last_numeric_at = sim._last_data_at
+        sim._data_keys = ["aircraft.radioAltitudeFt"]
+        sim._values["aircraft.radioAltitudeFt"] = 31777.0
+        self.assertIsNone(sim.read()["aircraft.radioAltitudeFt"])
+
+        sim._values["aircraft.radioAltitudeFt"] = 120.0
+        self.assertEqual(sim.read()["aircraft.radioAltitudeFt"], 120.0)
+
     def test_packet_is_parsed_by_real_sdk_field_order(self):
         """Независимый от `_RecvSimObjectData` тест: байты как в SimConnect.h."""
         sim = _make_sim()

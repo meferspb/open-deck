@@ -65,5 +65,7 @@ export function detectDeviceClass(width) {
  * @param {{innerWidth: number, matchMedia?: (q: string) => MediaQueryList}} [view]
  */
 export function shouldUseFrame(view = window) {
-  return view.innerWidth >= 900;
+  // Рабочий режим — полноэкранный на любом устройстве. Рамка-макет
+  // включается только явно через `?frame=1` (превью устройства).
+  return false;
 }

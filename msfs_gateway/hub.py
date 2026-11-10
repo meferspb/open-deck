@@ -384,18 +384,24 @@ class Hub:
 
     def health(self) -> dict[str, Any]:
         """Сводка состояния для /api/health."""
+        try:
+            values = self.sim.read()
+        except Exception:
+            values = {}
+        profile_id = self._active_profile_id(values)
         return {
             "status": "ok",
             "version": __version__,
             "uptimeSec": round(time.monotonic() - self._started_at, 1),
             "clients": self.client_count,
             "telemetryHz": self.hz,
+            "profileId": profile_id,
             "sim": {
                 "provider": self.sim.name,
                 "connected": bool(self.sim.connected),
                 "aircraftTitle": self.sim.aircraft_title,
                 "atcModel": getattr(self.sim, "atc_model", None),
-                "profileId": self.sim.profile_id,
+                "profileId": profile_id,
             },
         }
 

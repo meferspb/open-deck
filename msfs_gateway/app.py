@@ -123,9 +123,30 @@ class GatewayApplication:
 
         self.wasm_bridge = bridge
         self.hub.set_custom_reader(bridge.read_specs)
+        probe = getattr(bridge, "probe", None)
+        if callable(probe):
+            threading.Thread(target=probe, name="wasm-probe", daemon=True).start()
         self.logger.info(
             "WASM-мост подключён: LVAR/RPN через Client Data Area (MobiFlight/SimBridge)"
         )
+
+    def wasm_status(self) -> dict[str, object]:
+        """Диагностика WASM-моста для UI и /api/health."""
+        if not self.settings.wasm:
+            return {"enabled": False, "available": False, "state": "disabled"}
+        if self.wasm_bridge is None:
+            return {"enabled": True, "available": False, "state": "unavailable"}
+        status = self.wasm_bridge.status()
+        status["enabled"] = True
+        if not status.get("available"):
+            status["state"] = "unavailable"
+        elif status.get("lastSuccessAt"):
+            status["state"] = "connected"
+        elif status.get("lastError"):
+            status["state"] = "unavailable"
+        else:
+            status["state"] = "unknown"
+        return status
 
     def serve_forever(self) -> None:
         """Блокирующий цикл HTTP-сервера (режим CLI)."""

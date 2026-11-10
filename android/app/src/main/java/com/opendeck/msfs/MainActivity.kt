@@ -3,11 +3,18 @@ package com.opendeck.msfs
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowInsets
@@ -24,6 +31,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 
@@ -50,6 +58,10 @@ class MainActivity : Activity() {
     /** Номер попытки подключения: поздний ответ прошлой попытки игнорируется. */
     private var probeToken = 0
     private var probing = false
+    private var lastBackAt = 0L
+    private var reconnectOverlay: View? = null
+    private val reconnectHandler = Handler(Looper.getMainLooper())
+    private var reconnectRunnable: Runnable? = null
 
     /** Пока идёт загрузка реквизитов, повторные нажатия не плодят диалоги. */
     private var donationLoading = false
@@ -65,6 +77,11 @@ class MainActivity : Activity() {
 
         root = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
         setContentView(root)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            onBackInvokedDispatcher.registerOnBackInvokedCallback(
+                android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+            ) { handleBack() }
+        }
 
         store = HostStore(this)
         discovery = DiscoveryClient(
@@ -104,6 +121,8 @@ class MainActivity : Activity() {
     }
 
     override fun onDestroy() {
+        hideReconnectOverlay()
+        reconnectHandler.removeCallbacksAndMessages(null)
         currentDialog?.dismiss()
         currentDialog = null
         discovery.stop()
@@ -117,11 +136,27 @@ class MainActivity : Activity() {
 
     @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
     override fun onBackPressed() {
-        if (webView != null) {
-            showSetup(null)
-        } else {
+        handleBack()
+    }
+
+    private fun handleBack() {
+        val view = webView
+        if (view == null) {
             super.onBackPressed()
+            return
         }
+        if (view.canGoBack()) {
+            view.goBack()
+            return
+        }
+        val now = System.currentTimeMillis()
+        if (now - lastBackAt <= 2000L) {
+            lastBackAt = 0L
+            showSetup(null)
+            return
+        }
+        lastBackAt = now
+        Toast.makeText(this, R.string.back_to_setup_hint, Toast.LENGTH_SHORT).show()
     }
 
     @Suppress("DEPRECATION")
@@ -150,6 +185,7 @@ class MainActivity : Activity() {
     // ------------------------------------------------------------------
     @SuppressLint("InflateParams")
     private fun showSetup(message: String?) {
+        hideReconnectOverlay()
         dismissDialog()
         // Экран настройки не должен удерживать экран включённым.
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -190,6 +226,7 @@ class MainActivity : Activity() {
             }
         }
         donation.setOnClickListener { showDonationDialog() }
+        setProbing(false)
 
         renderHosts(discovery.snapshot())
         // Если приёмник упал (например, порт был занят), пробуем поднять снова.
@@ -234,18 +271,9 @@ class MainActivity : Activity() {
         }
 
         for (host in hosts) {
-            val card = TextView(this).apply {
-                text = getString(
-                    R.string.setup_host_card,
-                    if (host.authRequired) "🔒 ${host.name}" else host.name,
-                    "${host.address}:${host.port}",
-                    host.version,
-                    host.profileCount,
-                )
-                setTextColor(getColor(R.color.text))
-                textSize = 14f
-                setLineSpacing(dp(3).toFloat(), 1f)
-                setPadding(dp(14), dp(12), dp(14), dp(12))
+            val card = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(14), dp(11), dp(14), dp(11))
                 setBackgroundResource(R.drawable.bg_card)
                 isClickable = true
                 isFocusable = true
@@ -255,6 +283,61 @@ class MainActivity : Activity() {
                 ).apply { bottomMargin = dp(8) }
                 setOnClickListener { probeAndConnect(host, auto = false) }
             }
+
+            val top = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+            }
+            top.addView(
+                TextView(this).apply {
+                    text = host.name
+                    setTextColor(getColor(R.color.text))
+                    textSize = 16f
+                    setTypeface(typeface, Typeface.BOLD)
+                    layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                },
+            )
+            if (host.authRequired) {
+                top.addView(
+                    TextView(this).apply {
+                        text = "🔒"
+                        textSize = 14f
+                        setPadding(dp(6), 0, dp(6), 0)
+                    },
+                )
+            }
+            top.addView(
+                TextView(this).apply {
+                    text = "v${host.version}"
+                    setTextColor(getColor(R.color.muted))
+                    textSize = 12f
+                },
+            )
+
+            val bottom = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(0, dp(5), 0, 0)
+            }
+            bottom.addView(
+                TextView(this).apply {
+                    text = "${host.address}:${host.port}"
+                    setTextColor(getColor(R.color.accent))
+                    textSize = 13f
+                    typeface = Typeface.MONOSPACE
+                    layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                },
+            )
+            bottom.addView(
+                TextView(this).apply {
+                    text = getString(R.string.setup_profiles_count, host.profileCount)
+                    setTextColor(getColor(R.color.muted))
+                    textSize = 11f
+                },
+            )
+
+            card.addView(top)
+            card.addView(bottom)
             container.addView(card)
         }
     }
@@ -265,7 +348,7 @@ class MainActivity : Activity() {
     private fun probeAndConnect(host: HostInfo, auto: Boolean) {
         probeToken += 1
         val token = probeToken
-        probing = true
+        setProbing(true)
         setStatus(getString(R.string.setup_status_probing, "${host.address}:${host.port}"), pin = true)
 
         Thread {
@@ -274,7 +357,7 @@ class MainActivity : Activity() {
 
             runOnUiThread {
                 if (token != probeToken) return@runOnUiThread
-                probing = false
+                setProbing(false)
                 if (isFinishing || isDestroyed) return@runOnUiThread
 
                 when {
@@ -298,6 +381,80 @@ class MainActivity : Activity() {
         val status = setupView?.findViewById<TextView>(R.id.status) ?: return
         status.setTextColor(getColor(R.color.accent))
         status.text = text
+    }
+
+    private fun setProbing(value: Boolean) {
+        probing = value
+        setupView?.findViewById<ProgressBar>(R.id.probeProgress)?.visibility =
+            if (value) View.VISIBLE else View.GONE
+        setupView?.findViewById<Button>(R.id.connectButton)?.isEnabled = !value
+    }
+
+    private fun showReconnectOverlay(host: HostInfo) {
+        hideReconnectOverlay()
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(dp(24), dp(24), dp(24), dp(24))
+            setBackgroundColor(Color.argb(200, 3, 6, 10))
+        }
+        panel.addView(
+            TextView(this).apply {
+                text = getString(R.string.connection_lost)
+                setTextColor(getColor(R.color.text))
+                textSize = 18f
+                gravity = Gravity.CENTER
+            },
+        )
+        panel.addView(
+            TextView(this).apply {
+                text = "${host.address}:${host.port}"
+                setTextColor(getColor(R.color.muted))
+                textSize = 13f
+                gravity = Gravity.CENTER
+                setPadding(0, dp(6), 0, dp(18))
+                typeface = Typeface.MONOSPACE
+            },
+        )
+        val retry = Button(this).apply {
+            text = getString(R.string.retry_now)
+            setOnClickListener {
+                webView?.reload()
+                showReconnectOverlay(host)
+            }
+        }
+        val change = Button(this).apply {
+            text = getString(R.string.change_host)
+            setOnClickListener {
+                hideReconnectOverlay()
+                showSetup(null)
+            }
+        }
+        panel.addView(retry)
+        panel.addView(change)
+        root.addView(
+            panel,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+            ),
+        )
+        reconnectOverlay = panel
+        reconnectRunnable = object : Runnable {
+            override fun run() {
+                if (reconnectOverlay === panel) {
+                    webView?.reload()
+                    reconnectHandler.postDelayed(this, 3000L)
+                }
+            }
+        }.also { reconnectHandler.postDelayed(it, 3000L) }
+    }
+
+    private fun hideReconnectOverlay() {
+        reconnectRunnable?.let(reconnectHandler::removeCallbacks)
+        reconnectRunnable = null
+        reconnectOverlay?.let(root::removeView)
+        reconnectOverlay = null
     }
 
     private fun dismissDialog() {
@@ -373,6 +530,7 @@ class MainActivity : Activity() {
     private fun openPanel(host: HostInfo) {
         if (isFinishing || isDestroyed) return
 
+        hideReconnectOverlay()
         dismissDialog()
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         store.save(host)
@@ -418,6 +576,11 @@ class MainActivity : Activity() {
                 return true
             }
 
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                if (webView === view) hideReconnectOverlay()
+            }
+
             override fun onReceivedError(
                 view: WebView?,
                 request: WebResourceRequest?,
@@ -427,17 +590,7 @@ class MainActivity : Activity() {
                 if (request?.isForMainFrame == true && webView === view) {
                     root.post {
                         if (webView !== view || isFinishing || isDestroyed) return@post
-                        showDialog {
-                            setTitle(R.string.app_name)
-                            setMessage(getString(R.string.panel_load_error, host.address))
-                            setCancelable(false)
-                            setPositiveButton(R.string.action_retry) { _, _ ->
-                                probeAndConnect(host, auto = false)
-                            }
-                            setNegativeButton(R.string.action_other_host) { _, _ ->
-                                showSetup(null)
-                            }
-                        }
+                        if (reconnectOverlay == null) showReconnectOverlay(host)
                     }
                 }
             }
@@ -538,7 +691,16 @@ class MainActivity : Activity() {
     }
 
     private fun openDonationLink(link: DonationLink) {
-        val url = link.url ?: return
+        val url = link.url
+        if (url.isNullOrBlank()) {
+            val value = link.value
+            if (!value.isNullOrBlank()) {
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText(link.label, value))
+                Toast.makeText(this, R.string.donation_copied, Toast.LENGTH_SHORT).show()
+            }
+            return
+        }
         val uri = Uri.parse(url)
         // Только веб-ссылки: file://, content://, intent: от хоста не принимаем.
         if (uri.scheme != "http" && uri.scheme != "https") {

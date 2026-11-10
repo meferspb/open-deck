@@ -124,15 +124,28 @@ Below, `{id}` is a profile identifier (`[a-z0-9][a-z0-9-]{1,63}`).
   "uptimeSec": 42.1,
   "clients": 1,
   "telemetryHz": 30.0,
+  "profileId": "cessna-172-g1000",
   "authRequired": true,
   "sim": {
     "provider": "simconnect",
     "connected": true,
     "aircraftTitle": "Cessna Skyhawk G1000 Asobo",
     "profileId": "cessna-172-g1000"
+  },
+  "wasm": {
+    "enabled": true,
+    "available": true,
+    "state": "connected",
+    "lastError": null
   }
 }
 ```
+
+### `GET /api/diagnostics`
+
+Session required. Returns recent SimConnect exceptions (`simconnect`),
+WASM transport/probe status (`wasm`), and the current health snapshot
+(`health`). Useful for diagnosing `NAME_UNRECOGNIZED` and Client Data timeouts.
 
 ### `GET /api/profiles`
 

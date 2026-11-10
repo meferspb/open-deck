@@ -8,6 +8,7 @@
  */
 
 import { onLocaleChange, t } from '../core/i18n.js';
+import { THEMES, THEME_STORAGE_KEY, isTheme, nextTheme } from './theme.js';
 
 export const BRIGHTNESS_LEVELS = Object.freeze([
   { id: 'full', value: 1, label: '100%' },
@@ -31,13 +32,21 @@ export function brightnessLabel(id) {
 /**
  * @param {{
  *   brightnessButton: HTMLElement,
+ *   themeButton: HTMLElement,
  *   kioskButton: HTMLElement,
  *   exitButton: HTMLElement,
  *   onKioskChange?: (on: boolean) => void,
  *   notify?: (message: string) => void,
  * }} options
  */
-export function createComfort({ brightnessButton, kioskButton, exitButton, onKioskChange, notify }) {
+export function createComfort({
+  brightnessButton,
+  themeButton,
+  kioskButton,
+  exitButton,
+  onKioskChange,
+  notify,
+}) {
   const root = document.documentElement;
   let kiosk = false;
 
@@ -71,6 +80,36 @@ export function createComfort({ brightnessButton, kioskButton, exitButton, onKio
     applyBrightness(nextBrightness(root.dataset.brightness ?? BRIGHTNESS_LEVELS[0].id));
   }
 
+  function storedTheme() {
+    try {
+      const stored = localStorage.getItem(THEME_STORAGE_KEY);
+      if (isTheme(stored)) return stored;
+    } catch {
+      /* localStorage может быть выключен */
+    }
+    return THEMES[0].id;
+  }
+
+  function applyTheme(id, { announce = true } = {}) {
+    const theme = isTheme(id) ? id : THEMES[0].id;
+    root.dataset.theme = theme;
+    themeButton.dataset.theme = theme;
+    const label = t(`theme.${theme}`);
+    themeButton.title = t('comfort.themeTitle', { theme: label });
+    themeButton.setAttribute('aria-label', t('comfort.themeAria', { theme: label }));
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch {
+      /* игнорируем */
+    }
+    if (announce && notify) notify(t('comfort.themeNotify', { theme: label }));
+    window.dispatchEvent(new CustomEvent('open-deck:theme', { detail: { theme } }));
+  }
+
+  function cycleTheme() {
+    applyTheme(nextTheme(root.dataset.theme ?? THEMES[0].id));
+  }
+
   function setKiosk(next, { announce = true } = {}) {
     kiosk = next;
     document.body.classList.toggle('kiosk', kiosk);
@@ -85,10 +124,12 @@ export function createComfort({ brightnessButton, kioskButton, exitButton, onKio
 
   onLocaleChange(() => {
     applyBrightness(root.dataset.brightness ?? BRIGHTNESS_LEVELS[0].id, { announce: false });
+    applyTheme(root.dataset.theme ?? THEMES[0].id, { announce: false });
     kioskButton.title = kiosk ? t('comfort.kioskOnTitle') : t('comfort.kioskOffTitle');
   });
 
   brightnessButton.addEventListener('click', cycleBrightness);
+  themeButton.addEventListener('click', cycleTheme);
   kioskButton.addEventListener('click', () => setKiosk(!kiosk));
   exitButton.addEventListener('click', () => setKiosk(false));
 
@@ -101,6 +142,9 @@ export function createComfort({ brightnessButton, kioskButton, exitButton, onKio
     if (key === 'b') {
       event.preventDefault();
       cycleBrightness();
+    } else if (key === 'n') {
+      event.preventDefault();
+      cycleTheme();
     } else if (key === 'f') {
       event.preventDefault();
       setKiosk(!kiosk);
@@ -111,12 +155,17 @@ export function createComfort({ brightnessButton, kioskButton, exitButton, onKio
   });
 
   applyBrightness(storedBrightness());
+  applyTheme(storedTheme());
 
   return {
     cycleBrightness,
+    cycleTheme,
     setKiosk,
     get brightness() {
       return root.dataset.brightness;
+    },
+    get theme() {
+      return root.dataset.theme;
     },
     get kiosk() {
       return kiosk;

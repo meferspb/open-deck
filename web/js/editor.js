@@ -14,6 +14,7 @@ import { createDonation } from './ui/donation.js';
 import { verifyUiIntegrity, watchIntegrity } from './ui/integrity.js';
 import { createWidgetInstance } from './widgets/registry.js';
 import { initI18n, onLocaleChange, t } from './core/i18n.js';
+import { hasFormFactorOverride, resetFormFactorOverride } from './ui/layout-overrides.js';
 
 initI18n();
 
@@ -124,6 +125,7 @@ let dirty = false;
 /** @type {Map<string, {def: any, wrapper: HTMLElement, instance: any}>} */
 const widgets = new Map();
 let drag = null;
+let guideLayer = null;
 
 // История правок: снимки widgets до изменения. Достаточно для отмены
 // перемещений, размеров, свойств, добавления и удаления приборов.
@@ -141,6 +143,7 @@ const refs = {
   props: $('ed-props'),
   deleteBtn: $('ed-delete'),
   addBtn: $('ed-add'),
+  duplicateBtn: $('ed-duplicate'),
   saveBtn: $('ed-save'),
   undoBtn: $('ed-undo'),
   redoBtn: $('ed-redo'),
@@ -310,6 +313,9 @@ function renderPanel() {
   }
   widgets.clear();
   refs.panel.replaceChildren();
+  guideLayer = document.createElement('div');
+  guideLayer.className = 'ed-guides';
+  refs.panel.append(guideLayer);
   refs.panel.style.setProperty('--panel-bg', profile?.panel?.background ?? '#0b1117');
 
   for (const def of profile?.widgets ?? []) {
@@ -344,8 +350,12 @@ function createWidgetElement(def) {
   const handle = document.createElement('div');
   handle.className = 'ed-widget__handle';
   handle.title = t('editor.resizeTitle');
+  const ovr = document.createElement('div');
+  ovr.className = 'ed-widget__ovr';
+  ovr.textContent = 'OVR';
+  ovr.hidden = !hasFormFactorOverride(def, deviceClass);
 
-  wrapper.append(preview, frame, idLabel, handle);
+  wrapper.append(preview, frame, idLabel, ovr, handle);
   refs.panel.append(wrapper);
 
   const instance = createWidgetInstance(def, preview, stubCtx);
@@ -376,6 +386,8 @@ function refreshLayout() {
     wrapper.style.height = `${rect.h * 100}%`;
     wrapper.style.setProperty('--w', `${Math.round(rect.w * width)}px`);
     wrapper.style.setProperty('--h', `${Math.round(rect.h * height)}px`);
+    const ovr = wrapper.querySelector('.ed-widget__ovr');
+    if (ovr) ovr.hidden = !hasFormFactorOverride(def, deviceClass);
     try {
       instance.update(stubState, 0);
     } catch {
@@ -405,6 +417,84 @@ function editableRect(widget) {
   }
   if (!layout.base) layout.base = { x: 0.05, y: 0.05, w: 0.2, h: 0.2 };
   return layout.base;
+}
+
+function neighborRects(excludeId) {
+  return profile.widgets
+    .filter((widget) => widget.id !== excludeId)
+    .map((widget) => normalizeRect(rectFor(widget, deviceClass)));
+}
+
+function clearGuides() {
+  guideLayer?.replaceChildren();
+}
+
+function renderGuides(xs, ys) {
+  if (!guideLayer) return;
+  guideLayer.replaceChildren();
+  for (const x of new Set(xs)) {
+    const line = document.createElement('div');
+    line.className = 'ed-guide ed-guide--v';
+    line.style.left = `${x * 100}%`;
+    guideLayer.append(line);
+  }
+  for (const y of new Set(ys)) {
+    const line = document.createElement('div');
+    line.className = 'ed-guide ed-guide--h';
+    line.style.top = `${y * 100}%`;
+    guideLayer.append(line);
+  }
+}
+
+function applySmartGuides(widget, target, mode) {
+  const threshold = 0.005;
+  const others = neighborRects(widget.id);
+  const xs = [];
+  const ys = [];
+  for (const rect of others) {
+    xs.push(rect.x, rect.x + rect.w / 2, rect.x + rect.w);
+    ys.push(rect.y, rect.y + rect.h / 2, rect.y + rect.h);
+  }
+
+  const snapMove = (start, size, candidates) => {
+    let best = null;
+    for (const candidate of candidates) {
+      for (const offset of [0, size / 2, size]) {
+        const distance = Math.abs(candidate - (start + offset));
+        if (distance <= threshold && (!best || distance < best.distance)) {
+          best = { start: candidate - offset, line: candidate, distance };
+        }
+      }
+    }
+    return best;
+  };
+  const snapEnd = (start, size, candidates) => {
+    let best = null;
+    for (const candidate of candidates) {
+      const distance = Math.abs(candidate - (start + size));
+      if (distance <= threshold && (!best || distance < best.distance)) {
+        best = { end: candidate, line: candidate, distance };
+      }
+    }
+    return best;
+  };
+
+  if (mode === 'move') {
+    const xSnap = snapMove(target.x, target.w, xs);
+    const ySnap = snapMove(target.y, target.h, ys);
+    if (xSnap) target.x = round4(clamp(xSnap.start, 0, 1 - target.w));
+    if (ySnap) target.y = round4(clamp(ySnap.start, 0, 1 - target.h));
+    if (xSnap) xs.push(xSnap.line);
+    if (ySnap) ys.push(ySnap.line);
+  } else {
+    const xSnap = snapEnd(target.x, target.w, xs);
+    const ySnap = snapEnd(target.y, target.h, ys);
+    if (xSnap) target.w = round4(clamp(xSnap.end - target.x, 0.02, 1 - target.x));
+    if (ySnap) target.h = round4(clamp(ySnap.end - target.y, 0.02, 1 - target.y));
+    if (xSnap) xs.push(xSnap.line);
+    if (ySnap) ys.push(ySnap.line);
+  }
+  renderGuides(xs, ys);
 }
 
 function onPointerDown(event, id, mode = 'move') {
@@ -463,6 +553,7 @@ function onPointerMove(event) {
     target.h = round4(clamp(snap(h + dy), 0.02, 1 - y));
   }
 
+  applySmartGuides(widget, target, drag.mode);
   applyWidgetLayout(widgets.get(drag.id));
   dirty = true;
 }
@@ -472,6 +563,7 @@ function onPointerUp() {
   const wrapper = widgets.get(drag.id)?.wrapper;
   wrapper?.classList.remove('is-dragging');
   drag = null;
+  clearGuides();
   markDirty();
 }
 
@@ -725,6 +817,24 @@ function renderProperties() {
   );
   refs.props.append(geo);
 
+  if (hasFormFactorOverride(def, deviceClass)) {
+    const reset = document.createElement('button');
+    reset.type = 'button';
+    reset.className = 'ed-btn ed-btn--ghost';
+    reset.textContent = t('editor.field.resetLayout');
+    reset.title = t('editor.field.resetLayoutTitle');
+    reset.addEventListener('click', () => {
+      pushHistory();
+      resetFormFactorOverride(def, deviceClass);
+      dirty = true;
+      markDirty();
+      refreshLayout();
+      renderProperties();
+      toast(t('editor.toast.layoutReset'));
+    });
+    refs.props.append(reset);
+  }
+
   // Копирование геометрии в другие форм-факторы одним нажатием.
   refs.props.append(section(t('editor.field.layout')));
   const copyRow = document.createElement('div');
@@ -893,6 +1003,33 @@ function addWidget(type) {
   markDirty();
 }
 
+function duplicateSelected() {
+  if (!selectedId || !profile) return;
+  const source = profile.widgets.find((widget) => widget.id === selectedId);
+  if (!source) return;
+  const baseId = `${source.id}-copy`;
+  let id = baseId;
+  let n = 1;
+  while (profile.widgets.some((widget) => widget.id === id)) id = `${baseId}-${++n}`;
+
+  pushHistory();
+  const copy = JSON.parse(JSON.stringify(source));
+  copy.id = id;
+  copy.label = `${source.label ?? source.id} copy`;
+  for (const rect of Object.values(copy.layout ?? {})) {
+    if (!rect || typeof rect !== 'object') continue;
+    rect.x = round4(clamp(Number(rect.x) + 0.02, 0, 0.98));
+    rect.y = round4(clamp(Number(rect.y) + 0.02, 0, 0.98));
+  }
+  profile.widgets.push(copy);
+  createWidgetElement(copy);
+  refreshLayout();
+  setSelected(id);
+  dirty = true;
+  markDirty();
+  toast(t('editor.toast.duplicated'));
+}
+
 function deleteSelected() {
   if (!selectedId || !profile) return;
   const index = profile.widgets.findIndex((w) => w.id === selectedId);
@@ -953,6 +1090,7 @@ for (const button of refs.deviceSwitch.querySelectorAll('[data-device]')) {
   });
 }
 refs.addBtn.addEventListener('click', showPalette);
+refs.duplicateBtn.addEventListener('click', duplicateSelected);
 refs.saveBtn.addEventListener('click', save);
 refs.deleteBtn.addEventListener('click', deleteSelected);
 refs.undoBtn?.addEventListener('click', undo);
@@ -961,15 +1099,45 @@ refs.redoBtn?.addEventListener('click', redo);
 document.addEventListener('keydown', (event) => {
   const tag = event.target?.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-  if (!event.ctrlKey && !event.metaKey) return;
   const key = event.key.toLowerCase();
-  if (key === 'z' && !event.shiftKey) {
+  const command = event.ctrlKey || event.metaKey;
+
+  if (command && key === 'd') {
+    event.preventDefault();
+    duplicateSelected();
+    return;
+  }
+  if (command && key === 'z' && !event.shiftKey) {
     event.preventDefault();
     undo();
-  } else if (key === 'y' || (key === 'z' && event.shiftKey)) {
+    return;
+  }
+  if (command && (key === 'y' || (key === 'z' && event.shiftKey))) {
     event.preventDefault();
     redo();
+    return;
   }
+
+  if (!selectedId || !profile || command) return;
+  const delta = event.shiftKey ? 0.002 : 0.01;
+  const direction = {
+    ArrowLeft: [-delta, 0],
+    ArrowRight: [delta, 0],
+    ArrowUp: [0, -delta],
+    ArrowDown: [0, delta],
+  }[event.key];
+  if (!direction) return;
+  event.preventDefault();
+  const def = profile.widgets.find((widget) => widget.id === selectedId);
+  if (!def) return;
+  const rect = editableRect(def);
+  pushHistory();
+  rect.x = round4(clamp(Number(rect.x) + direction[0], 0, 1 - Number(rect.w)));
+  rect.y = round4(clamp(Number(rect.y) + direction[1], 0, 1 - Number(rect.h)));
+  dirty = true;
+  markDirty();
+  applyWidgetLayout(widgets.get(selectedId));
+  refreshLayout();
 });
 
 onLocaleChange(() => {

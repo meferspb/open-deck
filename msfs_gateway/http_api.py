@@ -219,7 +219,11 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
             logger.debug("%s %s", self.address_string(), self._redact(format % args))
 
         def log_error(self, format: str, *args: Any) -> None:
-            logger.warning("%s %s", self.address_string(), self._redact(format % args))
+            message = self._redact(format % args)
+            if "timed out" in message.lower() or "timeout" in message.lower():
+                logger.debug("%s %s", self.address_string(), message)
+                return
+            logger.warning("%s %s", self.address_string(), message)
 
         def _send_json(
             self, status: int, payload: Any, *, extra: dict[str, str] | None = None
@@ -695,7 +699,23 @@ def make_handler(app: Any) -> type[BaseHTTPRequestHandler]:
             if parts == ["api", "health"]:
                 self._send_json(
                     HTTPStatus.OK,
-                    {**hub.health(), "authRequired": self.gateway.auth.required},
+                    {
+                        **hub.health(),
+                        "authRequired": self.gateway.auth.required,
+                        "wasm": self.gateway.wasm_status(),
+                    },
+                )
+                return
+            if parts == ["api", "diagnostics"]:
+                diagnostics = getattr(self.gateway.sim, "diagnostics", None)
+                events = diagnostics() if callable(diagnostics) else []
+                self._send_json(
+                    HTTPStatus.OK,
+                    {
+                        "simconnect": events,
+                        "wasm": self.gateway.wasm_status(),
+                        "health": hub.health(),
+                    },
                 )
                 return
             if parts == ["api", "auth", "status"]:

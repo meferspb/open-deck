@@ -36,4 +36,10 @@
     <string name="donation_default_message">このプロジェクトは無料で、インターネットなしで動作します。パネルが飛行中の時間を節約できたら、作者を支援してください。</string>
     <string name="donation_author">作者: %1$s</string>
     <string name="donation_no_browser">このデバイスではリンクを開けませんでした。</string>
+    <string name="back_to_setup_hint">もう一度戻るを押すとホスト選択に戻ります</string>
+    <string name="connection_lost">ホストとの接続が切れました</string>
+    <string name="retry_now">今すぐ再試行</string>
+    <string name="change_host">ホストを変更</string>
+    <string name="donation_copied">支払い情報をコピーしました</string>
+    <string name="setup_profiles_count">プロファイル: %1$d</string>
 </resources>

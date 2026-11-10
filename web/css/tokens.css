@@ -40,4 +40,52 @@
 
   /* Размер «единицы» панели задаётся из JS: --u = ширина панели / 100. */
   --u: 4px;
+
+  /* Тема для Canvas-приборов: filter применяется ко всем canvas,
+     поэтому стрелки, шкалы и подписи перекрашиваются без перерисовки логики. */
+  --canvas-filter: none;
+}
+
+:root[data-theme="night-red"] {
+  --bg: #050203;
+  --bg-elevated: #0b0406;
+  --surface: #120609;
+  --surface-2: #1a080c;
+  --line: rgba(255, 59, 48, 0.16);
+  --line-strong: rgba(255, 59, 48, 0.34);
+  --text: #fca5a5;
+  --text-muted: #c77a7a;
+  --text-dim: #8f4a4a;
+  --accent: #ff3b30;
+  --accent-soft: rgba(255, 59, 48, 0.16);
+  --ok: #ff6b6b;
+  --warn: #ffb3a7;
+  --danger: #ff3b30;
+  --danger-soft: rgba(255, 59, 48, 0.18);
+  --canvas-filter: sepia(1) saturate(7) hue-rotate(-52deg) brightness(0.78) contrast(1.12);
+  color-scheme: dark;
+}
+
+:root[data-theme="amber"] {
+  --bg: #0d0903;
+  --bg-elevated: #151005;
+  --surface: #1d1508;
+  --surface-2: #271b09;
+  --line: rgba(255, 176, 0, 0.16);
+  --line-strong: rgba(255, 176, 0, 0.34);
+  --text: #ffe082;
+  --text-muted: #c9a44e;
+  --text-dim: #8f6f2e;
+  --accent: #ffb000;
+  --accent-soft: rgba(255, 176, 0, 0.16);
+  --ok: #ffd166;
+  --warn: #ffcf4a;
+  --danger: #ff8a5b;
+  --danger-soft: rgba(255, 138, 91, 0.18);
+  --canvas-filter: sepia(1) saturate(2.4) hue-rotate(-12deg) brightness(1.04) contrast(1.04);
+  color-scheme: dark;
+}
+
+.widget canvas {
+  filter: var(--canvas-filter, none);
 }

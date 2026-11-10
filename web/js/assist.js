@@ -191,6 +191,9 @@ $('landing-disarm').addEventListener('click', () =>
   action('/api/assist/landing', { action: 'disarm' }),
 );
 $('landing-toga').addEventListener('click', () => action('/api/assist/landing', { action: 'toga' }));
+$('landing-nav').addEventListener('click', () =>
+  action('/api/assist/landing', { action: 'nav_only' }),
+);
 
 $('taxi-engage').addEventListener('click', () => action('/api/assist/taxi', { action: 'engage' }));
 $('taxi-disengage').addEventListener('click', () =>

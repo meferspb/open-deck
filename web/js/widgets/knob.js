@@ -8,7 +8,7 @@
 
 import { formatNumber, toFiniteNumber } from '../core/format.js';
 import { t } from '../core/i18n.js';
-import { CanvasSurface, Smoother, Widget, createCard, degToRad } from './base.js';
+import { CanvasSurface, Smoother, Widget, createCard, degToRad, haptic } from './base.js';
 
 const MONO = '"Cascadia Mono", "Consolas", monospace';
 const SEND_THROTTLE_MS = 80;
@@ -49,6 +49,11 @@ export class KnobWidget extends Widget {
     this.pendingSend = null;
     /** @type {ReturnType<typeof setTimeout> | null} */
     this.sendTimer = null;
+    /** @type {ReturnType<typeof setTimeout> | null} */
+    this.pendingTimer = null;
+    /** @type {ReturnType<typeof setTimeout> | null} */
+    this.rejectedTimer = null;
+    this.fineTune = null;
 
     this.onPointerDown = this.onPointerDown.bind(this);
     this.onPointerMove = this.onPointerMove.bind(this);
@@ -66,8 +71,16 @@ export class KnobWidget extends Widget {
   onPointerDown(event) {
     if (!this.key) return;
     this.dragging = true;
+    this.dragStartY = event.clientY;
     this.lastPointerY = event.clientY;
-    this.card.setPointerCapture?.(event.pointerId);
+    this.dragMoved = 0;
+    this.dragStartedAt = performance.now();
+    haptic();
+    try {
+      this.card.setPointerCapture?.(event.pointerId);
+    } catch {
+      // Синтетические указатели/быстрое снятие захвата не должны ломать ручку.
+    }
     this.card.focus({ preventScroll: true });
     event.preventDefault();
   }
@@ -77,6 +90,7 @@ export class KnobWidget extends Widget {
     if (!this.dragging) return;
     const deltaY = this.lastPointerY - event.clientY;
     this.lastPointerY = event.clientY;
+    this.dragMoved = (this.dragMoved ?? 0) + Math.abs(deltaY);
     this.applyValue(this.value + deltaY * this.sensitivity);
   }
 
@@ -90,12 +104,23 @@ export class KnobWidget extends Widget {
       // Захват уже снят (pointercancel) — это не ошибка.
     }
     this.flushSend();
+    const tap = (this.dragMoved ?? 0) < 8 && performance.now() - (this.dragStartedAt ?? 0) < 700;
+    if (tap && event.pointerType !== 'mouse' && this.isPhoneFormFactor()) {
+      this.openFineTune();
+    }
+  }
+
+  isPhoneFormFactor() {
+    const frame = document.getElementById('device-frame');
+    if (frame?.dataset.device) return frame.dataset.device === 'phone';
+    return window.matchMedia?.('(max-width: 600px)').matches ?? false;
   }
 
   /** @param {WheelEvent} event */
   onWheel(event) {
     if (!this.key) return;
     event.preventDefault();
+    haptic();
     const direction = event.deltaY < 0 ? 1 : -1;
     this.applyValue(this.value + direction * this.step);
     this.flushSend();
@@ -129,6 +154,7 @@ export class KnobWidget extends Widget {
   applyValue(next) {
     this.value = this.clampValue(next);
     this.pendingSend = this.value;
+    this.setPending();
     if (this.sendTimer) return;
     this.sendTimer = setTimeout(() => {
       this.sendTimer = null;
@@ -147,21 +173,148 @@ export class KnobWidget extends Widget {
 
     this.ctx
       .command(this.key, value)
+      .then((ack) => {
+        if (ack?.ok === false) this.markRejected(ack.error || t('widget.commandNotExecuted'));
+      })
       .catch((error) => {
-        this.ctx.notify?.(`${this.caption}: ${error?.message ?? t('widget.commandNotExecuted')}`);
+        this.clearPending();
+        this.markRejected(error?.message ?? t('widget.commandNotExecuted'));
       });
+  }
+
+  setPending() {
+    this.el.classList.add('is-pending');
+    this.card.classList.add('is-pending');
+    this.card.setAttribute('aria-busy', 'true');
+    if (this.pendingTimer) clearTimeout(this.pendingTimer);
+    this.pendingTimer = setTimeout(() => this.clearPending(), 800);
+  }
+
+  markRejected(message) {
+    this.el.classList.add('is-rejected');
+    this.card.classList.add('is-rejected');
+    if (this.rejectedTimer) clearTimeout(this.rejectedTimer);
+    this.rejectedTimer = setTimeout(() => {
+      this.el.classList.remove('is-rejected');
+      this.card.classList.remove('is-rejected');
+    }, 600);
+    this.ctx.notify?.(`${this.caption}: ${message}`);
+  }
+
+  clearPending() {
+    this.el.classList.remove('is-pending');
+    this.card.classList.remove('is-pending');
+    this.card.removeAttribute('aria-busy');
+    if (this.pendingTimer) clearTimeout(this.pendingTimer);
+    this.pendingTimer = null;
+  }
+
+  openFineTune() {
+    if (this.fineTune) return;
+    haptic(18);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'knob-finetune';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', this.caption);
+
+    const panel = document.createElement('div');
+    panel.className = 'knob-finetune__panel';
+
+    const caption = document.createElement('div');
+    caption.className = 'knob-finetune__caption';
+    caption.textContent = this.caption;
+
+    const readout = document.createElement('div');
+    readout.className = 'knob-finetune__value';
+
+    const steps = document.createElement('div');
+    steps.className = 'knob-finetune__steps';
+    for (const multiplier of [-10, -1, 1, 10]) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'knob-finetune__step';
+      button.textContent = `${multiplier > 0 ? '+' : '−'}${Math.abs(multiplier)}×`;
+      button.addEventListener('click', () => {
+        haptic();
+        this.applyValue(this.value + this.step * multiplier);
+        this.flushSend();
+        this.updateFineTune();
+      });
+      steps.append(button);
+    }
+
+    const input = document.createElement('input');
+    input.type = 'range';
+    input.className = 'knob-finetune__slider';
+    input.min = String(this.min);
+    input.max = String(this.max);
+    input.step = String(this.step || 1);
+    input.addEventListener('input', () => {
+      this.applyValue(Number(input.value));
+      this.updateFineTune();
+    });
+    input.addEventListener('change', () => this.flushSend());
+
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'knob-finetune__close';
+    close.textContent = '✕';
+    close.setAttribute('aria-label', 'Close');
+    close.addEventListener('click', () => this.closeFineTune());
+
+    const head = document.createElement('div');
+    head.className = 'knob-finetune__head';
+    head.append(caption, close);
+
+    panel.append(head, readout, steps, input);
+    overlay.append(panel);
+    overlay.addEventListener('pointerdown', (event) => {
+      if (event.target === overlay) this.closeFineTune();
+    });
+    this.fineTune = { overlay, readout, input, onKey: null };
+    this.fineTune.onKey = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.closeFineTune();
+      }
+    };
+    document.addEventListener('keydown', this.fineTune.onKey);
+    document.body.append(overlay);
+    this.updateFineTune();
+  }
+
+  updateFineTune() {
+    if (!this.fineTune) return;
+    this.fineTune.readout.textContent = this.hasData
+      ? `${formatNumber(this.value, this.decimals)}${this.unit || ''}`
+      : '--';
+    this.fineTune.input.value = String(this.value);
+  }
+
+  closeFineTune() {
+    if (!this.fineTune) return;
+    document.removeEventListener('keydown', this.fineTune.onKey);
+    this.fineTune.overlay.remove();
+    this.fineTune = null;
   }
 
   update(state, now = performance.now()) {
     const raw = toFiniteNumber(this.bindingValue(state, 'value'));
     this.hasData = raw !== null;
     if (raw !== null && !this.dragging && this.pendingSend === null) {
+      const target = this.value;
       this.value = raw;
+      if (this.el.classList.contains('is-pending') && Math.abs(raw - target) <= this.step * 0.51) {
+        this.clearPending();
+      }
     }
     const shown = this.display.update(this.value, now);
     this.card.setAttribute('aria-valuenow', String(Math.round(this.value)));
     this.surface.resize();
     this.draw(shown);
+    if (this.fineTune) this.updateFineTune();
   }
 
   /** @param {number} shown */
@@ -237,7 +390,10 @@ export class KnobWidget extends Widget {
   }
 
   destroy() {
+    this.closeFineTune();
     if (this.sendTimer) clearTimeout(this.sendTimer);
+    if (this.pendingTimer) clearTimeout(this.pendingTimer);
+    if (this.rejectedTimer) clearTimeout(this.rejectedTimer);
     this.sendTimer = null;
     this.pendingSend = null;
   }

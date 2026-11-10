@@ -68,6 +68,12 @@ class BuildMessageTest(unittest.TestCase):
         # Полный набор ключей независимо от провайдера.
         self.assertEqual(set(message["values"]), set(telemetry.VARIABLES))
 
+    def test_health_includes_active_profile(self):
+        self.sim.profile_ref = "piper"
+        health = self.hub.health()
+        self.assertEqual(health["profileId"], "piper")
+        self.assertEqual(health["sim"]["profileId"], "piper")
+
     def test_seq_increments(self):
         first = self.hub.build_message()["seq"]
         second = self.hub.build_message()["seq"]

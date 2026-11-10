@@ -4,6 +4,17 @@
  * от частоты сети (20 Гц) и остаётся плавной на 60 Гц.
  */
 
+/** Short haptic pulse for touch interactions (no-op where unsupported). */
+export function haptic(ms = 12) {
+  try {
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      navigator.vibrate(ms);
+    }
+  } catch {
+    /* Vibration is best-effort. */
+  }
+}
+
 export class Widget {
   /**
    * @param {HTMLElement} element
